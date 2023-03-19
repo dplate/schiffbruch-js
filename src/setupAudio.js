@@ -42,7 +42,7 @@ const setupAudio = () => {
 
   return {
     load: async (name) => {
-      const response = await fetch('/sounds/' + name + '.mp3');
+      const response = await fetch('./sounds/' + name + '.mp3');
       const buffer = await response.arrayBuffer();
       const audioBuffer = await audioContext.decodeAudioData(buffer);
       const sound = createSound(audioContext, audioBuffer);
