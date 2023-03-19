@@ -4686,7 +4686,7 @@ const ZeichneObjekte = () => {
           else if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === -1 || (
             Bmp[Scape[x][y].Objekt].Sound !== Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Sound
           ))
-            PlaySound(Bmp[Scape[x][y].Objekt].Sound, 90);
+            PlaySound(Bmp[Scape[x][y].Objekt].Sound, 50);
         }
 
         ZeichneBilder(Scape[x][y].xScreen + Scape[x][y].ObPos.x - Camera.x,
@@ -4708,7 +4708,7 @@ const ZeichneObjekte = () => {
             else if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === -1 || (
               Bmp[Scape[x][y].Objekt].Sound !== Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Sound
             ))
-              PlaySound(Bmp[Scape[x][y].Objekt].Sound, 90);
+              PlaySound(Bmp[Scape[x][y].Objekt].Sound, 50);
           }
           if (Guyzeichnen) {
             if ((Guy.PosScreen.y) < (Scape[x][y].yScreen + Scape[x][y].ObPos.y
