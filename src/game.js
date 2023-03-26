@@ -7704,8 +7704,11 @@ const FindTheWay = () => {
     for (BI = 0; BI <= 3; BI++) //In jede Richtung schauen
     {
       //ist das Feld noch nicht besucht und frei?
-      if ((LenMap[NewPos.x][NewPos.y] === 65535) &&
-        (Scape[NewPos.x][NewPos.y].Begehbar)) {
+      if (NewPos.x >= 0 && NewPos.x < LenMap.length && 
+        NewPos.y >= 0 && NewPos.y < LenMap[NewPos.x].length &&
+        LenMap[NewPos.x][NewPos.y] === 65535 &&
+        Scape[NewPos.x][NewPos.y].Begehbar
+      ) {
         // Wieviele Schritte braucht man um zu diesem Feld zu kommen
         StepCnt = LenMap[Pos.x][Pos.y] + 1;
         LenMap[NewPos.x][NewPos.y] = StepCnt;
