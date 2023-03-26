@@ -584,13 +584,13 @@ const SaveGame = () => {
     animations
   };
 
-  window.localStorage.setItem('gameDataV1', JSON.stringify(gameData));
+  window.localStorage.setItem('gameDataV2', JSON.stringify(gameData));
 }
 
 const LoadGame = () => {
   let i;
 
-  const rawGameData = window.localStorage.getItem('gameDataV1');
+  const rawGameData = window.localStorage.getItem('gameDataV2');
   if (!rawGameData) {
     return false;  
   }
