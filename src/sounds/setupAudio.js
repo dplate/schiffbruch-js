@@ -1,4 +1,4 @@
-const createSound = (audioContext, audioBuffer) => {
+const createSound = (audioContext, audioBuffer, baseGain) => {
   let source = null;
 
   const gainNode = audioContext.createGain();
@@ -14,7 +14,7 @@ const createSound = (audioContext, audioBuffer) => {
     },
     setGain: (gain) => {
       if (source) {
-        gainNode.gain.value = gain;
+        gainNode.gain.value = baseGain * gain;
       }
     },
     isPlaying: () => Boolean(source),
@@ -41,11 +41,18 @@ const setupAudio = () => {
   const sounds = [];
 
   return {
-    load: async (name) => {
+    suspend: () => {
+      audioContext.suspend();
+    },
+    resume: () => {
+      audioContext.resume();
+    },
+    isRunning: () => audioContext.state === 'running',
+    load: async (name, baseGain = 1) => {
       const response = await fetch('./sounds/' + name + '.mp3');
       const buffer = await response.arrayBuffer();
       const audioBuffer = await audioContext.decodeAudioData(buffer);
-      const sound = createSound(audioContext, audioBuffer);
+      const sound = createSound(audioContext, audioBuffer, baseGain);
       sounds.push(sound);
       return sound;
     },
