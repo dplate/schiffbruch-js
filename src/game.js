@@ -26,8 +26,8 @@ const S2YPIXEL = 15; //Höhe der Schrift2
 const S2ABSTAND = 10; //Abstand zum nächsten Buchstaben
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
-const MAXSCAPEX = 3360//; Größe der Scapesurface
-const MAXSCAPEY = 1700;
+const MAXSCAPEX = 3414//; Größe der Scapesurface
+const MAXSCAPEY = 1724;
 const MAXX = 800; //Bildschirmauflösung
 const MAXY = 600;
 const SKARTEX = 370; //Schatzkartenbreite
@@ -422,13 +422,7 @@ const AbspannListe = Array.from(Array(10), () => Array.from(Array(10), () => ({
 })));    //Namenabfolge im Abspann
 
 let Scape = Array.from(Array(MAXXKACH), () => Array.from(Array(MAXYKACH), () => ({
-  type: null,    //Flach, Hang usw.
-  ground: null,    //Sand, Moor ...
-  height: null,    //Die Hoehe der Kachel
-  object: null,
   Markiert: null, //Ist diese Kachel markiert?
-  xScreen: null, //Die Koordinaten in der Scape-Surface
-  yScreen: null, //Die Koordinaten in der Scape-Surface
   Begehbar: null,        //notwendig für Pathfinding
   Entdeckt: null,        //Ist dieses Feld schon aufgedeckt?
   LaufZeit: null,        //LaufZeit auf dieser Kachel (1 am schnellsten...)
@@ -2841,8 +2835,8 @@ const CheckKey = () => {
       Scape[Guy.Pos.x - 2][Guy.Pos.y].ObPos.y = Bmp[WRACK].rcDes.top;
 
       const tile = Scape[Guy.Pos.x][Guy.Pos.y];
-      Guy.PosScreen.x = tile.xScreen + tileEdges[tile.type].center.x;
-      Guy.PosScreen.y = tile.yScreen + tileEdges[tile.type].center.y;;
+      Guy.PosScreen.x = tile.position.x + tileEdges[tile.type].center.x;
+      Guy.PosScreen.y = tile.position.y + tileEdges[tile.type].center.y;;
       RouteStart.x = -1;
       RouteStart.y = -1;
       RouteZiel.x = -1;
@@ -3013,23 +3007,23 @@ const GetKachel = (PosX, PosY) => {
   for (y = 0; y < MAXYKACH; y++)
     for (x = 0; x < MAXXKACH; x++) {    //Die in Betracht kommenden Kacheln rausfinden
       const tile = Scape[x][y];
-      if ((PosX > tile.xScreen) && (PosX < tile.xScreen + KXPIXEL) &&
-        (PosY > tile.yScreen) && (PosY < tile.yScreen + KYPIXEL)) {
+      if ((PosX > tile.position.x) && (PosX < tile.position.x + KXPIXEL) &&
+        (PosY > tile.position.y) && (PosY < tile.position.y + KYPIXEL)) {
         const tileEdge = tileEdges[tile.type];
         if ((InDreieck(PosX, PosY,
-          tile.xScreen + tileEdge.left.x,
-          tile.yScreen + tileEdge.left.y,
-          tile.xScreen + tileEdge.top.x,
-          tile.yScreen + tileEdge.top.y,
-          tile.xScreen + tileEdge.bottom.x,
-          tile.yScreen + tileEdge.bottom.y)) ||
+          tile.position.x + tileEdge.left.x,
+          tile.position.y + tileEdge.left.y,
+          tile.position.x + tileEdge.top.x,
+          tile.position.y + tileEdge.top.y,
+          tile.position.x + tileEdge.bottom.x,
+          tile.position.y + tileEdge.bottom.y)) ||
           (InDreieck(PosX, PosY,
-            tile.xScreen + tileEdge.right.x,
-            tile.yScreen + tileEdge.right.y,
-            tile.xScreen + tileEdge.top.x,
-            tile.yScreen + tileEdge.top.y,
-            tile.xScreen + tileEdge.bottom.x,
-            tile.yScreen + tileEdge.bottom.y))) {
+            tile.position.x + tileEdge.right.x,
+            tile.position.y + tileEdge.right.y,
+            tile.position.x + tileEdge.top.x,
+            tile.position.y + tileEdge.top.y,
+            tile.position.x + tileEdge.bottom.x,
+            tile.position.y + tileEdge.bottom.y))) {
           return { x, y };
         }
       }
@@ -3925,10 +3919,14 @@ const startGame = async (newGame) => {
         tile.GPosAlt.y = 0;
         for (let i = 0; i < BILDANZ; i++) tile.Rohstoff[i] = 0;
         tile.Timer = 0;
+        tile.position.x = tile.position.x;
+        tile.position.y = tile.position.y;
       }
     }
-    
-    CalcKoor();
+    ScapeGrenze.top = Scape[0][0].position.y;
+    ScapeGrenze.left = Scape[0][MAXYKACH - 1].position.x;
+    ScapeGrenze.bottom = Scape[MAXXKACH - 1][MAXYKACH - 1].position.y + KYPIXEL;
+    ScapeGrenze.right = Scape[MAXXKACH - 1][0].position.x + KXPIXEL;
 
     DrawString('Pflanze Baeume...', 5, 95, 2, primaryCanvasContext);
     await new Promise(window.requestAnimationFrame);
@@ -3942,8 +3940,8 @@ const startGame = async (newGame) => {
     Guy.Pos.x = 1;
     Guy.Pos.y = Math.floor(MAXYKACH / 2);
     const tile = Scape[Guy.Pos.x][Guy.Pos.y];
-    Guy.PosScreen.x = tile.xScreen + tileEdges[tile.type].center.x;
-    Guy.PosScreen.y = tile.yScreen + tileEdges[tile.type].center.y;
+    Guy.PosScreen.x = tile.position.x + tileEdges[tile.type].center.x;
+    Guy.PosScreen.y = tile.position.y + tileEdges[tile.type].center.y;
 
     Camera.x = Math.floor(Guy.PosScreen.x - rcGesamt.right / 2);
     Camera.y = Math.floor(Guy.PosScreen.y - rcGesamt.bottom / 2);
@@ -4013,8 +4011,8 @@ const Generate = () => {
     for (x = 0; x < MAXXKACH; x++) {
       if (!Scape[x][y].Entdeckt) continue; //Nicht entdeckte Felder nicht malen
 
-      rcRectdes.left = Scape[x][y].xScreen;
-      rcRectdes.top = Scape[x][y].yScreen;
+      rcRectdes.left = Scape[x][y].position.x;
+      rcRectdes.top = Scape[x][y].position.y;
       rcRectdes.right = rcRectdes.left + KXPIXEL;
       rcRectdes.bottom = rcRectdes.top + KYPIXEL;
       if (Scape[x][y].ground === grounds.SEA) {
@@ -4058,8 +4056,8 @@ const Generate = () => {
           drawSprite(
             object.sprite, 
             object.frame, 
-            Scape[x][y].xScreen + object.x, 
-            Scape[x][y].yScreen + object.y,
+            Scape[x][y].position.x + object.x, 
+            Scape[x][y].position.y + object.y,
             landscapeCanvasContext
           );
         } else if ((Scape[x][y].Objekt >= SCHLEUSE1) && (Scape[x][y].Objekt <= SCHLEUSE6)) {
@@ -4067,10 +4065,10 @@ const Generate = () => {
           rcRectsrc.right = Bmp[Scape[x][y].Objekt].rcSrc.right;
           rcRectsrc.top = Bmp[Scape[x][y].Objekt].rcSrc.top;
           rcRectsrc.bottom = Bmp[Scape[x][y].Objekt].rcSrc.bottom;
-          rcRectdes.left = Scape[x][y].xScreen + Bmp[Scape[x][y].Objekt].rcDes.left;
-          rcRectdes.right = Scape[x][y].xScreen + Bmp[Scape[x][y].Objekt].rcDes.right;
-          rcRectdes.top = Scape[x][y].yScreen + Bmp[Scape[x][y].Objekt].rcDes.top;
-          rcRectdes.bottom = Scape[x][y].yScreen + Bmp[Scape[x][y].Objekt].rcDes.bottom;
+          rcRectdes.left = Scape[x][y].position.x + Bmp[Scape[x][y].Objekt].rcDes.left;
+          rcRectdes.right = Scape[x][y].position.x + Bmp[Scape[x][y].Objekt].rcDes.right;
+          rcRectdes.top = Scape[x][y].position.y + Bmp[Scape[x][y].Objekt].rcDes.top;
+          rcRectdes.bottom = Scape[x][y].position.y + Bmp[Scape[x][y].Objekt].rcDes.bottom;
           //Landschaftsobjekt zeichnen
           drawImage(waterImage, landscapeCanvasContext);
         }
@@ -4329,10 +4327,10 @@ const ZeichneObjekte = () => {
       Guyzeichnen = (Guy.Pos.x === x) && (Guy.Pos.y === y);
 
       //Die nichtsichbaren Kacheln (oder nicht betroffenen) ausfiltern
-      if (!((Scape[x][y].xScreen > Camera.x + rcSpielflaeche.left - KXPIXEL) &&
-        (Scape[x][y].xScreen < Camera.x + rcSpielflaeche.right + KXPIXEL) &&
-        (Scape[x][y].yScreen > Camera.y + rcSpielflaeche.top - KYPIXEL) &&
-        (Scape[x][y].yScreen < Camera.y + rcSpielflaeche.bottom + KYPIXEL) &&
+      if (!((Scape[x][y].position.x > Camera.x + rcSpielflaeche.left - KXPIXEL) &&
+        (Scape[x][y].position.x < Camera.x + rcSpielflaeche.right + KXPIXEL) &&
+        (Scape[x][y].position.y > Camera.y + rcSpielflaeche.top - KYPIXEL) &&
+        (Scape[x][y].position.y < Camera.y + rcSpielflaeche.bottom + KYPIXEL) &&
         (Scape[x][y].Entdeckt) &&
         (Scape[x][y].Markiert || Scape[x][y].Objekt !== -1 || Scape[x][y].object || Guyzeichnen))) continue;
 
@@ -4342,9 +4340,9 @@ const ZeichneObjekte = () => {
         rcRectsrc.right = rcRectsrc.left + KXPIXEL;
         rcRectsrc.top = 2 * KYPIXEL;
         rcRectsrc.bottom = rcRectsrc.top + KYPIXEL;
-        rcRectdes.left = Scape[x][y].xScreen - Camera.x;
+        rcRectdes.left = Scape[x][y].position.x - Camera.x;
         rcRectdes.right = rcRectdes.left + KXPIXEL;
-        rcRectdes.top = Scape[x][y].yScreen - Camera.y;
+        rcRectdes.top = Scape[x][y].position.y - Camera.y;
         rcRectdes.bottom = rcRectdes.top + KYPIXEL;
         CalcRect(rcSpielflaeche);
         drawImage(tilesImage, primaryCanvasContext);
@@ -4357,8 +4355,8 @@ const ZeichneObjekte = () => {
         drawSprite(
           object.sprite, 
           object.frame, 
-          Scape[x][y].xScreen + object.x - Camera.x, 
-          Scape[x][y].yScreen + object.y - Camera.y,
+          Scape[x][y].position.x + object.x - Camera.x, 
+          Scape[x][y].position.y + object.y - Camera.y,
           primaryCanvasContext
         );
       } else if ((Scape[x][y].Objekt !== -1) && (LAnimation) &&
@@ -4377,8 +4375,8 @@ const ZeichneObjekte = () => {
             PlaySound(Bmp[Scape[x][y].Objekt].Sound, 50);
         }
 
-        ZeichneBilder(Scape[x][y].xScreen + Scape[x][y].ObPos.x - Camera.x,
-          Scape[x][y].yScreen + Scape[x][y].ObPos.y - Camera.y,
+        ZeichneBilder(Scape[x][y].position.x + Scape[x][y].ObPos.x - Camera.x,
+          Scape[x][y].position.y + Scape[x][y].ObPos.y - Camera.y,
           Scape[x][y].Objekt, rcSpielflaeche, Scape[x][y].Reverse,
           Scape[x][y].Phase);
       } else {
@@ -4399,15 +4397,15 @@ const ZeichneObjekte = () => {
               PlaySound(Bmp[Scape[x][y].Objekt].Sound, 50);
           }
           if (Guyzeichnen) {
-            if ((Guy.PosScreen.y) < (Scape[x][y].yScreen + Scape[x][y].ObPos.y
+            if ((Guy.PosScreen.y) < (Scape[x][y].position.y + Scape[x][y].ObPos.y
               + Bmp[Scape[x][y].Objekt].Hoehe)) {
               ZeichneGuy();
               Guyzeichnen = false;
             }
           }
 
-          ZeichneBilder(Scape[x][y].xScreen + Scape[x][y].ObPos.x - Camera.x,
-            Scape[x][y].yScreen + Scape[x][y].ObPos.y - Camera.y,
+          ZeichneBilder(Scape[x][y].position.x + Scape[x][y].ObPos.x - Camera.x,
+            Scape[x][y].position.y + Scape[x][y].ObPos.y - Camera.y,
             Scape[x][y].Objekt, rcSpielflaeche, false,
             Scape[x][y].Phase);
         }
@@ -5099,12 +5097,12 @@ const AkIntro = () => {
       Guy.PosScreen.y += 10;
       Guy.Zustand = GUYSCHWIMMEN;
       const targetTile = Scape[Guy.Pos.x][Guy.Pos.y];
-      ShortRoute(targetTile.xScreen + tileEdges[targetTile.type].west.x, targetTile.yScreen + tileEdges[targetTile.type].west.y);
+      ShortRoute(targetTile.position.x + tileEdges[targetTile.type].west.x, targetTile.position.y + tileEdges[targetTile.type].west.y);
       break;
     case 4:
       StopSound(WAVSCHWIMMEN); //Sound hier sofort stoppen
       Guy.Zustand = GUYLINKS;
-      ShortRoute(tile.xScreen + tileEdges[tile.type].center.x, tile.yScreen + tileEdges[tile.type].center.y);
+      ShortRoute(tile.position.x + tileEdges[tile.type].center.x, tile.position.y + tileEdges[tile.type].center.y);
       break;
     case 5:
       Guy.PosAlt = { ...Guy.PosScreen };
@@ -5255,7 +5253,7 @@ const AkAbbruch = () => {
       tile.GPosAlt.x = Guy.PosScreen.x;
       tile.GPosAlt.y = Guy.PosScreen.y;
 
-      ShortRoute(tile.xScreen + tileEdges[tile.type].center.x, tile.yScreen + tileEdges[tile.type].center.y);
+      ShortRoute(tile.position.x + tileEdges[tile.type].center.x, tile.position.y + tileEdges[tile.type].center.y);
       break;
     case 2:
       Guy.Aktion = AKNICHTS;
@@ -5273,9 +5271,9 @@ const AkDestroy = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite + 4,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe);
       break;
     case 2:
@@ -5323,8 +5321,8 @@ const AkSuchen = () => {
     Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
   }
   while (1) {
-    Ziel.x = Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Math.floor(Math.random() * KXPIXEL);
-    Ziel.y = Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Math.floor(Math.random() * KYPIXEL);
+    Ziel.x = Scape[Guy.Pos.x][Guy.Pos.y].position.x + Math.floor(Math.random() * KXPIXEL);
+    Ziel.y = Scape[Guy.Pos.x][Guy.Pos.y].position.y + Math.floor(Math.random() * KYPIXEL);
     Erg = GetKachel(Ziel.x, Ziel.y);
     if (Erg && Erg.x === Guy.Pos.x && Erg.y === Guy.Pos.y) break; //Wenn das gefundene Ziel in der Kachel, dann fertig
   }
@@ -5460,10 +5458,10 @@ const AkEssen = () => {
   switch (Guy.AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 2
       ));
       break;
@@ -5492,10 +5490,10 @@ const AkSchleuder = () => {
   switch (Guy.AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 - 14
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 9
       ));
       break;
@@ -5509,10 +5507,10 @@ const AkSchleuder = () => {
     case 3:
       Guy.PosScreen.x -= 5;
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 + 6
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 2
       ));
       break;
@@ -5567,10 +5565,10 @@ const AkFaellen = () => {
   switch (Guy.AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 + 9
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 3
       ));
       break;
@@ -5623,55 +5621,55 @@ const AkAngeln = () => {
       if (tile.object) {
         switch (tile.object.sprite) {
           case spriteTypes.RIVER_SLOPE_NORTH:
-            ShortRoute(tile.xScreen + 35, tile.yScreen + 26);
+            ShortRoute(tile.position.x + 35, tile.position.y + 26);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
-            ShortRoute(tile.xScreen + 19, tile.yScreen + 26);
+            ShortRoute(tile.position.x + 19, tile.position.y + 26);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
-            ShortRoute(tile.xScreen + 22, tile.yScreen + 20);
+            ShortRoute(tile.position.x + 22, tile.position.y + 20);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
-            ShortRoute(tile.xScreen + 34, tile.yScreen + 23);
+            ShortRoute(tile.position.x + 34, tile.position.y + 23);
             break;
           case spriteTypes.RIVER_NORTH_SOUTH:  
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
-            ShortRoute(tile.xScreen + 34, tile.yScreen + 33);
+            ShortRoute(tile.position.x + 34, tile.position.y + 33);
             break;
           case spriteTypes.RIVER_WEST_EAST:  
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
-            ShortRoute(tile.xScreen + 20, tile.yScreen + 33);
+            ShortRoute(tile.position.x + 20, tile.position.y + 33);
             break;
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
-            ShortRoute(tile.xScreen + 22, tile.yScreen + 26);
+            ShortRoute(tile.position.x + 22, tile.position.y + 26);
             break;
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            ShortRoute(tile.xScreen + 32, tile.yScreen + 26);
+            ShortRoute(tile.position.x + 32, tile.position.y + 26);
             break;
         }
       } else {
         switch (tile.Objekt) {
           case SCHLEUSE2:
           case SCHLEUSE3:
-            ShortRoute(tile.xScreen + 34, tile.yScreen + 33);
+            ShortRoute(tile.position.x + 34, tile.position.y + 33);
             break;
           case SCHLEUSE1:
           case SCHLEUSE5:
-            ShortRoute(tile.xScreen + 20, tile.yScreen + 33);
+            ShortRoute(tile.position.x + 20, tile.position.y + 33);
             break;
           case SCHLEUSE4:
-            ShortRoute(tile.xScreen + 22, tile.yScreen + 26);
+            ShortRoute(tile.position.x + 22, tile.position.y + 26);
             break;
           case SCHLEUSE6:
-            ShortRoute(tile.xScreen + 32, tile.yScreen + 26);
+            ShortRoute(tile.position.x + 32, tile.position.y + 26);
             break;
         }
       }
@@ -5858,10 +5856,10 @@ const AkAnzuenden = () => {
   switch (Guy.AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 - 10
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
         + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 1
       ));
       break;
@@ -5975,45 +5973,45 @@ const AkFeld = () => {
   }
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 23);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 23);
       break;
     case 4:
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = 4;
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 25,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 25,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 7:
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = 5;
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 19);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 19);
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 10:
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = 6;
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 17);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 17);
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 13:
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = 7;
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 34,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 34,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 16:
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = 8;
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 36,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 36,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
@@ -6114,17 +6112,17 @@ const AkTagEnde = () => {
         if ((Scape[Erg.x][Erg.y].Objekt === ZELT) &&
           (Scape[Erg.x][Erg.y].Phase < Bmp[Scape[Erg.x][Erg.y].Objekt].Anzahl))
           ShortRoute(Math.floor(
-            Scape[Erg.x][Erg.y].xScreen + Scape[Erg.x][Erg.y].ObPos.x + 3
+            Scape[Erg.x][Erg.y].position.x + Scape[Erg.x][Erg.y].ObPos.x + 3
           ), Math.floor(
-            Scape[Erg.x][Erg.y].yScreen + Scape[Erg.x][Erg.y].ObPos.y + 20
+            Scape[Erg.x][Erg.y].position.y + Scape[Erg.x][Erg.y].ObPos.y + 20
           ));
         else if ((Scape[Erg.x][Erg.y].Objekt === HAUS3) &&
           (Scape[Erg.x][Erg.y].Phase < Bmp[Scape[Erg.x][Erg.y].Objekt].Anzahl))
           ShortRoute(Math.floor(
-            Scape[Erg.x][Erg.y].xScreen + Scape[Erg.x][Erg.y].ObPos.x +
+            Scape[Erg.x][Erg.y].position.x + Scape[Erg.x][Erg.y].ObPos.x +
             Bmp[BAUMGROSS].Breite / 2
           ), Math.floor(
-            Scape[Erg.x][Erg.y].yScreen + Scape[Erg.x][Erg.y].ObPos.y +
+            Scape[Erg.x][Erg.y].position.y + Scape[Erg.x][Erg.y].ObPos.y +
             Bmp[BAUMGROSS].Hoehe + 1
           ));
       }
@@ -6363,16 +6361,16 @@ const AkGerettet = () => {
     case 5:
       Guy.Zustand = GUYLINKS;
       ShortRoute(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.x, 
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.x, 
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.y
       );
       break;
     case 6:
       Guy.Pos.x += 2;
       Guy.Zustand = GUYSCHWIMMEN;
       ShortRoute(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.x, 
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.x, 
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.y
       );
       break;
     case 7:
@@ -6422,8 +6420,8 @@ const AkZelt = () => {
   }
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
       break;
     case 2:
     case 3:
@@ -6437,16 +6435,16 @@ const AkZelt = () => {
       break;
     case 4:
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = 2;
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
       break;
     case 5:
       ShortRoute(Guy.PosAlt.x,
         Guy.PosAlt.y);
       break;
     case 6:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 3,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 3,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
 
       break;
     case 7:
@@ -6463,16 +6461,16 @@ const AkZelt = () => {
         Guy.PosAlt.y);
       break;
     case 10:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
       break;
     case 11:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
       break;
     case 14:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
       break;
     case 15:
       ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
@@ -6508,16 +6506,16 @@ const AkBoot = () => {
   }
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 30,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 30,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
       break;
     case 2:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 29,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 29,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
       break;
     case 3:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 19);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 19);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[BOOT].Anzahl + 1);
       break;
     case 4:
@@ -6536,13 +6534,13 @@ const AkBoot = () => {
       AddTime(0, 15);
       break;
     case 7:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 16);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 16);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[BOOT].Anzahl + 2);
       break;
     case 11:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 14,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 11);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 14,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 11);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[BOOT].Anzahl + 3);
       break;
     case 15:
@@ -6595,16 +6593,16 @@ const AkRohr = () => {
   }
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 30,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 30,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
       break;
     case 2:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 29,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 29,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
       break;
     case 3:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[ROHR].Anzahl + 1);
       break;
     case 4:
@@ -6632,8 +6630,8 @@ const AkRohr = () => {
       AddTime(0, 5);
       break;
     case 10:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 17,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 17,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[ROHR].Anzahl + 2);
       break;
     case 17:
@@ -6671,32 +6669,32 @@ const AkSOS = () => {
   }
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 4,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 4,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
       break;
     case 4:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 12,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 17);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 12,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 17);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 1);
       break;
     case 7:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 12,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 9);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 12,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 9);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 2);
       break;
     case 10:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 19,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 19,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 3);
       break;
     case 13:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 21,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 5);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 21,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 5);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 4);
       break;
     case 16:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 8);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 8);
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 5);
       break;
     case 2:
@@ -6762,8 +6760,8 @@ const AkFeuerstelle = () => {
   }
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 4,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 16);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 4,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 16);
       break;
     case 2:
       Guy.Aktiv = true;
@@ -6783,8 +6781,8 @@ const AkFeuerstelle = () => {
       Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[FEUERSTELLE].Anzahl + 1);
       break;
     case 4:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
       break;
     case 5:
     case 6:
@@ -6831,10 +6829,10 @@ const AkHaus1 = () => {
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
         Bmp[BAUMGROSS].Breite / 2 - 3
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
         Bmp[BAUMGROSS].Hoehe + 1
       ));
       break;
@@ -6910,10 +6908,10 @@ const AkHaus2 = () => {
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
         Bmp[BAUMGROSS].Breite / 2
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
         Bmp[BAUMGROSS].Hoehe + 1
       ));
       break;
@@ -7004,10 +7002,10 @@ const AkHaus3 = () => {
   switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
         Bmp[BAUMGROSS].Breite / 2
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
         Bmp[BAUMGROSS].Hoehe + 1
       ));
       break;
@@ -7094,17 +7092,17 @@ const AkSchlafen = () => {
       if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
         (Scape[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
         ShortRoute(Math.floor(
-          Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 3
+          Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 3
         ), Math.floor(
-          Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20
+          Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20
         ));
       else if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
         (Scape[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
         ShortRoute(Math.floor(
-          Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
+          Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
           Bmp[BAUMGROSS].Breite / 2 + 1
         ), Math.floor(
-          Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
+          Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
           Bmp[BAUMGROSS].Hoehe + 1
         ));
       break;
@@ -7176,18 +7174,18 @@ const AkAblegen = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].xScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 14,
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 11);
+      ShortRoute(Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x + 14,
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y + 11);
       break;
     case 2:
       ChangeBootsFahrt();
       Guy.PosScreen.x = Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x +
         Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
         Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2
       );
       Guy.PosScreen.y = Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen +
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y +
         Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
         Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe / 2
       );
@@ -7197,8 +7195,8 @@ const AkAblegen = () => {
       else if (Scape[Guy.Pos.x + 1][Guy.Pos.y].ground === grounds.SEA) Guy.Pos.x++;
       else if (Scape[Guy.Pos.x][Guy.Pos.y + 1].ground === grounds.SEA) Guy.Pos.y++;
       ShortRoute(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.x, 
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.x, 
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.y
       );
       break;
     case 3:
@@ -7215,23 +7213,23 @@ const AkAnlegen = () => {
     case 1:
       if (Scape[Guy.Pos.x - 1][Guy.Pos.y].ground !== grounds.SEA) {
         ShortRoute(
-          Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].west.x, 
-          Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].west.y
+          Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].west.x, 
+          Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].west.y
         );
       } else if (Scape[Guy.Pos.x][Guy.Pos.y - 1].ground !== grounds.SEA) {
         ShortRoute(
-          Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].north.x, 
-          Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].north.y
+          Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].north.x, 
+          Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].north.y
         );
       } else if (Scape[Guy.Pos.x + 1][Guy.Pos.y].ground !== grounds.SEA) {
         ShortRoute(
-          Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.x, 
-          Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.y
+          Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.x, 
+          Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].east.y
         );
       } else if (Scape[Guy.Pos.x][Guy.Pos.y + 1].ground !== grounds.SEA) {
         ShortRoute(
-          Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].south.x, 
-          Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].south.y
+          Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].south.x, 
+          Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].south.y
         );
       }
       break;
@@ -7256,18 +7254,18 @@ const AkAnlegen = () => {
       ChangeBootsFahrt();
       Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x = Math.floor(
         Guy.PosScreen.x -
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen -
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x -
         Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2
       );
       Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y = Math.floor(
         Guy.PosScreen.y -
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen -
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y -
         Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe / 2
       );
 
       ShortRoute(
-        Scape[Guy.Pos.x][Guy.Pos.y].xScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.x, 
-        Scape[Guy.Pos.x][Guy.Pos.y].yScreen + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.y
+        Scape[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.x, 
+        Scape[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[Scape[Guy.Pos.x][Guy.Pos.y].type].center.y
       );
       break;
     case 3:
@@ -7422,7 +7420,7 @@ const Baeume = (Prozent) => {
       while (1) {
         Pos.x = Math.floor(Math.random() * KXPIXEL);
         Pos.y = Math.floor(Math.random() * KYPIXEL);
-        Erg = GetKachel(Scape[x][y].xScreen + Pos.x, Scape[x][y].yScreen + Pos.y);
+        Erg = GetKachel(Scape[x][y].position.x + Pos.x, Scape[x][y].position.y + Pos.y);
         if (Erg && Erg.x === x && Erg.y === y) break;
       }
       if ((Scape[x][y].ground === grounds.BEACH))//Bei Strand nur Palmen nehmen
@@ -7503,8 +7501,8 @@ const Schatz = () => {
 
       for (i = 0; i < SKARTEX; i++)
         for (j = 0; j < SKARTEY; j++) {
-          GetPixel((i + Scape[SchatzPos.x][SchatzPos.y].xScreen - SKARTEX / 2 + KXPIXEL / 2),
-            (j + Scape[SchatzPos.x][SchatzPos.y].yScreen - SKARTEY / 2 + 30), landscapeCanvasContext);
+          GetPixel((i + Scape[SchatzPos.x][SchatzPos.y].position.x - SKARTEX / 2 + KXPIXEL / 2),
+            (j + Scape[SchatzPos.x][SchatzPos.y].position.y - SKARTEY / 2 + 30), landscapeCanvasContext);
           PutPixel(i, j,
             (rgbStruct.r * 30 + rgbStruct.g * 59 + rgbStruct.b * 11) / 100,
             (rgbStruct.r * 30 + rgbStruct.g * 59 + rgbStruct.b * 11) / 100,
@@ -7800,8 +7798,8 @@ const SortRoute = () => {
     SaveRoute[i].y = Pos.y;
 
     const tile = Scape[Pos.x][Pos.y];
-    RouteKoor[2 * i].x = tile.xScreen + tileEdges[tile.type].center.x;
-    RouteKoor[2 * i].y = tile.yScreen + tileEdges[tile.type].center.y;
+    RouteKoor[2 * i].x = tile.position.x + tileEdges[tile.type].center.x;
+    RouteKoor[2 * i].y = tile.position.y + tileEdges[tile.type].center.y;
 
     NewPos.x = Pos.x;
     NewPos.y = Pos.y - 1; //oben mit nachschauen anfangen
@@ -7811,20 +7809,20 @@ const SortRoute = () => {
         (!CheckRoute(NewPos.x, NewPos.y, true, i))) {
         switch (j) {
           case 0:
-            RouteKoor[2 * i + 1].x = tile.xScreen + tileEdges[tile.type].north.x;
-            RouteKoor[2 * i + 1].y = tile.yScreen + tileEdges[tile.type].north.y;
+            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].north.x;
+            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].north.y;
             break;
           case 1:
-            RouteKoor[2 * i + 1].x = tile.xScreen + tileEdges[tile.type].east.x;
-            RouteKoor[2 * i + 1].y = tile.yScreen + tileEdges[tile.type].east.y;
+            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].east.x;
+            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].east.y;
             break;
           case 2:
-            RouteKoor[2 * i + 1].x = tile.xScreen + tileEdges[tile.type].south.x;
-            RouteKoor[2 * i + 1].y = tile.yScreen + tileEdges[tile.type].south.y;
+            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].south.x;
+            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].south.y;
             break;
           case 3:
-            RouteKoor[2 * i + 1].x = tile.xScreen + tileEdges[tile.type].west.x;
-            RouteKoor[2 * i + 1].y = tile.yScreen + tileEdges[tile.type].west.y;
+            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].west.x;
+            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].west.y;
             break;
         }
         break;
@@ -8071,25 +8069,6 @@ const Entdecken = () => {
     }
 
   if (Aenderung) Generate();
-}
-
-const CalcKoor = () => {
-  let x, y;
-  // Bildschirmkoordinaten berechnen und speichern
-  for (y = 0; y < MAXYKACH; y++)
-    for (x = 0; x < MAXXKACH; x++) {
-      Scape[x][y].xScreen = KXPIXEL / 2 * MAXXKACH + 32 +
-        x * KXPIXEL / 2 - y * KYPIXEL / 2 +
-        (-6 * y) + x; //seltsame Korrekturen
-      Scape[x][y].yScreen =
-        x * KXPIXEL / 2 + y * KYPIXEL / 2 - 16 * Scape[x][y].height +
-        (-13 * x) + (-8 * y); //seltsame Korrekturen
-      if ((x === 0) && (y === 0)) ScapeGrenze.top = Scape[x][y].yScreen;
-      if ((x === 0) && (y === MAXYKACH - 1)) ScapeGrenze.left = Scape[x][y].xScreen;
-      if ((x === MAXXKACH - 1) && (y === MAXYKACH - 1)) ScapeGrenze.bottom = Scape[x][y].yScreen + KYPIXEL;
-      if ((x === MAXXKACH - 1) && (y === 0)) ScapeGrenze.right = Scape[x][y].xScreen + KXPIXEL;
-    }
-
 }
 
 const refresh = (timestamp) => {

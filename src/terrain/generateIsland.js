@@ -1,4 +1,5 @@
 import tileTypes from './tiles/tileTypes.js';
+import tileEdges from './tiles/tileEdges.js';
 import directions from './directions.js';
 import allowedNeighbors from './tiles/allowedNeighbors.js';
 
@@ -14,6 +15,7 @@ const initTerrain = (tiles) => {
     for (let y in tiles[x]) {
       tiles[x][y].type = null;
       tiles[x][y].height = null;
+      tiles[x][y].position = null;
     }
   }
 };
@@ -138,19 +140,19 @@ const findRandomTile = (possibleTiles, direction) => {
   return multipliedTiles[Math.floor(Math.random() * multipliedTiles.length)];
 };
 
-const setTile = (tiles, x, y, direction) => {
-  const possibleTiles = findPossibleTiles(tiles, x, y);
+const setTile = (terrain, x, y, direction) => {
+  const possibleTiles = findPossibleTiles(terrain, x, y);
   if (!possibleTiles.length) {
     console.error('No possible tile found', [
-      tiles[x - 1][y - 1], tiles[x][y - 1], tiles[x + 1][y - 1], 
-      tiles[x - 1][y + 0], tiles[x][y + 0], tiles[x + 1][y + 0],
-      tiles[x - 1][y + 1], tiles[x][y + 1], tiles[x + 1][y + 1], 
+      terrain[x - 1][y - 1], terrain[x][y - 1], terrain[x + 1][y - 1], 
+      terrain[x - 1][y + 0], terrain[x][y + 0], terrain[x + 1][y + 0],
+      terrain[x - 1][y + 1], terrain[x][y + 1], terrain[x + 1][y + 1], 
     ], x, y, direction);
     throw new Error('No possible tile found');
   }
   const randomTile = findRandomTile(possibleTiles, direction);
-  tiles[x][y].type = randomTile.type;
-  tiles[x][y].height = randomTile.height;
+  terrain[x][y].type = randomTile.type;
+  terrain[x][y].height = randomTile.height;
 };
 
 const validateTerrain = (terrain) => {
@@ -171,7 +173,24 @@ const validateTerrain = (terrain) => {
     }
   }
   return islandTiles >= MIN_ISLAND_TILES; 
-}
+};
+
+const calculateTilePositions = (terrain) => {
+  const flatTileEdges = tileEdges[tileTypes.FLAT];
+  const flatHalfWidth = flatTileEdges.top.x + 2;
+  const flatHalfHeight = flatTileEdges.left.y - flatTileEdges.top.y ;
+  const heightMultiplier = flatTileEdges.top.y + 1;
+  const offsetX = Math.floor(flatHalfWidth * (terrain.length - 1));
+
+  terrain.forEach((terrainColumn, x) => {
+    terrainColumn.forEach((tile, y) => {
+      terrain[x][y].position = {
+        x: offsetX + flatHalfWidth * (x - y),
+        y: flatHalfHeight * (x + y) - heightMultiplier * tile.height
+      };
+    });
+  });
+};
 
 const generateIsland = (terrain) => {
   const center = Math.floor(terrain.length / 2);
@@ -204,6 +223,8 @@ const generateIsland = (terrain) => {
       break;
     }
   }
+
+  calculateTilePositions(terrain);
 }
 
 export default generateIsland;
