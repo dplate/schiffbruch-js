@@ -15,6 +15,8 @@ import loadSounds from './sounds/loadSounds.js';
 import playTerrainSounds from './terrain/playTerrainSounds.js';
 import addRiver from './terrain/addRiver.js';
 import spriteTypes from './images/spriteTypes.js';
+import addTrees from './terrain/addTrees.js';
+import sprites from './images/sprites.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -39,19 +41,13 @@ const SCHLEUSE3 = SCHLEUSE1 + 2;
 const SCHLEUSE4 = SCHLEUSE1 + 3;
 const SCHLEUSE5 = SCHLEUSE1 + 4;
 const SCHLEUSE6 = SCHLEUSE1 + 5;
-const BAUM1 = 25;
-const BAUM2 = BAUM1 + 1;
-const BAUM3 = BAUM1 + 2;
-const BAUM4 = BAUM1 + 3;
-const BUSCH = BAUM1 + 4;
-const BAUM1DOWN = BAUM1 + 5;
-const BAUM2DOWN = BAUM1 + 6;
-const BAUM3DOWN = BAUM1 + 7;
-const BAUM4DOWN = BAUM1 + 8;
-const BAUMGROSS = BAUM1 + 9;
-const FEUER = BAUM1 + 10;
-const WRACK = BAUM1 + 11;
-const WRACK2 = BAUM1 + 12;
+const BAUM1DOWN = 30;
+const BAUM2DOWN = BAUM1DOWN + 1;
+const BAUM3DOWN = BAUM1DOWN + 2;
+const BAUM4DOWN = BAUM1DOWN + 3;
+const FEUER = BAUM1DOWN + 5;
+const WRACK = BAUM1DOWN + 6;
+const WRACK2 = BAUM1DOWN + 7;
 const FELD = 38;
 const ZELT = FELD + 1;
 const BOOT = FELD + 2;
@@ -1404,61 +1400,6 @@ const InitStructs = async () => {
   Bmp[FEUERSTELLE].Rohstoff[ROHSTAMM] = 4;
   Bmp[FEUERSTELLE].AkAnzahl = 9;
 
-  //Allgemein Bäume
-  for (i = BAUM1; i <= BAUM4; i++) {
-    Bmp[i].Animation = true;
-    Bmp[i].Anzahl = 4;
-    Bmp[i].Geschwindigkeit = 4;
-    Bmp[i].Phase = 0;
-    Bmp[i].Surface = treesImage;
-    Bmp[i].Sound = WAVWALD;
-  }
-  //Baum1
-  Bmp[BAUM1].rcSrc.left = 0;
-  Bmp[BAUM1].rcSrc.top = 0;
-  Bmp[BAUM1].rcSrc.right = 21;
-  Bmp[BAUM1].rcSrc.bottom = 26;
-  Bmp[BAUM1].Breite = (Bmp[BAUM1].rcSrc.right - Bmp[BAUM1].rcSrc.left);
-  Bmp[BAUM1].Hoehe = (Bmp[BAUM1].rcSrc.bottom - Bmp[BAUM1].rcSrc.top);
-
-  //Baum2
-  Bmp[BAUM2].rcSrc.left = 21;
-  Bmp[BAUM2].rcSrc.top = 0;
-  Bmp[BAUM2].rcSrc.right = 42;
-  Bmp[BAUM2].rcSrc.bottom = 26;
-  Bmp[BAUM2].Breite = (Bmp[BAUM2].rcSrc.right - Bmp[BAUM2].rcSrc.left);
-  Bmp[BAUM2].Hoehe = (Bmp[BAUM2].rcSrc.bottom - Bmp[BAUM2].rcSrc.top);
-
-  //Baum3
-  Bmp[BAUM3].rcSrc.left = 42;
-  Bmp[BAUM3].rcSrc.top = 0;
-  Bmp[BAUM3].rcSrc.right = 64;
-  Bmp[BAUM3].rcSrc.bottom = 27;
-  Bmp[BAUM3].Breite = (Bmp[BAUM3].rcSrc.right - Bmp[BAUM3].rcSrc.left);
-  Bmp[BAUM3].Hoehe = (Bmp[BAUM3].rcSrc.bottom - Bmp[BAUM3].rcSrc.top);
-
-  //Baum4
-  Bmp[BAUM4].rcSrc.left = 64;
-  Bmp[BAUM4].rcSrc.top = 0;
-  Bmp[BAUM4].rcSrc.right = 81;
-  Bmp[BAUM4].rcSrc.bottom = 16;
-  Bmp[BAUM4].Breite = (Bmp[BAUM4].rcSrc.right - Bmp[BAUM4].rcSrc.left);
-  Bmp[BAUM4].Hoehe = (Bmp[BAUM4].rcSrc.bottom - Bmp[BAUM4].rcSrc.top);
-
-  //Baumgroß
-  Bmp[BAUMGROSS].rcSrc.left = 238;
-  Bmp[BAUMGROSS].rcSrc.top = 0;
-  Bmp[BAUMGROSS].rcSrc.right = 238 + 26;
-  Bmp[BAUMGROSS].rcSrc.bottom = 41;
-  Bmp[BAUMGROSS].Breite = (Bmp[BAUMGROSS].rcSrc.right - Bmp[BAUMGROSS].rcSrc.left);
-  Bmp[BAUMGROSS].Hoehe = (Bmp[BAUMGROSS].rcSrc.bottom - Bmp[BAUMGROSS].rcSrc.top);
-  Bmp[BAUMGROSS].Animation = false;
-  Bmp[BAUMGROSS].Anzahl = 1;
-  Bmp[BAUMGROSS].Geschwindigkeit = 0;
-  Bmp[BAUMGROSS].Phase = 0;
-  Bmp[BAUMGROSS].Surface = treesImage;
-  Bmp[BAUMGROSS].Sound = WAVWALD;
-
   //Feuer
   Bmp[FEUER].Anzahl = 3;
   Bmp[FEUER].Surface = buildingsImage;
@@ -1511,19 +1452,6 @@ const InitStructs = async () => {
   Bmp[WRACK2].Geschwindigkeit = 5;
   Bmp[WRACK2].Phase = 0;
 
-  //Früchte
-  //Busch
-  Bmp[BUSCH].rcSrc.left = 81;
-  Bmp[BUSCH].rcSrc.top = 0;
-  Bmp[BUSCH].rcSrc.right = 81 + 20;
-  Bmp[BUSCH].rcSrc.bottom = 13;
-  Bmp[BUSCH].Breite = (Bmp[BUSCH].rcSrc.right - Bmp[BUSCH].rcSrc.left);
-  Bmp[BUSCH].Hoehe = (Bmp[BUSCH].rcSrc.bottom - Bmp[BUSCH].rcSrc.top);
-  Bmp[BUSCH].Animation = false;
-  Bmp[BUSCH].Anzahl = 3;
-  Bmp[BUSCH].Geschwindigkeit = 0;
-  Bmp[BUSCH].Phase = 0;
-  Bmp[BUSCH].Surface = treesImage;
 
   //Buttons
 
@@ -2945,26 +2873,29 @@ const AddTime = (h, m) => {
   }
   for (y = 0; y < MAXYKACH; y++)
     for (x = 0; x < MAXXKACH; x++) {
+      const tile = Scape[x][y];
       //Feuer nach einer bestimmten Zeit ausgehen lassen
-      if (Scape[x][y].Objekt === FEUER) {
-        Scape[x][y].Timer += (60 * h + m) * 0.0005;
-        if (Scape[x][y].Timer >= 1) {
-          Scape[x][y].Objekt = -1;
-          Scape[x][y].Timer = 0;
-          Scape[x][y].ObPos.x = 0;
-          Scape[x][y].ObPos.y = 0;
-          Scape[x][y].Phase = -1;
-          Chance -= 2 + 2 * Scape[x][y].height;
+      if (tile.Objekt === FEUER) {
+        tile.Timer += (60 * h + m) * 0.0005;
+        if (tile.Timer >= 1) {
+          tile.Objekt = -1;
+          tile.Timer = 0;
+          tile.ObPos.x = 0;
+          tile.ObPos.y = 0;
+          tile.Phase = -1;
+          Chance -= 2 + 2 * tile.height;
         }
       }
-      if ((Scape[x][y].Phase === -1) ||
-        ((Scape[x][y].Objekt !== FELD) &&
-          (Scape[x][y].Objekt !== BUSCH))) continue; //Wenn kein Fruchtobjekt weiter
-      if (Scape[x][y].Phase >= Bmp[Scape[x][y].Objekt].Anzahl) continue;
-      if (Scape[x][y].Objekt === FELD) Scape[x][y].Phase += (60 * h + m) * 0.005;
-      else if (Scape[x][y].Objekt === BUSCH) Scape[x][y].Phase += (60 * h + m) * 0.0005; //pro Minute Reifungsprozess fortführen
-      if (Scape[x][y].Phase > Bmp[Scape[x][y].Objekt].Anzahl - 1)
-        Scape[x][y].Phase = Bmp[Scape[x][y].Objekt].Anzahl - 1;
+      //pro Minute Reifungsprozess fortführen
+      if (tile.Objekt === FELD && tile.Phase < Bmp[tile.Objekt].Anzahl) {
+        tile.Phase += (60 * h + m) * 0.005;
+        if (tile.Phase > Bmp[tile.Objekt].Anzahl - 1) {
+          tile.Phase = Bmp[tile.Objekt].Anzahl - 1;
+        }
+      } else if (tile.object?.type === objectTypes.BUSH) {
+        tile.object.frame += (60 * h + m) * 0.0005; 
+        tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
+      }
     }
   AddResource(GESUNDHEIT, (60 * h + m) * (Guy.Resource[WASSER] - 50 + Guy.Resource[NAHRUNG] - 50) / 1000);
 
@@ -3089,7 +3020,8 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   //Info anzeigen
   Erg = GetKachel((MousePosition.x + Camera.x), (MousePosition.y + Camera.y));
   if (Erg && Scape[Erg.x][Erg.y].Entdeckt) {
-    switch (Scape[Erg.x][Erg.y].ground) {
+    const tile = Scape[Erg.x][Erg.y];
+    switch (tile.ground) {
       case grounds.GRASS:
         Text = texts.GROUND_GRASS;
         break;
@@ -3108,49 +3040,49 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       default:
         Text = '?';
     }
-    if ((Scape[Erg.x][Erg.y].Objekt !== -1 || Scape[Erg.x][Erg.y].object) && (Scape[Erg.x][Erg.y].object?.type !== objectTypes.WAVES)) {
+    if ((tile.Objekt !== -1 || tile.object) && (tile.object?.type !== objectTypes.WAVES)) {
       Text += ' ' + texts.MIT + ' ';
 
-      if ((Scape[Erg.x][Erg.y].Objekt >= BAUM1) && (Scape[Erg.x][Erg.y].Objekt <= BAUM4))
+      if (tile.object?.type === objectTypes.TREE)
         TextTmp = texts.BAUMTEXT;
       else if (
-        Scape[Erg.x][Erg.y].object?.type === objectTypes.RIVER ||
-        ((Scape[Erg.x][Erg.y].Objekt >= SCHLEUSE1) && (Scape[Erg.x][Erg.y].Objekt <= SCHLEUSE6))
+        tile.object?.type === objectTypes.RIVER ||
+        ((tile.Objekt >= SCHLEUSE1) && (tile.Objekt <= SCHLEUSE6))
       )
         TextTmp = texts.FLUSSTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === BUSCH)
+      else if (tile.object?.type === objectTypes.BUSH)
         TextTmp = texts.BUSCHTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === ZELT)
+      else if (tile.Objekt === ZELT)
         TextTmp = texts.ZELTTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === FELD)
+      else if (tile.Objekt === FELD)
         TextTmp = texts.FELDTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === BOOT)
+      else if (tile.Objekt === BOOT)
         TextTmp = texts.BOOTTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === ROHR)
+      else if (tile.Objekt === ROHR)
         TextTmp = texts.ROHRTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === SOS)
+      else if (tile.Objekt === SOS)
         TextTmp = texts.SOSTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === HAUS1)
+      else if (tile.Objekt === HAUS1)
         TextTmp = texts.HAUS1TEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === HAUS2)
+      else if (tile.Objekt === HAUS2)
         TextTmp = texts.HAUS2TEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === HAUS3)
+      else if (tile.Objekt === HAUS3)
         TextTmp = texts.HAUS3TEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === BAUMGROSS)
+      else if (tile.object?.type === objectTypes.BIG_TREE)
         TextTmp = texts.BAUMGROSSTEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === FEUERSTELLE)
+      else if (tile.Objekt === FEUERSTELLE)
         TextTmp = texts.FEUERSTELLETEXT;
-      else if (Scape[Erg.x][Erg.y].Objekt === FEUER)
+      else if (tile.Objekt === FEUER)
         TextTmp = texts.FEUERTEXT;
-      else if ((Scape[Erg.x][Erg.y].Objekt === WRACK) || (Scape[Erg.x][Erg.y].Objekt === WRACK2))
+      else if ((tile.Objekt === WRACK) || (tile.Objekt === WRACK2))
         TextTmp = texts.WRACKTEXT;
       Text += TextTmp;
 
-      if ((Scape[Erg.x][Erg.y].Objekt >= FELD) &&
-        (Scape[Erg.x][Erg.y].Objekt <= FEUERSTELLE)) {
+      if ((tile.Objekt >= FELD) &&
+        (tile.Objekt <= FEUERSTELLE)) {
         //Baufortschrittanzeigen
         Text += ' (';
-        TextTmp = Math.floor((Scape[Erg.x][Erg.y].AkNummer * 100) / Bmp[Scape[Erg.x][Erg.y].Objekt].AkAnzahl);
+        TextTmp = Math.floor((tile.AkNummer * 100) / Bmp[tile.Objekt].AkAnzahl);
         Text += TextTmp + '%)';
         //benötigte Rohstoffe anzeigen
         MakeRohString(Erg.x, Erg.y, -1);
@@ -3177,6 +3109,8 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       ((Erg.x !== Guy.Pos.x) || (Erg.y !== Guy.Pos.y)) &&
       (Erg.x > 0) && (Erg.x < MAXXKACH - 1) &&
       (Erg.y > 0) && (Erg.y < MAXYKACH - 1)) {
+
+      console.log(Scape[Erg.x][Erg.y]);
       //Klicksound abspielen
       PlaySound(WAVKLICK2, 100);
       if ((Erg.x === RouteZiel.x) && (Erg.y === RouteZiel.y)) {
@@ -3391,10 +3325,12 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (((Scape[Guy.Pos.x][Guy.Pos.y].Objekt === BUSCH) ||
-        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === FELD)) &&
-        (Scape[Guy.Pos.x][Guy.Pos.y].Phase === Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl - 1)) Guy.Aktion = AKESSEN;
-      else if (
+      if ((Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BUSH && 
+        Scape[Guy.Pos.x][Guy.Pos.y].object.frame === sprites[Scape[Guy.Pos.x][Guy.Pos.y].object.sprite].frameCount - 1) ||
+        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === FELD &&
+         Scape[Guy.Pos.x][Guy.Pos.y].Phase === Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl - 1)) {
+        Guy.Aktion = AKESSEN;
+      }else if (
         Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.RIVER ||
         (Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6) ||
         (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === ROHR && Scape[Guy.Pos.x][Guy.Pos.y].Phase === 1)
@@ -3421,12 +3357,11 @@ const MouseInPanel = (Button, Push) => {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
       if (Guy.Inventar[ROHSTAMM] <= 10) {
-        if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= BAUM1) &&
-          (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= BAUM4)) {
+        if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type >= objectTypes.TREE) {
           Guy.Aktion = AKFAELLEN;
-        } else if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt === BAUMGROSS) ||
-          ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1) &&
-            (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3)))
+        } else if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE ||
+          (Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1 &&
+            Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3))
           PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
         else PapierText = DrawText(texts.KEINBAUM, TXTPAPIER, 1);
       } else PapierText = DrawText(texts.ROHSTAMMZUVIEL, TXTPAPIER, 1);
@@ -3490,11 +3425,10 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= BAUM1) &&
-        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= BAUM4)) {
+      if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLEUDER;
-      } else if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt === BAUMGROSS) ||
+      } else if ((Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE) ||
         ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1) &&
           (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3)))
         PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
@@ -3659,10 +3593,9 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= BAUM1) &&
-        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= BAUM4))
+      if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE)
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === BAUMGROSS) {
+      else if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE) {
         Scape[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS1;
@@ -3687,10 +3620,9 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= BAUM1) &&
-        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= BAUM4))
+      if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE)
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === BAUMGROSS)
+      else if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE)
         PapierText = DrawText(texts.NICHTOHNELEITER, TXTPAPIER, 1);
       else if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1) {
         Scape[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
@@ -3717,11 +3649,10 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= BAUM1) &&
-        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= BAUM4))
+      if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE)
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt === BAUMGROSS) ||
-        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1))
+      else if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE ||
+        Scape[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1)
         PapierText = DrawText(texts.NICHTOHNEPLATTFORM, TXTPAPIER, 1);
       else if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS2) {
         Scape[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
@@ -3902,6 +3833,10 @@ const startGame = async (newGame) => {
     await new Promise(window.requestAnimationFrame);
     addRiver(Scape);
 
+    DrawString('Pflanze Baeume...', 5, 95, 2, primaryCanvasContext);
+    await new Promise(window.requestAnimationFrame);
+    addTrees(Scape);
+
     for (let x = 0; x < MAXXKACH; x++) {
       for (let y = 0; y < MAXYKACH; y++) {
         const tile = Scape[x][y];
@@ -3919,8 +3854,6 @@ const startGame = async (newGame) => {
         tile.GPosAlt.y = 0;
         for (let i = 0; i < BILDANZ; i++) tile.Rohstoff[i] = 0;
         tile.Timer = 0;
-        tile.position.x = tile.position.x;
-        tile.position.y = tile.position.y;
       }
     }
     ScapeGrenze.top = Scape[0][0].position.y;
@@ -3928,13 +3861,10 @@ const startGame = async (newGame) => {
     ScapeGrenze.bottom = Scape[MAXXKACH - 1][MAXYKACH - 1].position.y + KYPIXEL;
     ScapeGrenze.right = Scape[MAXXKACH - 1][0].position.x + KXPIXEL;
 
-    DrawString('Pflanze Baeume...', 5, 95, 2, primaryCanvasContext);
-    await new Promise(window.requestAnimationFrame);
-    Baeume(30);
-    Piratenwrack();
-
     DrawString('Vergrabe Schatz...', 5, 125, 2, primaryCanvasContext);
     await new Promise(window.requestAnimationFrame);
+    
+    Piratenwrack();
 
     //Guy Position
     Guy.Pos.x = 1;
@@ -4347,7 +4277,7 @@ const ZeichneObjekte = () => {
         CalcRect(rcSpielflaeche);
         drawImage(tilesImage, primaryCanvasContext);
       }
-      //Landschaftsanimationen malen (und Feld)
+      //Der Guy ist immer vor diesen Objekten
       if (Scape[x][y].Objekt === -1 && 
         (Scape[x][y].object?.type === objectTypes.WAVES || Scape[x][y].object?.type === objectTypes.RIVER) && 
         LAnimation) {
@@ -4359,11 +4289,12 @@ const ZeichneObjekte = () => {
           Scape[x][y].position.y + object.y - Camera.y,
           primaryCanvasContext
         );
-      } else if ((Scape[x][y].Objekt !== -1) && (LAnimation) &&
-        ((Scape[x][y].Objekt <= SCHLEUSE6))
-        || (Scape[x][y].Objekt === FELD)   //Der Guy ist immer vor diesen Objekten
-        || (Scape[x][y].Objekt === ROHR)
-        || (Scape[x][y].Objekt === SOS)) {
+      } else if (LAnimation &&
+        Scape[x][y].Objekt > -1 &&
+        (Scape[x][y].Objekt <= SCHLEUSE6
+        || Scape[x][y].Objekt === FELD   
+        || Scape[x][y].Objekt === ROHR
+        || Scape[x][y].Objekt === SOS)) {
         //Sound abspielen
         if (((Guy.Pos.x - 1 <= x) && (x <= Guy.Pos.x + 1)) &&
           ((Guy.Pos.y - 1 <= y) && (y <= Guy.Pos.y + 1))) {
@@ -4380,11 +4311,30 @@ const ZeichneObjekte = () => {
           Scape[x][y].Objekt, rcSpielflaeche, Scape[x][y].Reverse,
           Scape[x][y].Phase);
       } else {
-
-        if (((Scape[x][y].Objekt >= BAUM1) && (Scape[x][y].Objekt <= BAUM4DOWN)) ||
-          (Scape[x][y].Objekt === BAUMGROSS) || (Scape[x][y].Objekt === FEUER) ||
-          (Scape[x][y].Objekt === WRACK) || (Scape[x][y].Objekt === WRACK2) ||
-          (Scape[x][y].Objekt >= ZELT)) //Bäume und Früchte (und alle anderen Objekte) malen
+        if (Scape[x][y].Objekt === -1 && Scape[x][y].object) {
+          const object = Scape[x][y].object;
+          if (Guyzeichnen) {
+            if ((Guy.PosScreen.y) < (Scape[x][y].position.y + object.y + sprites[object.sprite].height)) {
+              ZeichneGuy();
+              Guyzeichnen = false;
+            }
+          }
+          
+          drawSprite(
+            object.sprite, 
+            object.frame, 
+            Scape[x][y].position.x + object.x - Camera.x, 
+            Scape[x][y].position.y + object.y - Camera.y,
+            primaryCanvasContext
+          );
+        } else if (Scape[x][y].Objekt === FEUER ||
+          Scape[x][y].Objekt === BAUM1DOWN || 
+          Scape[x][y].Objekt === BAUM2DOWN || 
+          Scape[x][y].Objekt === BAUM3DOWN || 
+          Scape[x][y].Objekt === BAUM4DOWN || 
+          Scape[x][y].Objekt === WRACK || 
+          Scape[x][y].Objekt === WRACK2 ||
+          Scape[x][y].Objekt >= ZELT)
         {
           //Sound abspielen
           if (((Guy.Pos.x - 1 <= x) && (x <= Guy.Pos.x + 1)) &&
@@ -5293,17 +5243,17 @@ const AkDestroy = () => {
       AddTime(0, 5);
       break;
     case 6:
-      if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === SOS) Chance -= 0.1;
       i = Scape[Guy.Pos.x][Guy.Pos.y].Objekt;
-      if ((i >= HAUS1) && (i <= HAUS3)) Scape[Guy.Pos.x][Guy.Pos.y].Objekt = BAUMGROSS;
-      else {
-        Scape[Guy.Pos.x][Guy.Pos.y].Objekt = -1;
-        Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x = 0;
-        Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y = 0;
-        Scape[Guy.Pos.x][Guy.Pos.y].Phase = -1;
-      }
+      
+      Scape[Guy.Pos.x][Guy.Pos.y].Objekt = -1;
+      Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x = 0;
+      Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y = 0;
+      Scape[Guy.Pos.x][Guy.Pos.y].Phase = -1;
+      Scape[Guy.Pos.x][Guy.Pos.y].object = Scape[Guy.Pos.x][Guy.Pos.y].originalObject;
+      Scape[Guy.Pos.x][Guy.Pos.y].originalObject = null
       Scape[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
-      if (i === ROHR) FillRohr();
+      if (i === SOS) Chance -= 0.1;
+      else if (i === ROHR) FillRohr();
       ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
       break;
     case 7:
@@ -5379,7 +5329,7 @@ const AkSuchen = () => {
           if (Guy.Inventar[ROHSTEIN] > 10) Guy.Inventar[ROHSTEIN] = 10;
         } else PapierText = DrawText(texts.ROHSTEINZUVIEL, TXTPAPIER, 1);
 
-      } else if (Scape[Guy.Pos.x][Guy.Pos.y].Objekt === BUSCH) {
+      } else if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BUSH) {
         i = Math.floor(Math.random() * 2);
         switch (i) {
           case 0:
@@ -5395,10 +5345,10 @@ const AkSuchen = () => {
             } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
             break;
         }
-      } else if (((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= BAUM1) &&
-        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= BAUMGROSS)) ||
-        ((Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1) &&
-          (Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3))) {
+      } else if (Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE || 
+        Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE || 
+        Scape[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BUSH ||
+        (Scape[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1 && Scape[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3)) {
         i = Math.floor(Math.random() * 3);
         switch (i) {
           case 0:
@@ -5454,16 +5404,23 @@ const AkEssen = () => {
   if (Guy.AkNummer === 0) {
     Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
   }
+  const tile = Scape[Guy.Pos.x][Guy.Pos.y];
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
-        + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2
-      ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
-        + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 2
-      ));
+      if (tile.object) {
+        ShortRoute(Math.floor(
+          tile.position.x + tile.object.x + sprites[tile.object.sprite].width / 2
+        ), Math.floor(
+          tile.position.y + tile.object.y + sprites[tile.object.sprite].height + 2
+        ));
+      } else {
+        ShortRoute(Math.floor(
+          tile.position.x + tile.ObPos.x + Bmp[tile.Objekt].Breite / 2
+        ), Math.floor(
+          tile.position.y + tile.ObPos.y + Bmp[tile.Objekt].Hoehe + 2
+        ));
+      }
       break;
     case 2:
     case 3:
@@ -5473,7 +5430,11 @@ const AkEssen = () => {
       AddTime(0, 2);
       break;
     case 4:
-      Scape[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      if (tile.object) {
+        tile.object.frame = 0;
+      } else {
+        tile.Phase = 0;
+      }
       ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
       break;
     case 5:
@@ -5561,15 +5522,14 @@ const AkFaellen = () => {
   if (Guy.AkNummer === 0) {
     Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
   }
+  const tile = Scape[Guy.Pos.x][Guy.Pos.y];
+  const tree = tile.object;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x
-        + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 + 9
-      ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y
-        + Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 3
+        tile.position.x + tree.x + sprites[tree.sprite].width / 2 + 9
+      ), Math.floor(tile.position.y + tree.y + sprites[tree.sprite].height + 3
       ));
       break;
     case 2:
@@ -5586,17 +5546,27 @@ const AkFaellen = () => {
     case 7:
       Guy.Aktiv = true;
       Guy.Zustand = GUYWARTEN;
-      i = Scape[Guy.Pos.x][Guy.Pos.y].Objekt + (BAUM1DOWN - BAUM1);
-      Scape[Guy.Pos.x][Guy.Pos.y].Objekt = i;
-      Scape[Guy.Pos.x][Guy.Pos.y].Phase = 0;
-      Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x -= 17;
+      if (tree.sprite === spriteTypes.TREE_HARDWOOD) {
+        i = BAUM1DOWN;
+      } else if (tree.sprite === spriteTypes.TREE_PALM) {
+        i = BAUM2DOWN;
+      } else if (tree.sprite === spriteTypes.TREE_EVERGREEN) {
+        i = BAUM3DOWN;
+      } else if (tree.sprite === spriteTypes.TREE_SMALL) {
+        i = BAUM4DOWN;
+      }
+      tile.object = null;
+      tile.Objekt = i;
+      tile.Phase = 0;
+      tile.ObPos.x = tree.x - 17;
+      tile.ObPos.y = tree.y;
       PlaySound(WAVBAUMFAELLT, 100);
       break;
     case 8:
       ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
       break;
     case 9:
-      Scape[Guy.Pos.x][Guy.Pos.y].Objekt = -1;
+      tile.Objekt = -1;
       Guy.Inventar[ROHSTAMM]++;
       if (Guy.Inventar[ROHSTAMM] > 10) Guy.Inventar[ROHSTAMM] = 10;
       Guy.Inventar[ROHAST] += 5;
@@ -6120,10 +6090,10 @@ const AkTagEnde = () => {
           (Scape[Erg.x][Erg.y].Phase < Bmp[Scape[Erg.x][Erg.y].Objekt].Anzahl))
           ShortRoute(Math.floor(
             Scape[Erg.x][Erg.y].position.x + Scape[Erg.x][Erg.y].ObPos.x +
-            Bmp[BAUMGROSS].Breite / 2
+            sprites[spriteTypes.BIG_TREE].width / 2
           ), Math.floor(
             Scape[Erg.x][Erg.y].position.y + Scape[Erg.x][Erg.y].ObPos.y +
-            Bmp[BAUMGROSS].Hoehe + 1
+            sprites[spriteTypes.BIG_TREE].height + 1
           ));
       }
       break;
@@ -6813,27 +6783,32 @@ const AkFeuerstelle = () => {
 
 const AkHaus1 = () => {
   let i;
+  const tile = Scape[Guy.Pos.x][Guy.Pos.y];
 
-  if (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
+  if (tile.AkNummer === 0) {
     Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
     for (i = 0; i < BILDANZ; i++)
-      Scape[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[HAUS1].Rohstoff[i];
-    Scape[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[HAUS1].Anzahl;
-    Scape[Guy.Pos.x][Guy.Pos.y].Objekt = HAUS1;
+    tile.Rohstoff[i] = Bmp[HAUS1].Rohstoff[i];
+    tile.Phase = Bmp[HAUS1].Anzahl;
+    tile.originalObject = tile.object;
+    tile.object = null;
+    tile.Objekt = HAUS1;
+    tile.ObPos.x = tile.originalObject.x;
+    tile.ObPos.y = tile.originalObject.y;
   }
-  Scape[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    Scape[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (Scape[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
       ShortRoute(Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-        Bmp[BAUMGROSS].Breite / 2 - 3
+        tile.position.x + tile.ObPos.x +
+        sprites[spriteTypes.BIG_TREE].width / 2 - 3
       ), Math.floor(
-        Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-        Bmp[BAUMGROSS].Hoehe + 1
+        tile.position.y + tile.ObPos.y +
+        sprites[spriteTypes.BIG_TREE].height + 1
       ));
       break;
     case 2:
@@ -6852,7 +6827,7 @@ const AkHaus1 = () => {
     case 9:
       Guy.Aktiv = true;
       Guy.Zustand = GUYHAMMER;
-      Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS1].Anzahl + 1);
+      tile.Phase = (Bmp[HAUS1].Anzahl + 1);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6863,7 +6838,7 @@ const AkHaus1 = () => {
     case 13:
       Guy.Aktiv = true;
       Guy.Zustand = GUYHAMMER;
-      Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS1].Anzahl + 2);
+      tile.Phase = (Bmp[HAUS1].Anzahl + 2);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6874,7 +6849,7 @@ const AkHaus1 = () => {
     case 17:
       Guy.Aktiv = true;
       Guy.Zustand = GUYHAMMER;
-      Scape[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS1].Anzahl + 3);
+      tile.Phase = (Bmp[HAUS1].Anzahl + 3);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6883,7 +6858,7 @@ const AkHaus1 = () => {
       ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
       break;
     case 19:
-      Scape[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      tile.Phase = 0;
       Bmp[BUTTSTOP].Phase = -1;
       Guy.Aktion = AKNICHTS;
       break;
@@ -6909,10 +6884,10 @@ const AkHaus2 = () => {
     case 1:
       ShortRoute(Math.floor(
         Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-        Bmp[BAUMGROSS].Breite / 2
+        sprites[spriteTypes.BIG_TREE].width / 2
       ), Math.floor(
         Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-        Bmp[BAUMGROSS].Hoehe + 1
+        sprites[spriteTypes.BIG_TREE].height + 1
       ));
       break;
     case 2:
@@ -7003,10 +6978,10 @@ const AkHaus3 = () => {
     case 1:
       ShortRoute(Math.floor(
         Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-        Bmp[BAUMGROSS].Breite / 2
+        sprites[spriteTypes.BIG_TREE].width / 2
       ), Math.floor(
         Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-        Bmp[BAUMGROSS].Hoehe + 1
+        sprites[spriteTypes.BIG_TREE].height + 1
       ));
       break;
     case 2:
@@ -7100,10 +7075,10 @@ const AkSchlafen = () => {
         (Scape[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[Scape[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
         ShortRoute(Math.floor(
           Scape[Guy.Pos.x][Guy.Pos.y].position.x + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-          Bmp[BAUMGROSS].Breite / 2 + 1
+          sprites[spriteTypes.BIG_TREE].width / 2 + 1
         ), Math.floor(
           Scape[Guy.Pos.x][Guy.Pos.y].position.y + Scape[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-          Bmp[BAUMGROSS].Hoehe + 1
+          sprites[spriteTypes.BIG_TREE].height + 1
         ));
       break;
     case 2:
@@ -7402,48 +7377,6 @@ const FillRohr = () => {
     }
   Generate();
 
-}
-
-const Baeume = (Prozent) => {
-  let x, y;    //Diese Kachel wird angeschaut
-  let Erg;
-  const Pos = { x: 0, y: 0 };    //Da steht der Baum
-  let r;      //random speicherung
-  let einGrosserBaum = false;  //gibt es bereits einen großen Baum
-
-  for (y = 0; y < MAXYKACH; y++)//Alle Kacheln durchgehen
-    for (x = 0; x < MAXXKACH; x++) {
-      //Wenn schon ein Objekt da ist oder Treibsand ist, dann mit nächsten Teil weitermachen
-      if ((Scape[x][y].Objekt !== -1 || Scape[x][y].object) ||
-        ((Scape[x][y].ground === grounds.QUICKSAND))) continue;
-      if (Math.floor(Math.random() * (100 / Prozent)) !== 0) continue; //Die Wahrscheinlichkeit für einen Baum bestimmen
-      while (1) {
-        Pos.x = Math.floor(Math.random() * KXPIXEL);
-        Pos.y = Math.floor(Math.random() * KYPIXEL);
-        Erg = GetKachel(Scape[x][y].position.x + Pos.x, Scape[x][y].position.y + Pos.y);
-        if (Erg && Erg.x === x && Erg.y === y) break;
-      }
-      if ((Scape[x][y].ground === grounds.BEACH))//Bei Strand nur Palmen nehmen
-      {
-        Scape[x][y].Objekt = BAUM2;
-      } else {
-        r = Math.floor(Math.random() * 5);
-        Scape[x][y].Objekt = BAUM1 + r;
-        if ((Math.floor(Math.random() * 50) === 1) || (!einGrosserBaum)) {
-          Scape[x][y].Objekt = BAUMGROSS;
-          einGrosserBaum = true;
-        }
-      }
-      //Linke obere Ecke speichern
-      Scape[x][y].ObPos.x = Math.floor(Pos.x - Bmp[Scape[x][y].Objekt].Breite / 2);
-      Scape[x][y].ObPos.y = Math.floor(Pos.y - Bmp[Scape[x][y].Objekt].Hoehe);
-      //Startphase
-      if (Scape[x][y].Objekt === BUSCH)
-        Scape[x][y].Phase = Bmp[Scape[x][y].Objekt].Anzahl - 1;
-      else Scape[x][y].Phase = (Bmp[Scape[x][y].Objekt].Anzahl -
-        Math.floor(Math.random() * (Bmp[Scape[x][y].Objekt].Anzahl)) - 1);
-
-    }
 }
 
 const Piratenwrack = () => {
@@ -7924,11 +7857,15 @@ const Animationen = () => {
       i = Math.floor(framesPerSecond / Bmp[j].Geschwindigkeit);
       if (i < 1) i = 1;
       if (frame % i === 0) {
-        if (!((j >= BAUM1DOWN) && (j <= BAUM4DOWN) &&  //Die Baumfällenanimation nur ein mal abspielen
-          (Scape[x][y].Phase === Bmp[j].Anzahl - 1))) {
-          Scape[x][y].Phase++;
+        Scape[x][y].Phase++;
+
+        if (Scape[x][y].Phase >= Bmp[j].Anzahl) {
+          Scape[x][y].Phase = 0;
+          //Die Baumfällenanimation nur ein mal abspielen
+          if (j >= BAUM1DOWN && j <= BAUM4DOWN) {
+            Scape[x][y].Objekt = -1;
+          }
         }
-        if (Scape[x][y].Phase >= Bmp[j].Anzahl) Scape[x][y].Phase = 0;
       }
     }
   }

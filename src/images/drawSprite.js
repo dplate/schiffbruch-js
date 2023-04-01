@@ -3,7 +3,7 @@ import sprites from './sprites.js'
 const drawSprite = (type, frame, x, y, canvasContext) => {
   const sprite = sprites[type];
   let sourceX = sprite.x;
-  let sourceY = sprite.y + frame * sprite.height;
+  let sourceY = sprite.y + Math.floor(frame) * sprite.height;
   let destinationX = x;
   let destinationY = y;
   let width = sprite.width;

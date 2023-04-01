@@ -96,6 +96,7 @@ Object.keys(tileEdges).forEach(type => {
   edges.east = calculateCenter(edges.right, edges.bottom);
   edges.south = calculateCenter(edges.bottom, edges.left);
   edges.center = topBottomTiles.includes(type) ? calculateCenter(edges.top, edges.bottom) : calculateCenter(edges.left, edges.right);
+  edges.topBottomEdge = topBottomTiles.includes(type);
 });
 
 export default tileEdges;

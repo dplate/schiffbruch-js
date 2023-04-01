@@ -8,6 +8,11 @@ const sounds = {
     file: 'river',
     baseGain: 0.5,
     instance: null
+  },
+  FOREST: {
+    file: 'forest',
+    baseGain: 0.8,
+    instance: null
   }
 };
 

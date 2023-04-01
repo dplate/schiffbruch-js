@@ -9,6 +9,13 @@ const riverDefault = {
   speed: 7
 };
 
+const treeDefault = {
+  image: images.TREES,
+  sound: sounds.FOREST,
+  frameCount: 4,
+  speed: 4
+};
+
 const sprites = {
   [spriteTypes.WAVES]: {
     image: images.WATER,
@@ -145,6 +152,52 @@ const sprites = {
     y: 0,
     width: 34,
     height: 8,
+  },
+  [spriteTypes.TREE_HARDWOOD]: {
+    ...treeDefault,
+    x: 0,
+    y: 0,
+    width: 21,
+    height: 26,
+  },
+  [spriteTypes.TREE_PALM]: {
+    ...treeDefault,
+    x: 21,
+    y: 0,
+    width: 21,
+    height: 26,
+  },
+  [spriteTypes.TREE_EVERGREEN]: {
+    ...treeDefault,
+    x: 42,
+    y: 0,
+    width: 22,
+    height: 27,
+  },
+  [spriteTypes.TREE_SMALL]: {
+    ...treeDefault,
+    x: 64,
+    y: 0,
+    width: 17,
+    height: 16,
+  },
+  [spriteTypes.BUSH]: {
+    ...treeDefault,
+    frameCount: 3,
+    speed: 0,
+    x: 81,
+    y: 0,
+    width: 20,
+    height: 13
+  },
+  [spriteTypes.BIG_TREE]: {
+    ...treeDefault,
+    frameCount: 0,
+    speed: 0,
+    x: 238,
+    y: 0,
+    width: 26,
+    height: 41
   }
 };
 

@@ -17,7 +17,13 @@ const spriteTypes = {
   RIVER_SLOPE_NORTH: 'riverSlopeNorth',
   RIVER_SLOPE_EAST: 'riverSlopeEast',
   RIVER_SLOPE_SOUTH: 'riverSlopeSouth',
-  RIVER_SLOPE_WEST: 'riverSlopeWest'
+  RIVER_SLOPE_WEST: 'riverSlopeWest',
+  TREE_HARDWOOD: 'treeHardwood',
+  TREE_PALM: 'treePalm',
+  TREE_EVERGREEN: 'treeEvergreen',
+  TREE_SMALL: 'treeSmall',
+  BUSH: 'bush',
+  BIG_TREE: 'bigTree',
 };
 
 export default spriteTypes;
