@@ -103,8 +103,6 @@ export default {
   NICHTSGEFUNDEN2: 'Ich habe den ganzen Grund abgesucht, aber nichts von Interesse gefunden.',
   KARTE: 'Schatzkarte',
   KARTEGEFUNDEN: 'Ich tauchte durch das uralte Piratenschiff, allerdings ohne etwas zu finden, bis ich ploetzlich das Skelett des Kapitains fand. In der Hand hielt er noch eine erstaunlich gut erhaltene Schatzkarte. Nachdem ich sie an mich genommen hatte, nahm ich mir noch eine Schaufel mit. Jetzt kann ich mir die Zeit mit einer Schatzsuche vertreiben.',
-  ANIMATIONAUS: 'Wasseranimationen ausschalten',
-  ANIMATIONAN: 'Wasseranimationen anschalten',
   ASTPLUSLIANENICHTS: 'Mehr kann ich mir auch mit einer Liane und einem Ast nicht bauen.',
   SCHLEUDER: 'Steinschleuder',
   STEINPLUSLIANENICHTS: 'Mir faellt nichts mehr ein, was ich mir aus einer Liane und einem Stein bauen könnte.',

@@ -10,12 +10,13 @@ const MAX_ISLAND_TILES = 500;
 // Height of highest point of island
 const MAX_HEIGHT = 3;
 
-const initTerrain = (tiles) => {
-  for (let x in tiles) {
-    for (let y in tiles[x]) {
-      tiles[x][y].type = null;
-      tiles[x][y].height = null;
-      tiles[x][y].position = null;
+const initTerrain = (terrain) => {
+  for (let x in terrain) {
+    for (let y in terrain[x]) {
+      terrain[x][y].type = null;
+      terrain[x][y].height = null;
+      terrain[x][y].position = null;
+      terrain[x][y].discovered = false;
     }
   }
 };
