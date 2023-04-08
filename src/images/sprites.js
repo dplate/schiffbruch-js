@@ -209,6 +209,16 @@ const sprites = {
     frameCount: 3,
     speed: 5
   },
+  [spriteTypes.SHIP_WRECK]: {
+    image: images.BUILDINGS,
+    sound: sounds.WAVES,
+    x: 391,
+    y: 0,
+    width: 24,
+    height: 18,
+    frameCount: 3,
+    speed: 5
+  },
 };
 
 export default sprites;

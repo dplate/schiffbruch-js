@@ -13,7 +13,7 @@ const isGoodPosition = (terrain, x, y) => {
   }
 
   // Do not place it left of a beach (left part of island) to make it harder to find
-  for (let neighborX = Math.max(0, x - 1); neighborX <= Math.min(x + 1, terrain.length - 1); neighborX++) {
+  for (let neighborX = Math.max(0, x - 1); neighborX <= Math.min(x, terrain.length - 1); neighborX++) {
     for (let neighborY = Math.max(0, y - 1); neighborY <= Math.min(y + 1, terrain[0].length - 1); neighborY++) {
       if (neighborX !== x && neighborY !== y) {
         if (terrain[neighborX][neighborY].ground !== grounds.SEA) {
@@ -36,8 +36,7 @@ const addPirateWreck = (terrain) => {
         sprite: spriteTypes.PIRATE_WRECK,
         x: 15,
         y: 16,
-        frame: 0,
-        reverse: false,
+        frame: 0
       };
       return;
     }

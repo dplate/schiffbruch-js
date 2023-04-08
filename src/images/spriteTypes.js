@@ -25,6 +25,7 @@ const spriteTypes = {
   BUSH: 'bush',
   BIG_TREE: 'bigTree',
   PIRATE_WRECK: 'pirateWreck',
+  SHIP_WRECK: 'shipWreck',
 };
 
 export default spriteTypes;

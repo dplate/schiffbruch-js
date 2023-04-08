@@ -21,6 +21,7 @@ import drawTerrain from './terrain/drawTerrain.js';
 import getTreasureMapCanvasContext from './treasure/getTreasureMapCanvasContext.js';
 import drawTreasureMap from './treasure/drawTreasureMap.js';
 import addPirateWreck from './terrain/addPirateWreck.js';
+import addShipWreck from './terrain/addShipWreck.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -46,7 +47,6 @@ const BAUM2DOWN = BAUM1DOWN + 1;
 const BAUM3DOWN = BAUM1DOWN + 2;
 const BAUM4DOWN = BAUM1DOWN + 3;
 const FEUER = BAUM1DOWN + 5;
-const WRACK = BAUM1DOWN + 6;
 const FELD = 38;
 const ZELT = FELD + 1;
 const BOOT = FELD + 2;
@@ -1376,24 +1376,6 @@ const InitStructs = async () => {
   Bmp[FEUER].Phase = 0;
   Bmp[FEUER].Sound = WAVFEUER;
 
-  //WRACK
-  Bmp[WRACK].Anzahl = 3;
-  Bmp[WRACK].Surface = buildingsImage;
-  Bmp[WRACK].Breite = 24;
-  Bmp[WRACK].Hoehe = 18;
-  Bmp[WRACK].rcSrc.left = 391;
-  Bmp[WRACK].rcSrc.right = 391 + Bmp[WRACK].Breite;
-  Bmp[WRACK].rcSrc.top = 0;
-  Bmp[WRACK].rcSrc.bottom = 0 + Bmp[WRACK].Hoehe;
-  Bmp[WRACK].rcDes.left = 15;
-  Bmp[WRACK].rcDes.right = Bmp[WRACK].rcDes.left + Bmp[WRACK].Breite;
-  Bmp[WRACK].rcDes.top = 20;
-  Bmp[WRACK].rcDes.bottom = Bmp[WRACK].rcDes.top + Bmp[WRACK].Hoehe;
-  Bmp[WRACK].Animation = true;
-  Bmp[WRACK].Geschwindigkeit = 5;
-  Bmp[WRACK].Phase = 0;
-
-
   //Buttons
 
   //StandardBmponsinitialisierung
@@ -2666,9 +2648,7 @@ const CheckKey = () => {
         Entdecken();
         if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground !== grounds.SEA) break;
       }
-      gameData.terrain[Guy.Pos.x - 2][Guy.Pos.y].Objekt = WRACK;
-      gameData.terrain[Guy.Pos.x - 2][Guy.Pos.y].ObPos.x = Bmp[WRACK].rcDes.left;
-      gameData.terrain[Guy.Pos.x - 2][Guy.Pos.y].ObPos.y = Bmp[WRACK].rcDes.top;
+      addShipWreck(gameData.terrain[Guy.Pos.x - 2][Guy.Pos.y]);
 
       const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
       Guy.PosScreen.x = tile.position.x + tileEdges[tile.type].center.x;
@@ -2974,7 +2954,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = texts.FEUERSTELLETEXT;
       else if (tile.Objekt === FEUER)
         TextTmp = texts.FEUERTEXT;
-      else if ((tile.Objekt === WRACK) || (tile.object?.type === objectTypes.PIRATE_WRECK))
+      else if ((tile.object?.type === objectTypes.SHIP_WRECK) || (tile.object?.type === objectTypes.PIRATE_WRECK))
         TextTmp = texts.WRACKTEXT;
       Text += TextTmp;
 
@@ -4060,7 +4040,6 @@ const ZeichneObjekte = () => {
           gameData.terrain[x][y].Objekt === BAUM2DOWN || 
           gameData.terrain[x][y].Objekt === BAUM3DOWN || 
           gameData.terrain[x][y].Objekt === BAUM4DOWN || 
-          gameData.terrain[x][y].Objekt === WRACK || 
           gameData.terrain[x][y].Objekt >= ZELT)
         {
           //Sound abspielen
@@ -4753,9 +4732,7 @@ const AkIntro = () => {
       PlaySound(WAVCRASH, 100);
       break;
     case 3:
-      tile.Objekt = WRACK;
-      tile.ObPos.x = Bmp[WRACK].rcDes.left;
-      tile.ObPos.y = Bmp[WRACK].rcDes.top;
+      addShipWreck(tile);
 
       ChangeBootsFahrt();
       Guy.Pos.x += 2;
@@ -5086,7 +5063,7 @@ const AkSuchen = () => {
             break;
         }
       } else if (BootsFahrt) {
-        if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === WRACK) {
+        if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.SHIP_WRECK) {
           if (Guy.Inventar[ROHFERNROHR] === 0) {
             PapierText = DrawText(texts.FERNROHRGEFUNDEN, TXTPAPIER, 1);
             Guy.Inventar[ROHFERNROHR] = 1;
