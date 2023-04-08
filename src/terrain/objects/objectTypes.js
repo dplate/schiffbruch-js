@@ -3,7 +3,8 @@ const objectTypes = {
   RIVER: 'river',
   TREE: 'tree',
   BUSH: 'bush',
-  BIG_TREE: 'bigTree'
+  BIG_TREE: 'bigTree',
+  PIRATE_WRECK: 'pirateWreck'
 };
 
 export default objectTypes;

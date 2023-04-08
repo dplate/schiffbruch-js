@@ -14,6 +14,10 @@ const images = {
   PANEL: {
     file: 'panel.png',
     instance: null
+  },
+  BUILDINGS: {
+    file: 'buildings.png',
+    instance: null
   }
 };
 

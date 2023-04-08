@@ -198,7 +198,17 @@ const sprites = {
     y: 0,
     width: 26,
     height: 41
-  }
+  },
+  [spriteTypes.PIRATE_WRECK]: {
+    image: images.BUILDINGS,
+    sound: sounds.WAVES,
+    x: 415,
+    y: 0,
+    width: 27,
+    height: 26,
+    frameCount: 3,
+    speed: 5
+  },
 };
 
 export default sprites;

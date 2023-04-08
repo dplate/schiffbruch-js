@@ -20,6 +20,7 @@ import hideTreasure from './treasure/hideTreasure.js';
 import drawTerrain from './terrain/drawTerrain.js';
 import getTreasureMapCanvasContext from './treasure/getTreasureMapCanvasContext.js';
 import drawTreasureMap from './treasure/drawTreasureMap.js';
+import addPirateWreck from './terrain/addPirateWreck.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -46,7 +47,6 @@ const BAUM3DOWN = BAUM1DOWN + 2;
 const BAUM4DOWN = BAUM1DOWN + 3;
 const FEUER = BAUM1DOWN + 5;
 const WRACK = BAUM1DOWN + 6;
-const WRACK2 = BAUM1DOWN + 7;
 const FELD = 38;
 const ZELT = FELD + 1;
 const BOOT = FELD + 2;
@@ -1393,23 +1393,6 @@ const InitStructs = async () => {
   Bmp[WRACK].Geschwindigkeit = 5;
   Bmp[WRACK].Phase = 0;
 
-  //WRACK2
-  Bmp[WRACK2].Anzahl = 3;
-  Bmp[WRACK2].Surface = buildingsImage;
-  Bmp[WRACK2].Breite = 27;
-  Bmp[WRACK2].Hoehe = 26;
-  Bmp[WRACK2].rcSrc.left = 415;
-  Bmp[WRACK2].rcSrc.right = 415 + Bmp[WRACK2].Breite;
-  Bmp[WRACK2].rcSrc.top = 0;
-  Bmp[WRACK2].rcSrc.bottom = 0 + Bmp[WRACK2].Hoehe;
-  Bmp[WRACK2].rcDes.left = 15;
-  Bmp[WRACK2].rcDes.right = Bmp[WRACK2].rcDes.left + Bmp[WRACK2].Breite;
-  Bmp[WRACK2].rcDes.top = 16;
-  Bmp[WRACK2].rcDes.bottom = Bmp[WRACK2].rcDes.top + Bmp[WRACK2].Hoehe;
-  Bmp[WRACK2].Animation = true;
-  Bmp[WRACK2].Geschwindigkeit = 5;
-  Bmp[WRACK2].Phase = 0;
-
 
   //Buttons
 
@@ -2659,11 +2642,9 @@ const CheckKey = () => {
   const DIK_LEFT = 'ArrowLeft';
   const DIK_F11 = 'F11';
   const DIK_G = 'KeyG';
-  const DIK_A = 'KeyA';
   const DIK_C = 'KeyC';
   const DIK_I = 'KeyI';
   const DIK_W = 'KeyW';
-  const DIK_S = 'KeyS';
 
   let x;
 
@@ -2993,7 +2974,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = texts.FEUERSTELLETEXT;
       else if (tile.Objekt === FEUER)
         TextTmp = texts.FEUERTEXT;
-      else if ((tile.Objekt === WRACK) || (tile.Objekt === WRACK2))
+      else if ((tile.Objekt === WRACK) || (tile.object?.type === objectTypes.PIRATE_WRECK))
         TextTmp = texts.WRACKTEXT;
       Text += TextTmp;
 
@@ -3729,6 +3710,7 @@ const startGame = async (newGame) => {
     DrawString('Vergrabe Schatz...', 5, 125, 2, primaryCanvasContext);
     await new Promise(window.requestAnimationFrame);
     gameData.treasure = hideTreasure(gameData);
+    addPirateWreck(gameData.terrain);
     
     for (let x = 0; x < MAXXKACH; x++) {
       for (let y = 0; y < MAXYKACH; y++) {
@@ -3746,8 +3728,6 @@ const startGame = async (newGame) => {
         tile.Rohstoff = Array(BILDANZ).fill(0);
       }
     }
-    
-    Piratenwrack();
 
     //Guy Position
     Guy.Pos.x = 1;
@@ -3762,7 +3742,7 @@ const startGame = async (newGame) => {
     Chance = 0;
 
     BootsFahrt = false;
-    if (!BootsFahrt) ChangeBootsFahrt();
+    ChangeBootsFahrt();
 
     Tag = 1;
     Stunden = 0;
@@ -4081,7 +4061,6 @@ const ZeichneObjekte = () => {
           gameData.terrain[x][y].Objekt === BAUM3DOWN || 
           gameData.terrain[x][y].Objekt === BAUM4DOWN || 
           gameData.terrain[x][y].Objekt === WRACK || 
-          gameData.terrain[x][y].Objekt === WRACK2 ||
           gameData.terrain[x][y].Objekt >= ZELT)
         {
           //Sound abspielen
@@ -5117,7 +5096,7 @@ const AkSuchen = () => {
             Bmp[BUTTHAUS2].Phase = 0;
             Bmp[BUTTHAUS3].Phase = 0;
           } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
-        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === WRACK2) {
+        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.PIRATE_WRECK) {
           if (Guy.Inventar[ROHKARTE] === 0) {
             PapierText = DrawText(texts.KARTEGEFUNDEN, TXTPAPIER, 1);
             Guy.Inventar[ROHKARTE] = 1;
@@ -7110,44 +7089,6 @@ const FillRohr = () => {
         gameData.terrain[x][y].AkNummer = 0;
       }
     }
-}
-
-const Piratenwrack = () => {
-  let x, y, i, Richtung;
-
-  Richtung = Math.floor(Math.random() * 3);
-  switch (Richtung) {
-    case 0:
-      x = Math.floor(MAXXKACH / 2);
-      for (i = 0; i < MAXYKACH; i++) {
-        if (gameData.terrain[x][i].ground !== grounds.SEA) {
-          y = i - 1;
-          break;
-        }
-      }
-      break;
-    case 1:
-      y = Math.floor(MAXYKACH / 2);
-      for (i = MAXXKACH - 1; i >= 0; i--) {
-        if (gameData.terrain[i][y].ground !== grounds.SEA) {
-          x = i + 1;
-          break;
-        }
-      }
-      break;
-    case 2:
-      x = Math.floor(MAXXKACH / 2);
-      for (i = MAXYKACH - 1; i >= 0; i--) {
-        if (gameData.terrain[x][i].ground !== grounds.SEA) {
-          y = i + 1;
-          break;
-        }
-      }
-      break;
-  }
-  gameData.terrain[x][y].Objekt = WRACK2;
-  gameData.terrain[x][y].ObPos.x = Bmp[WRACK2].rcDes.left;
-  gameData.terrain[x][y].ObPos.y = Bmp[WRACK2].rcDes.top;
 }
 
 const RotateRight = (Dir) =>  //Richtungskoordinate rechtsrum umrechnen
