@@ -1,9 +1,7 @@
 import spriteTypes from '../../images/spriteTypes.js';
 import sprites from '../../images/sprites.js';
-import objectTypes from './objectTypes.js';
 
 const createWaves = () => ({
-  type: objectTypes.WAVES,
   sprite: spriteTypes.WAVES,
   x: 9,
   y: 23,

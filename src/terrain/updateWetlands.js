@@ -1,4 +1,4 @@
-import objectTypes from './objects/objectTypes.js';
+import isRiver from './objects/isRiver.js';
 import grounds from './tiles/grounds.js';
 
 const updateWetlands = (terrain) => {
@@ -9,7 +9,7 @@ const updateWetlands = (terrain) => {
         for (let neighborX = x - 1; neighborX <= x + 1; neighborX++) {
           for (let neighborY = y - 1; neighborY <= y + 1; neighborY++) {
             const neighborTile = terrain[neighborX]?.[neighborY];
-            if (neighborTile?.object?.type === objectTypes.RIVER) {
+            if (isRiver(neighborTile?.object)) {
               tile.ground = grounds.WETLAND;
             }
           }

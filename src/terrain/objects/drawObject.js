@@ -1,5 +1,5 @@
 import drawSprite from '../../images/drawSprite.js';
-import objectTypes from './objectTypes.js';
+import isOnGround from './isOnGround.js';
 
 const drawObject = (gameData, tile, camera, forTreasureMap, groundObjects, canvasContext) => {
   const object = forTreasureMap && tile.originalObject ? tile.originalObject : tile.object;
@@ -7,7 +7,7 @@ const drawObject = (gameData, tile, camera, forTreasureMap, groundObjects, canva
     return;
   }
 
-  if (groundObjects && (object.type === objectTypes.WAVES || object.type === objectTypes.RIVER)) {
+  if (groundObjects && isOnGround(object)) {
     drawSprite(
       object.sprite, 
       object.frame, 

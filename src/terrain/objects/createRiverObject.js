@@ -1,5 +1,4 @@
 import spriteTypes from '../../images/spriteTypes.js';
-import objectTypes from './objectTypes.js';
 import directions from '../directions.js';
 import tileTypes from '../tiles/tileTypes.js';
 import grounds from '../tiles/grounds.js';
@@ -234,7 +233,6 @@ const createRiverObject = (tile, fromDirection, toDirection) => {
     return null;
   }
   return {
-    type: objectTypes.RIVER,
     frame: 0,
     reverse: false,
     ...sprite

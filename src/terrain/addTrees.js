@@ -1,6 +1,5 @@
 import sprites from '../images/sprites.js';
 import spriteTypes from '../images/spriteTypes.js';
-import objectTypes from './objects/objectTypes.js';
 import calculatePositionInTile from './tiles/calculatePositionInTile.js';
 import grounds from './tiles/grounds.js';
 
@@ -15,24 +14,13 @@ const getRandomTree = () => {
   return nonBigTrees[Math.floor(Math.random() * nonBigTrees.length)];
 };
 
-const getSpriteDependentInfo = (spriteType) => {
+const getStartFrame = (spriteType) => {
   const sprite = sprites[spriteType];
   switch (spriteType) {
     case spriteTypes.BUSH:
-      return {
-        type: objectTypes.BUSH,
-        frame: sprite.frameCount - 1
-      }
-    case spriteTypes.BIG_TREE:
-      return {
-        type: objectTypes.BIG_TREE,
-        frame: 0
-      };
+      return sprite.frameCount - 1;
     default:
-      return {
-        type: objectTypes.TREE,
-        frame: Math.floor(Math.random() * sprite.frameCount)
-      };
+      return Math.floor(Math.random() * sprite.frameCount);
   }
 };
 
@@ -66,7 +54,7 @@ const addTrees = (terrain) => {
         x: Math.round(position.x - sprite.width / 2),
         y: Math.round(position.y - sprite.height),
         reverse: Math.random() < 0.5,
-        ... getSpriteDependentInfo(spriteType)
+        frame: getStartFrame(spriteType)
       };
       bigTreePlanted = bigTreePlanted || (spriteType === spriteTypes.BIG_TREE);
     });

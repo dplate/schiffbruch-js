@@ -1,5 +1,4 @@
 import spriteTypes from '../images/spriteTypes.js';
-import objectTypes from './objects/objectTypes.js';
 import grounds from './tiles/grounds.js';
 
 const isGoodPosition = (terrain, x, y) => {
@@ -32,7 +31,6 @@ const addPirateWreck = (terrain) => {
     if (isGoodPosition(terrain, x, y)) {
       const tile = terrain[x][y];
       tile.object = {
-        type: objectTypes.PIRATE_WRECK,
         sprite: spriteTypes.PIRATE_WRECK,
         x: 15,
         y: 16,

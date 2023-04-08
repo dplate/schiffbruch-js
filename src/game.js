@@ -6,7 +6,6 @@ import tileTypes from './terrain/tiles/tileTypes.js';
 import grounds from './terrain/tiles/grounds.js';
 import tileEdges from './terrain/tiles/tileEdges.js';
 import loadImages from './images/loadImages.js';
-import objectTypes from './terrain/objects/objectTypes.js';
 import drawSprite from './images/drawSprite.js';
 import createWaves from './terrain/objects/createWaves.js';
 import animateTerrain from './terrain/animateTerrain.js';
@@ -22,6 +21,12 @@ import getTreasureMapCanvasContext from './treasure/getTreasureMapCanvasContext.
 import drawTreasureMap from './treasure/drawTreasureMap.js';
 import addPirateWreck from './terrain/addPirateWreck.js';
 import addShipWreck from './terrain/addShipWreck.js';
+import isDrinkable from './terrain/objects/isDrinkable.js';
+import isEatable from './terrain/objects/isEatable.js';
+import isNormalTree from './terrain/objects/isNormalTree.js';
+import isFishable from './terrain/objects/isFishable.js';
+import isOnGround from './terrain/objects/isOnGround.js';
+import isRiver from './terrain/objects/isRiver.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -2776,7 +2781,7 @@ const AddTime = (h, m) => {
         if (tile.Phase > Bmp[tile.Objekt].Anzahl - 1) {
           tile.Phase = Bmp[tile.Objekt].Anzahl - 1;
         }
-      } else if (tile.object?.type === objectTypes.BUSH) {
+      } else if (tile.object?.sprite === spriteTypes.BUSH) {
         tile.object.frame += (60 * h + m) * 0.0005; 
         tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
       }
@@ -2920,17 +2925,17 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       default:
         Text = '?';
     }
-    if ((tile.Objekt !== -1 || tile.object) && (tile.object?.type !== objectTypes.WAVES)) {
+    if ((tile.Objekt !== -1 || tile.object) && (tile.object?.sprite !== spriteTypes.WAVES)) {
       Text += ' ' + texts.MIT + ' ';
 
-      if (tile.object?.type === objectTypes.TREE)
+      if (isNormalTree(tile.object))
         TextTmp = texts.BAUMTEXT;
       else if (
-        tile.object?.type === objectTypes.RIVER ||
+        isRiver(tile.object) ||
         ((tile.Objekt >= SCHLEUSE1) && (tile.Objekt <= SCHLEUSE6))
       )
         TextTmp = texts.FLUSSTEXT;
-      else if (tile.object?.type === objectTypes.BUSH)
+      else if (tile.object?.sprite === spriteTypes.BUSH)
         TextTmp = texts.BUSCHTEXT;
       else if (tile.Objekt === ZELT)
         TextTmp = texts.ZELTTEXT;
@@ -2948,13 +2953,13 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = texts.HAUS2TEXT;
       else if (tile.Objekt === HAUS3)
         TextTmp = texts.HAUS3TEXT;
-      else if (tile.object?.type === objectTypes.BIG_TREE)
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE)
         TextTmp = texts.BAUMGROSSTEXT;
       else if (tile.Objekt === FEUERSTELLE)
         TextTmp = texts.FEUERSTELLETEXT;
       else if (tile.Objekt === FEUER)
         TextTmp = texts.FEUERTEXT;
-      else if ((tile.object?.type === objectTypes.SHIP_WRECK) || (tile.object?.type === objectTypes.PIRATE_WRECK))
+      else if ((tile.object?.sprite === spriteTypes.SHIP_WRECK) || (tile.object?.sprite === spriteTypes.PIRATE_WRECK))
         TextTmp = texts.WRACKTEXT;
       Text += TextTmp;
 
@@ -3192,13 +3197,12 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BUSH && 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].object.frame === sprites[gameData.terrain[Guy.Pos.x][Guy.Pos.y].object.sprite].frameCount - 1) ||
+      if (isEatable(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) ||
         (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === FELD &&
          gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase === Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl - 1)) {
         Guy.Aktion = AKESSEN;
       }else if (
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.RIVER ||
+        isDrinkable(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) ||
         (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6) ||
         (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ROHR && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase === 1)
       )
@@ -3224,9 +3228,9 @@ const MouseInPanel = (Button, Push) => {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
       if (Guy.Inventar[ROHSTAMM] <= 10) {
-        if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type >= objectTypes.TREE) {
+        if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object)) {
           Guy.Aktion = AKFAELLEN;
-        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE ||
+        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE ||
           (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1 &&
             gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3))
           PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
@@ -3240,9 +3244,8 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.RIVER ||
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6) ||
-        BootsFahrt
+      if (isFishable(gameData.terrain[Guy.Pos.x][Guy.Pos.y]) ||
+        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6)
       ) Guy.Aktion = AKANGELN;
       else PapierText = DrawText(texts.KEINWASSER, TXTPAPIER, 1);
     }
@@ -3292,10 +3295,10 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE) {
+      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object)) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLEUDER;
-      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE) ||
+      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE) ||
         ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1) &&
           (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3)))
         PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
@@ -3460,9 +3463,9 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE)
+      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE) {
+      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.spite === spriteTypes.BIG_TREE) {
         gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS1;
@@ -3487,9 +3490,9 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE)
+      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE)
+      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE)
         PapierText = DrawText(texts.NICHTOHNELEITER, TXTPAPIER, 1);
       else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1) {
         gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
@@ -3516,9 +3519,9 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE)
+      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE ||
+      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE ||
         gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1)
         PapierText = DrawText(texts.NICHTOHNEPLATTFORM, TXTPAPIER, 1);
       else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS2) {
@@ -3996,7 +3999,7 @@ const ZeichneObjekte = () => {
         (gameData.terrain[x][y].Objekt !== -1 || gameData.terrain[x][y].object || Guyzeichnen))) continue;
 
       //Der Guy ist immer vor diesen Objekten
-      if ((gameData.terrain[x][y].object?.type === objectTypes.WAVES || gameData.terrain[x][y].object?.type === objectTypes.RIVER)) {
+      if (isOnGround(gameData.terrain[x][y].object)) {
         //this happens in drawObject now
       } else if (gameData.terrain[x][y].Objekt > -1 &&
         (gameData.terrain[x][y].Objekt <= SCHLEUSE6
@@ -5012,7 +5015,7 @@ const AkSuchen = () => {
       //Auf Strand und Fluss
       if (
         gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground === grounds.BEACH ||
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.RIVER ||
+        isRiver(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) ||
         (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6)
       ) {
         if (Guy.Inventar[ROHSTEIN] < 10) {
@@ -5021,7 +5024,7 @@ const AkSuchen = () => {
           if (Guy.Inventar[ROHSTEIN] > 10) Guy.Inventar[ROHSTEIN] = 10;
         } else PapierText = DrawText(texts.ROHSTEINZUVIEL, TXTPAPIER, 1);
 
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BUSH) {
+      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BUSH) {
         i = Math.floor(Math.random() * 2);
         switch (i) {
           case 0:
@@ -5037,9 +5040,8 @@ const AkSuchen = () => {
             } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
             break;
         }
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.TREE || 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BIG_TREE || 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.BUSH ||
+      } else if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) || 
+        gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE || 
         (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3)) {
         i = Math.floor(Math.random() * 3);
         switch (i) {
@@ -5063,7 +5065,7 @@ const AkSuchen = () => {
             break;
         }
       } else if (BootsFahrt) {
-        if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.SHIP_WRECK) {
+        if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.SHIP_WRECK) {
           if (Guy.Inventar[ROHFERNROHR] === 0) {
             PapierText = DrawText(texts.FERNROHRGEFUNDEN, TXTPAPIER, 1);
             Guy.Inventar[ROHFERNROHR] = 1;
@@ -5073,7 +5075,7 @@ const AkSuchen = () => {
             Bmp[BUTTHAUS2].Phase = 0;
             Bmp[BUTTHAUS3].Phase = 0;
           } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
-        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.type === objectTypes.PIRATE_WRECK) {
+        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.PIRATE_WRECK) {
           if (Guy.Inventar[ROHKARTE] === 0) {
             PapierText = DrawText(texts.KARTEGEFUNDEN, TXTPAPIER, 1);
             Guy.Inventar[ROHKARTE] = 1;
@@ -7032,7 +7034,7 @@ const FillRohr = () => {
   for (y = 0; y < MAXYKACH; y++) {
     for (x = 0; x < MAXXKACH; x++) {
       if (
-        gameData.terrain[x][y].object?.type === objectTypes.RIVER ||
+        isRiver(gameData.terrain[x][y].object) ||
         (gameData.terrain[x][y].Objekt >= SCHLEUSE1 && gameData.terrain[x][y].Objekt <= SCHLEUSE6)
       ) {
         for (let neighborX = x - 1; neighborX <= x + 1; neighborX++) {
