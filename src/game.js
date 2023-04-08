@@ -27,6 +27,8 @@ import isNormalTree from './terrain/objects/isNormalTree.js';
 import isFishable from './terrain/objects/isFishable.js';
 import isOnGround from './terrain/objects/isOnGround.js';
 import isRiver from './terrain/objects/isRiver.js';
+import updateCamera from './camera/updateCamera.js';
+import restrictCamera from './camera/restrictCamera.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -348,7 +350,6 @@ const LenMap = Array.from(Array(MAXXKACH), () => Array(MAXYKACH));
 
 //Bereiche
 const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
-const rcSpielflaeche = { left: 0, top: 0, right: MAXX - 195, bottom: MAXY - 20 };
 const rcPanel = { left: MAXX - 205, top: 0, right: MAXX, bottom: MAXY };
 const rcKarte = { left: MAXX - 158, top: 23, right: MAXX - 158 + MAXXKACH * 2, bottom: 23 + MAXYKACH * 2 };
 const rcTextFeld1 = { left: 0, top: MAXY - 20, right: MAXX - 195, bottom: MAXY };
@@ -358,8 +359,7 @@ let TextBereich = Array.from(Array(TEXTANZ), () => ({
   rcText: { left: null, top: null, right: null, bottom: null } //Die Position des Ausgabe
 }));
 
-let Camera = { x: null, y: null };        //aktueller Kartenausschnitt
-const MousePosition = { x: null, y: null }; //     "    Mauskoordinaten
+const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
 const RouteZiel = { x: null, y: null };     // Koordinaten des Endes der Route
 const RouteStart = { x: null, y: null };    // Koordinaten des Starts der Route
 const RouteKoor = Array.from(Array(2 * MAXXKACH * MAXYKACH), () => ({ x: null, y: null })); // Liste der Routenkoordinaten
@@ -408,6 +408,12 @@ const AbspannListe = Array.from(Array(10), () => Array.from(Array(10), () => ({
 
 const gameData = {
   terrain: Array.from(Array(MAXXKACH), () => Array.from(Array(MAXYKACH), () => ({}))),
+  camera: {
+    x: 0,
+    y: 0,
+    width: null,
+    height: null
+  },
   options: {
     grid: false
   },
@@ -526,11 +532,10 @@ const SaveGame = () => {
     });
   }
 
-  window.localStorage.setItem('gameDataV4', JSON.stringify({
+  window.localStorage.setItem('gameDataV5', JSON.stringify({
     ...gameData,
     Guy,
     BootsFahrt,
-    Camera,
     Chance,
     HauptMenue,
     Minuten,
@@ -545,7 +550,7 @@ const SaveGame = () => {
 const LoadGame = () => {
   let i;
 
-  const rawGameData = window.localStorage.getItem('gameDataV4');
+  const rawGameData = window.localStorage.getItem('gameDataV5');
   if (!rawGameData) {
     return false;  
   }
@@ -563,7 +568,6 @@ const LoadGame = () => {
 
   Guy = gameData.Guy;
   BootsFahrt = gameData.BootsFahrt;
-  Camera = gameData.Camera;
   Chance = gameData.Chance;
   HauptMenue = gameData.HauptMenue;
   Minuten = gameData.Minuten;
@@ -2612,7 +2616,7 @@ const CheckMouse = () => {
   }
 
   //die Maus ist in der Spielflaeche .
-  if (InRect(MousePosition.x, MousePosition.y, rcSpielflaeche))
+  if (InRect(MousePosition.x, MousePosition.y, { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }))
     MouseInSpielflaeche(Button, Push, xDiff, yDiff);
   //die Maus ist im Panel .
   if (InRect(MousePosition.x, MousePosition.y, rcPanel))
@@ -2663,8 +2667,8 @@ const CheckKey = () => {
       RouteStart.y = -1;
       RouteZiel.x = -1;
       RouteZiel.y = -1;
-      Camera.x = Math.floor(Guy.PosScreen.x - rcSpielflaeche.right / 2);
-      Camera.y = Math.floor(Guy.PosScreen.y - rcSpielflaeche.bottom / 2);
+      updateCamera(gameData.camera, Guy.PosScreen, primaryCanvasContext, false);
+
       if (BootsFahrt) ChangeBootsFahrt();
       Guy.Zustand = GUYLINKS;
       Guy.Aktion = AKNICHTS;
@@ -2679,10 +2683,10 @@ const CheckKey = () => {
       return (1);
     }
   } else if (Spielzustand === GAME_PLAY) {
-    if (pressedKeyCodes[DIK_RIGHT]) Camera.x += 10;
-    if (pressedKeyCodes[DIK_LEFT]) Camera.x -= 10;
-    if (pressedKeyCodes[DIK_DOWN]) Camera.y += 10;
-    if (pressedKeyCodes[DIK_UP]) Camera.y -= 10;
+    if (pressedKeyCodes[DIK_RIGHT]) gameData.camera.x += 10;
+    if (pressedKeyCodes[DIK_LEFT]) gameData.camera.x -= 10;
+    if (pressedKeyCodes[DIK_DOWN]) gameData.camera.y += 10;
+    if (pressedKeyCodes[DIK_UP]) gameData.camera.y -= 10;
     if (pressedKeyCodes[DIK_ESCAPE]) {
       Guy.AkNummer = 0;
       gameData.guy.active = false;
@@ -2810,12 +2814,6 @@ const AddResource = (Art, Anzahl) => //Fügt wassser usw hinzu
     Guy.Aktion = AKTOD;
   }
 }
-const LimitScroll = () => {
-  Camera.x = Math.max(Camera.x, gameData.terrain[0][MAXYKACH - 1].position.x);
-  Camera.x = Math.min(Camera.x, gameData.terrain[MAXXKACH - 1][0].position.x + KXPIXEL - rcSpielflaeche.right)
-  Camera.y = Math.max(Camera.y, gameData.terrain[0][0].position.y);
-  Camera.y = Math.min(Camera.y, gameData.terrain[MAXXKACH - 1][MAXYKACH - 1].position.y + KYPIXEL - rcSpielflaeche.bottom);
-}
 
 const GetKachel = (PosX, PosY) => {
   let x, y;
@@ -2903,7 +2901,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   let TextTmp = ''; //Text für Infoleiste
 
   //Info anzeigen
-  Erg = GetKachel((MousePosition.x + Camera.x), (MousePosition.y + Camera.y));
+  Erg = GetKachel((MousePosition.x + gameData.camera.x), (MousePosition.y + gameData.camera.y));
   if (Erg && gameData.terrain[Erg.x][Erg.y].discovered) {
     const tile = gameData.terrain[Erg.x][Erg.y];
     switch (tile.ground) {
@@ -2982,8 +2980,8 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
 
   //rechte Maustastescrollen
   if ((Button === 1) && (Push === 0)) {
-    Camera.x += xDiff;
-    Camera.y += yDiff;
+    gameData.camera.x += xDiff;
+    gameData.camera.y += yDiff;
     CursorTyp = CURICHTUNG;
   }
 
@@ -3036,10 +3034,8 @@ const MouseInPanel = (Button, Push) => {
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
     mx = MousePosition.x - rcKarte.left;
     my = MousePosition.y - rcKarte.top;
-    Camera.x = Math.floor(((KXPIXEL / 4) * (mx - my) + MAXXKACH * KXPIXEL / 2)
-      - (rcSpielflaeche.right - rcSpielflaeche.left) / 2);
-    Camera.y = Math.floor(((KXPIXEL / 7) * (my + mx))
-      - (rcSpielflaeche.bottom - rcSpielflaeche.top) / 2);
+    gameData.camera.x = Math.floor(((KXPIXEL / 4) * (mx - my) + MAXXKACH * KXPIXEL / 2) - gameData.camera.width / 2);
+    gameData.camera.y = Math.floor(((KXPIXEL / 7) * (my + mx)) - gameData.camera.height / 2);
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTGITTER].rcDes)) {
     if (gameData.options.grid) DrawText(texts.GITTERAUS, TXTTEXTFELD, 2);
     else DrawText(texts.GITTERAN, TXTTEXTFELD, 2);
@@ -3719,9 +3715,6 @@ const startGame = async (newGame) => {
     Guy.PosScreen.x = tile.position.x + tileEdges[tile.type].center.x;
     Guy.PosScreen.y = tile.position.y + tileEdges[tile.type].center.y;
 
-    Camera.x = Math.floor(Guy.PosScreen.x - rcGesamt.right / 2);
-    Camera.y = Math.floor(Guy.PosScreen.y - rcGesamt.bottom / 2);
-
     Chance = 0;
 
     BootsFahrt = false;
@@ -3788,7 +3781,7 @@ const Zeige = () => {
   let Stringsave1 = '';
   let Stringsave2 = ''; //Für die Zeitausgabe
 
-  drawTerrain(gameData, Camera, false, primaryCanvasContext);
+  drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
 
   ZeichneObjekte();
 
@@ -3846,7 +3839,7 @@ const Zeige = () => {
 }
 
 const ZeigeIntro = () => {
-  drawTerrain(gameData, Camera, false, primaryCanvasContext);
+  drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
 
   ZeichneObjekte();
 }
@@ -3991,10 +3984,10 @@ const ZeichneObjekte = () => {
       Guyzeichnen = (Guy.Pos.x === x) && (Guy.Pos.y === y);
 
       //Die nichtsichbaren Kacheln (oder nicht betroffenen) ausfiltern
-      if (!((gameData.terrain[x][y].position.x > Camera.x + rcSpielflaeche.left - KXPIXEL) &&
-        (gameData.terrain[x][y].position.x < Camera.x + rcSpielflaeche.right + KXPIXEL) &&
-        (gameData.terrain[x][y].position.y > Camera.y + rcSpielflaeche.top - KYPIXEL) &&
-        (gameData.terrain[x][y].position.y < Camera.y + rcSpielflaeche.bottom + KYPIXEL) &&
+      if (!((gameData.terrain[x][y].position.x > gameData.camera.x - KXPIXEL) &&
+        (gameData.terrain[x][y].position.x < gameData.camera.x + gameData.camera.width + KXPIXEL) &&
+        (gameData.terrain[x][y].position.y > gameData.camera.y - KYPIXEL) &&
+        (gameData.terrain[x][y].position.y < gameData.camera.y + gameData.camera.height + KYPIXEL) &&
         (gameData.terrain[x][y].discovered) &&
         (gameData.terrain[x][y].Objekt !== -1 || gameData.terrain[x][y].object || Guyzeichnen))) continue;
 
@@ -4017,9 +4010,12 @@ const ZeichneObjekte = () => {
             PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 50);
         }
 
-        ZeichneBilder(gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - Camera.x,
-          gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - Camera.y,
-          gameData.terrain[x][y].Objekt, rcSpielflaeche, gameData.terrain[x][y].Reverse,
+        ZeichneBilder(
+          gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x,
+          gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y,
+          gameData.terrain[x][y].Objekt, 
+          { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
+          gameData.terrain[x][y].Reverse,
           gameData.terrain[x][y].Phase);
       } else {
         if (gameData.terrain[x][y].Objekt === -1 && gameData.terrain[x][y].object) {
@@ -4034,8 +4030,8 @@ const ZeichneObjekte = () => {
           drawSprite(
             object.sprite, 
             object.frame, 
-            gameData.terrain[x][y].position.x + object.x - Camera.x, 
-            gameData.terrain[x][y].position.y + object.y - Camera.y,
+            gameData.terrain[x][y].position.x + object.x - gameData.camera.x, 
+            gameData.terrain[x][y].position.y + object.y - gameData.camera.y,
             primaryCanvasContext
           );
         } else if (gameData.terrain[x][y].Objekt === FEUER ||
@@ -4063,10 +4059,14 @@ const ZeichneObjekte = () => {
             }
           }
 
-          ZeichneBilder(gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - Camera.x,
-            gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - Camera.y,
-            gameData.terrain[x][y].Objekt, rcSpielflaeche, false,
-            gameData.terrain[x][y].Phase);
+          ZeichneBilder(
+            gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x,
+            gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y,
+            gameData.terrain[x][y].Objekt, 
+            { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
+            false,
+            gameData.terrain[x][y].Phase
+          );
         }
       }
       if (Guyzeichnen) ZeichneGuy();
@@ -4077,20 +4077,31 @@ const ZeichneGuy = () => {
   if (BootsFahrt) {
     if (Guy.Zustand === GUYSCHIFF) {
       ZeichneBilder(
-        Math.floor(Guy.PosScreen.x - 30 - Camera.x),
-        Math.floor(Guy.PosScreen.y - 28 - Camera.y),
-        Guy.Zustand, rcSpielflaeche, false, -1);
+        Math.floor(Guy.PosScreen.x - 30 - gameData.camera.x),
+        Math.floor(Guy.PosScreen.y - 28 - gameData.camera.y),
+        Guy.Zustand, 
+        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
+        false, 
+        -1
+      );
     } else {
       ZeichneBilder(
-        Math.floor(Guy.PosScreen.x - (Bmp[Guy.Zustand].Breite) / 2 - Camera.x),
-        Math.floor(Guy.PosScreen.y - (Bmp[Guy.Zustand].Hoehe) / 2 - Camera.y),
-        Guy.Zustand, rcSpielflaeche, false, -1
+        Math.floor(Guy.PosScreen.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
+        Math.floor(Guy.PosScreen.y - (Bmp[Guy.Zustand].Hoehe) / 2 - gameData.camera.y),
+        Guy.Zustand, 
+        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
+        false, 
+        -1
       );
     }
   } else ZeichneBilder(
-    Math.floor(Guy.PosScreen.x - (Bmp[Guy.Zustand].Breite) / 2 - Camera.x),
-    Math.floor(Guy.PosScreen.y - (Bmp[Guy.Zustand].Hoehe) - Camera.y),
-    Guy.Zustand, rcSpielflaeche, false, -1);
+    Math.floor(Guy.PosScreen.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
+    Math.floor(Guy.PosScreen.y - (Bmp[Guy.Zustand].Hoehe) - gameData.camera.y),
+    Guy.Zustand, 
+    { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
+    false, 
+    -1
+  );
   //Sound abspielen
   if (gameData.guy.active) PlaySound(Bmp[Guy.Zustand].Sound, 100);
 }
@@ -4146,8 +4157,8 @@ const ZeichnePanel = () => {
   rcRectsrc.top = 0;
   rcRectsrc.right = 205 + 65;
   rcRectsrc.bottom = 65;
-  rcRectdes.left = rcKarte.left + (Camera.x + 2 * Camera.y) / (KXPIXEL / 2) - MAXXKACH - 2;
-  rcRectdes.top = rcKarte.top + (2 * Camera.y - Camera.x) / (KXPIXEL / 2) + MAXYKACH - 21 - 2;
+  rcRectdes.left = rcKarte.left + (gameData.camera.x + 2 * gameData.camera.y) / (KXPIXEL / 2) - MAXXKACH - 2;
+  rcRectdes.top = rcKarte.top + (2 * gameData.camera.y - gameData.camera.x) / (KXPIXEL / 2) + MAXYKACH - 21 - 2;
   rcRectdes.right = rcRectdes.left + 65;
   rcRectdes.bottom = rcRectdes.top + 65;
   CalcRect(rcKarte);
@@ -4750,6 +4761,7 @@ const AkIntro = () => {
       ShortRoute(tile.position.x + tileEdges[tile.type].center.x, tile.position.y + tileEdges[tile.type].center.y);
       break;
     case 5:
+      updateCamera(gameData.camera, Guy.PosScreen, primaryCanvasContext, false);
       Guy.PosAlt = { ...Guy.PosScreen };
       Spielzustand = GAME_PLAY;
       Guy.Aktion = AKNICHTS;
@@ -6011,15 +6023,13 @@ const AkGerettet = () => {
       }
       //Schiff hinbauen
       gameData.terrain[RouteZiel.x][RouteZiel.y].Phase = 0;
+      gameData.terrain[RouteZiel.x][RouteZiel.y].object = null;
       gameData.terrain[RouteZiel.x][RouteZiel.y].Objekt = GUYSCHIFF;
       gameData.terrain[RouteZiel.x][RouteZiel.y].ObPos.x = 10;
       gameData.terrain[RouteZiel.x][RouteZiel.y].ObPos.y = 10;
       RouteZiel.x -= 2;
       FindTheWay();
       Guy.Zustand = GUYLINKS;
-      //Fill whole screen with landscape
-      rcSpielflaeche.right = MAXX;
-      rcSpielflaeche.bottom = MAXY;
       break;
     case 5:
       Guy.Zustand = GUYLINKS;
@@ -7581,10 +7591,9 @@ const CalcGuyKoor = () => {
     }
     Guy.PosScreen.x = Math.floor(GuyPosScreenStart.x + Math.round(Step * Schrittx));
     Guy.PosScreen.y = Math.floor(GuyPosScreenStart.y + Math.round(Step * Schritty));
-    if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) //Beim Intro fährt die Kamera mit
+    if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) //Beim Intro und Outra fährt die Kamera mit
     {
-      Camera.x = Math.floor(Guy.PosScreen.x - rcGesamt.right / 2);
-      Camera.y = Math.floor(Guy.PosScreen.y - rcGesamt.bottom / 2);
+      updateCamera(gameData.camera, Guy.PosScreen, primaryCanvasContext, true);
     }
   }
 }
@@ -7647,7 +7656,7 @@ const refresh = (timestamp) => {
     CheckSpzButton();          //Die Spezialknöpfe umschalten
     if (MouseAktiv) CheckMouse();    //Den MouseZustand abchecken
     if (CheckKey() === 0) return false;    //Das Keyboard abfragen
-    LimitScroll();            //Das Scrollen an die Grenzen der Landschaft anpassen
+    restrictCamera(gameData.camera, gameData.terrain);            //Das Scrollen an die Grenzen der Landschaft anpassen
     Animationen();            //Die Animationsphasen weiterschalten
     playTerrainSounds(gameData.terrain, { tile: Guy.Pos });
     if (!gameData.guy.active) Event(Guy.Aktion);  //Die Aktionen starten

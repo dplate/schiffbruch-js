@@ -9,11 +9,13 @@ const drawTreasureMap = (gameData) => {
   const canvas = canvasContext.canvas;
 
   const tileCenter = tileEdges[tile.type].center;
-  const position = {
+  const area = {
     x: Math.round(tile.position.x + tileCenter.x - canvas.width / 2),
     y: Math.round(tile.position.y + tileCenter.y - canvas.height / 2),
+    width: canvas.width,
+    height: canvas.height
   };
-  drawTerrain(gameData, position, true, canvasContext);
+  drawTerrain(gameData, area, true, canvasContext);
   
   canvasContext.filter = 'blur(2px) sepia(1)';
   canvasContext.drawImage(canvas, 0, 0);
