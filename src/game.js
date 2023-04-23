@@ -29,6 +29,7 @@ import isOnGround from './terrain/objects/isOnGround.js';
 import isRiver from './terrain/objects/isRiver.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
+import findRoute from './guy/findRoute.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -346,7 +347,6 @@ let AbspannZustand = 0;            //Wo im Abspann
 // Pathfinding
 let Step;
 let Steps;
-const LenMap = Array.from(Array(MAXXKACH), () => Array(MAXYKACH));
 
 //Bereiche
 const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
@@ -364,7 +364,7 @@ const RouteZiel = { x: null, y: null };     // Koordinaten des Endes der Route
 const RouteStart = { x: null, y: null };    // Koordinaten des Starts der Route
 const RouteKoor = Array.from(Array(2 * MAXXKACH * MAXYKACH), () => ({ x: null, y: null })); // Liste der Routenkoordinaten
 const SaveRoute = Array.from(Array(MAXXKACH * MAXYKACH), () => ({ x: null, y: null }));   //Zum zwischenspeichern der Route
-let NewPos;            // Nur innerhalb des Pathfindings benutzt
+let NewPos = { x: null, y: null };            // Nur innerhalb des Pathfindings benutzt
 const GuyPosScreenStart = { x: null, y: null }; // Absolute StartPosition bei einem Schritt (Für CalcGuyKoor)
 
 let Guy = {
@@ -3008,12 +3008,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         RouteStart.y = Guy.Pos.y;
         RouteZiel.x = Erg.x;
         RouteZiel.y = Erg.y;
-        if (!FindTheWay()) {
-          RouteStart.x = -1;
-          RouteStart.y = -1;
-          RouteZiel.x = -1;
-          RouteZiel.y = -1;
-        }
+        FindTheWay();
       }
     } else PlaySound(WAVKLICK, 100);
   }
@@ -7111,200 +7106,14 @@ const RotateRight = (Dir) =>  //Richtungskoordinate rechtsrum umrechnen
   return Dir;
 }
 
-const LineIntersect = (LineStartPos, Pos, store) => {
-  let i;
-  let x, y;
-  let Dx, Dy;
-  let Sx, Sy;
-  let erg = false;
-  let Nextx, Nexty;
-
-  let Steps = 0;
-
-  Dx = LineStartPos.x - Pos.x;
-  Dy = LineStartPos.y - Pos.y;
-  x = LineStartPos.x;
-  y = LineStartPos.y;
-  if (Math.abs(Dx) > Math.abs(Dy)) {
-    if (Dx > 0) Sx = -1; else Sx = 1;
-    if (Dx === 0) Sy = 0; else Sy = Dy / ((Dx * Sx));
-    Steps = Math.abs(Dx);
-  } else {
-    if (Dy > 0) Sy = -1; else Sy = 1;
-    if (Dy === 0) Sx = 0; else Sx = Dx / ((Dy * Sy));
-    Steps = Math.abs(Dy);
-  }
-
-  for (i = 0; i < Steps; i++) {
-    if (!gameData.terrain[Math.round(x)][Math.round(y)].Begehbar) erg = true;
-    if ((store)) {
-      gameData.guy.route.push({ 
-        x: Math.round(x), 
-        y: Math.round(y) 
-      });
-    }
-    Nextx = x + Sx;
-    Nexty = y + Sy;
-    if ((Math.round(y) !== Math.round(Nexty)) && (Math.round(x) !== Math.round(Nextx))) {
-      if (gameData.terrain[Math.round(x)][Math.round(Nexty)].Begehbar) {
-        if ((store)) {
-          gameData.guy.route.push({ 
-            x: Math.round(x), 
-            y: Math.round(Nexty) 
-          });
-        }
-      } else {
-        if (gameData.terrain[Math.round(Nextx)][Math.round(y)].Begehbar) {
-          if ((store)) {
-            gameData.guy.route.push({ 
-              x: Math.round(Nextx), 
-              y: Math.round(y) 
-            });
-          }
-        } else {
-          erg = true;
-        }
-      }
-    }
-    y = Nexty;
-    x = Nextx;
-  }
-  return erg;
-}
-
 const FindTheWay = () => {
-  let Pos;
-  let Dir;
+  gameData.guy.route = findRoute(gameData, RouteStart, RouteZiel);
 
-  const Plist = Array.from(Array(MAXXKACH * MAXYKACH), () => ({ x: null, y: null })); // Besuchte Punkte merken
-  const Llist = Array(MAXXKACH * MAXYKACH); // Länge vom Punkt zum Ziel
-  let PCnt;
-  let GoalReached;
-  let Shortest;
-  let DiffX, DiffY;
-  let StepCnt;
+  RouteZiel.x = gameData.guy.route[gameData.guy.route.length - 1].x;
+  RouteZiel.y = gameData.guy.route[gameData.guy.route.length - 1].y;
 
-  let ShPos;
-  let ShStep;
-  let BestLine;
-  let LineStartPos;
-  let AI, BI, CI;
-  let ShortKoor;
-  let ShortEntf;
+  SortRoute();
 
-
-  for (AI = 0; AI < MAXYKACH; AI++)
-    for (BI = 0; BI < MAXXKACH; BI++) {
-      LenMap[AI][BI] = 65535;
-      Llist[AI * BI] = 0;
-      Plist[AI * BI].x = 0;
-      Plist[AI * BI].y = 0;
-
-    }
-  ShortEntf = -1;
-  gameData.guy.route = [];
-
-  PCnt = 1;
-  Plist[0] = RouteStart;
-  DiffX = (RouteStart.x - RouteZiel.x);
-  DiffY = (RouteStart.y - RouteZiel.y);
-  Llist[0] = (DiffX * DiffX) + (DiffY * DiffY);
-
-  LenMap[RouteStart.x][RouteStart.y] = 0;
-  Pos = { ...RouteStart };
-  NewPos = { ...Pos };
-  GoalReached = false;
-  while ((!GoalReached) && (PCnt > 0)) {
-    //den mit der kürzesten Entfernung zum Ziel finden (der in der Liste ist)
-    Shortest = 0;
-    for (CI = 0; CI <= PCnt - 1; CI++) {
-      if (Llist[CI] < Llist[Shortest]) {
-        Shortest = CI;
-      }
-    }
-    //Mit dem Nächsten weitermachen
-    Pos = { ...Plist[Shortest] };
-    //Den kürzesten merken
-    if ((ShortEntf > Llist[Shortest]) || (ShortEntf === -1)) {
-      ShortEntf = Llist[Shortest];
-      ShortKoor = { ...Plist[Shortest] };
-    }
-
-    //Den Nächsten aus der Liste löschen
-    Plist[Shortest] = Plist[PCnt - 1];
-    Llist[Shortest] = Llist[PCnt - 1];
-    PCnt--;
-    NewPos = { ...Pos };
-    Dir = 2;
-    NewPos.y--; //Oben nachschauen anfangen
-    for (BI = 0; BI <= 3; BI++) //In jede Richtung schauen
-    {
-      //ist das Feld noch nicht besucht und frei?
-      if (NewPos.x >= 0 && NewPos.x < LenMap.length && 
-        NewPos.y >= 0 && NewPos.y < LenMap[NewPos.x].length &&
-        LenMap[NewPos.x][NewPos.y] === 65535 &&
-        gameData.terrain[NewPos.x][NewPos.y].Begehbar
-      ) {
-        // Wieviele Schritte braucht man um zu diesem Feld zu kommen
-        StepCnt = LenMap[Pos.x][Pos.y] + 1;
-        LenMap[NewPos.x][NewPos.y] = StepCnt;
-        Plist[PCnt] = { ...NewPos };
-        //Die Entfernung in die Liste aufnehmen
-        DiffX = (NewPos.x - RouteZiel.x);
-        DiffY = (NewPos.y - RouteZiel.y);
-        Llist[PCnt] = (DiffX * DiffX) + (DiffY * DiffY);
-
-        PCnt++;
-      }
-      //Ziel erreicht?
-      if ((NewPos.x === RouteZiel.x) && (NewPos.y === RouteZiel.y)) {
-        GoalReached = true;
-        BI = 3;
-      }
-      Dir = RotateRight(Dir);
-    }
-  }
-  if ((PCnt === 0) || (!gameData.terrain[RouteZiel.x][RouteZiel.y].Begehbar)) {
-    RouteZiel.x = ShortKoor.x;
-    RouteZiel.y = ShortKoor.y;
-    return FindTheWay();
-  } else if (GoalReached) //Punkt rückwärts durchgehen und Abkürzungen finden
-  {
-    Pos = { ...RouteZiel };
-    LineStartPos = { ...Pos };
-    while ((Pos.x !== RouteStart.x) || (Pos.y !== RouteStart.y)) {
-      NewPos = { ...Pos };
-      ShPos = { ...NewPos };
-      ShStep = 65535;
-      Dir = 2;
-      NewPos.y--; //Zuerst nach oben probieren
-      for (AI = 0; AI <= 3; AI++) {
-        if (LenMap[NewPos.x][NewPos.y] < ShStep) {
-          ShStep = LenMap[NewPos.x][NewPos.y];
-          ShPos = { ...NewPos };
-        }
-        Dir = RotateRight(Dir);
-      }
-      Pos = { ...ShPos };
-
-      // Linie beste Linie ohne Unterbrechung finden
-      if (!LineIntersect(LineStartPos, Pos, false)) {
-        BestLine = { ...Pos };
-      }
-
-      if ((Pos.x === RouteStart.x) && (Pos.y === RouteStart.y)) {
-        Pos = { ...BestLine };
-        LineIntersect(LineStartPos, Pos, true);
-        LineStartPos = { ...Pos };
-      }
-    }
-    gameData.guy.route.push({ 
-      x: RouteStart.x, 
-      y: RouteStart.y 
-    });
-
-    SortRoute();  //Sortieren
-  }
   return true;
 }
 
