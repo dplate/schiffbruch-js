@@ -43,6 +43,8 @@ import directions from './terrain/directions.js';
 import goToOffset from './guy/goToOffset.js';
 import isOnSea from './guy/isOnSea.js';
 import getCostsOfTile from './guy/getCostsOfTile.js';
+import changeWaterAndFood from './guy/changeWaterAndFood.js';
+import changeHealth from './guy/changeHealth.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -286,11 +288,6 @@ const TXTCHANCE = 3;
 const TXTPAPIER = 4; //Muß!!! als letztes stehen
 const TEXTANZ = 5; //Wieviele Textbreiche
 
-//Resourcen
-const WASSER = 0;
-const NAHRUNG = 1;
-const GESUNDHEIT = 2;
-
 //Spielzustände
 const GAME_WAIT = 'wait';
 const GAME_INTRO = 'intro';
@@ -418,17 +415,17 @@ const gameData = {
     active: false,
     route: [],
     position: {
-      x: 0,
-      y: 0
+      x: null,
+      y: null
     },
-    prevPosition: {
-      x: 0,
-      y: 0
-    },
+    prevPosition: null,
     tile: {
-      x: 0,
-      y: 0
-    }
+      x: null,
+      y: null
+    },
+    water: null,
+    food: null,
+    health: null
   }
 };
 
@@ -2476,10 +2473,6 @@ const InitStructs = async () => {
   TextBereich[TXTCHANCE].rcText.right = TextBereich[TXTCHANCE].rcText.left + 3 * S2XPIXEL;
   TextBereich[TXTCHANCE].rcText.bottom = TextBereich[TXTCHANCE].rcText.top + S2YPIXEL;
 
-  Guy.Resource[WASSER] = 100;
-  Guy.Resource[NAHRUNG] = 100;
-  Guy.Resource[GESUNDHEIT] = 100;
-
   for (i = ROHAST; i <= ROHSCHLEUDER; i++) {
     Guy.Inventar[i] = 0;
   }
@@ -2792,7 +2785,12 @@ const AddTime = (h, m) => {
         tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
       }
     }
-  AddResource(GESUNDHEIT, (60 * h + m) * (Guy.Resource[WASSER] - 50 + Guy.Resource[NAHRUNG] - 50) / 1000);
+  changeHealth(gameData, (60 * h + m) * (gameData.guy.water - 50 + gameData.guy.food - 50) / 1000);
+  if (gameData.guy.health <= 0 && Guy.Aktion !== AKTOD && Guy.Aktion !== AKTAGENDE && Spielzustand === GAME_PLAY) {
+    gameData.guy.active = false;
+    Guy.AkNummer = 0;
+    Guy.Aktion = AKTOD;
+  }
 
   if ((Spielzustand === GAME_PLAY) && (!isOnSea(gameData))) {
     if (Math.random() < (Chance / 100) * ((60 * h + m) / 720)) {
@@ -2809,12 +2807,7 @@ const AddResource = (Art, Anzahl) => //Fügt wassser usw hinzu
   if (Guy.Resource[Art] > 100) Guy.Resource[Art] = 100;
   if (Guy.Resource[Art] < 0) Guy.Resource[Art] = 0;
   //Wann tod
-  if ((Guy.Resource[GESUNDHEIT] <= 0) && (Guy.Aktion !== AKTOD) &&
-    (Guy.Aktion !== AKTAGENDE) && (Spielzustand === GAME_PLAY)) {
-    gameData.guy.active = false;
-    Guy.AkNummer = 0;
-    Guy.Aktion = AKTOD;
-  }
+  
 }
 
 const GetKachel = (PosX, PosY) => {
@@ -3690,6 +3683,10 @@ const startGame = async (newGame) => {
     gameData.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
     gameData.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
 
+    gameData.guy.water = 100;
+    gameData.guy.food = 100;
+    gameData.guy.health = 100;
+
     Chance = 0;
 
     Tag = 1;
@@ -4276,7 +4273,7 @@ const ZeichnePanel = () => {
   }
 
   //Säule1
-  i = Bmp[SAEULE1].Hoehe - Guy.Resource[WASSER] * Bmp[SAEULE1].Hoehe / 100;
+  i = Bmp[SAEULE1].Hoehe - gameData.guy.water * Bmp[SAEULE1].Hoehe / 100;
   rcRectsrc = { ...Bmp[SAEULE1].rcSrc };
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE1].rcDes };
@@ -4284,7 +4281,7 @@ const ZeichnePanel = () => {
   drawImage(Bmp[SAEULE1].Surface, primaryCanvasContext);
 
   //Säule2
-  i = Bmp[SAEULE2].Hoehe - Guy.Resource[NAHRUNG] * Bmp[SAEULE2].Hoehe / 100;
+  i = Bmp[SAEULE2].Hoehe - gameData.guy.food * Bmp[SAEULE2].Hoehe / 100;
   rcRectsrc = { ...Bmp[SAEULE2].rcSrc };
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE2].rcDes };
@@ -4292,7 +4289,7 @@ const ZeichnePanel = () => {
   drawImage(Bmp[SAEULE2].Surface, primaryCanvasContext);
 
   //Säule3
-  i = Bmp[SAEULE3].Hoehe - Guy.Resource[GESUNDHEIT] * Bmp[SAEULE3].Hoehe / 100;
+  i = Bmp[SAEULE3].Hoehe - gameData.guy.health * Bmp[SAEULE3].Hoehe / 100;
   rcRectsrc = { ...Bmp[SAEULE3].rcSrc };
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE3].rcDes };
@@ -4439,7 +4436,7 @@ const DrawText = (TEXT, Bereich, Art) => {
           Posx += BBreite * StdString2.length;
           break;
         case 'b':
-          StdString2 = ' ' + Math.round(Guy.Resource[GESUNDHEIT]).toString();
+          StdString2 = ' ' + Math.round(gameData.guy.health).toString();
           DrawString(StdString2, Posx, Posy, Art);
           Posx += BBreite * StdString2.length;
           break;
@@ -4821,7 +4818,7 @@ const AkSpielverlassen = () => {
       if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       else Guy.Zustand = GUYLINKS;
       if (Frage === 1) {
-        if (Guy.Resource[GESUNDHEIT] > 10) SaveGame();
+        if (gameData.guy.health > 10) SaveGame();
         Spielzustand = GAME_CREDITS;
       }
       Frage = -1;
@@ -4906,16 +4903,14 @@ const AkDestroy = () => {
     case 4:
       gameData.guy.active = true;
       Guy.Zustand = GUYFAELLEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
     case 3:
     case 5:
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHLAGEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
     case 6:
@@ -5098,7 +5093,7 @@ const AkEssen = () => {
     case 3:
       gameData.guy.active = true;
       Guy.Zustand = GUYESSEN;
-      AddResource(NAHRUNG, 15);
+      changeWaterAndFood(gameData, 0, 15);
       AddTime(0, 2);
       break;
     case 4:
@@ -5138,7 +5133,7 @@ const AkSchleuder = () => {
     case 4:
       gameData.guy.active = true;
       Guy.Zustand = GUYSUCHEN;
-      AddResource(NAHRUNG, 5);
+      changeWaterAndFood(gameData, 0, 5);
       AddTime(0, 20);
       break;
     case 5:
@@ -5163,7 +5158,7 @@ const AkTrinken = () => {
     case 3:
       gameData.guy.active = true;
       Guy.Zustand = GUYTRINKEN;
-      AddResource(WASSER, 30);
+      changeWaterAndFood(gameData, 30, 0);
       AddTime(0, 3);
       break;
     case 4:
@@ -5195,8 +5190,7 @@ const AkFaellen = () => {
     case 6:
       gameData.guy.active = true;
       Guy.Zustand = GUYFAELLEN;
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 10);
       break;
     case 7:
@@ -5409,7 +5403,7 @@ const AkAngeln = () => {
             break;
         }
       }
-      Guy.Resource[GESUNDHEIT] += 2;
+      changeHealth(gameData, 2);
       AddTime(0, 20);
       break;
     case 7:
@@ -5468,7 +5462,7 @@ const AkAngeln = () => {
       goToStoredPosition(gameData);
       break;
     case 9:
-      Guy.Resource[NAHRUNG] += 20;
+      changeWaterAndFood(gameData, 0, 20);
       Guy.Aktion = AKNICHTS;
       break;
   }
@@ -5559,8 +5553,7 @@ const AkSchatz = () => {
       break;
     case 2:
       AddTime(0, 20);
-      AddResource(WASSER, -10);
-      AddResource(NAHRUNG, -10);
+      changeWaterAndFood(gameData, -10, -10);
       gameData.guy.position.x += 5;
       gameData.guy.position.y -= 1;
       goToStoredPosition(gameData);
@@ -5609,8 +5602,7 @@ const AkFeld = () => {
         x: tile.ObPos.x + 25,
         y: tile.ObPos.y + 21
       });
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 7:
@@ -5619,8 +5611,7 @@ const AkFeld = () => {
         x: tile.ObPos.x + 28,
         y: tile.ObPos.y + 19
       });
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 10:
@@ -5629,8 +5620,7 @@ const AkFeld = () => {
         x: tile.ObPos.x + 31,
         y: tile.ObPos.y + 17
       });
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 13:
@@ -5639,8 +5629,7 @@ const AkFeld = () => {
         x: tile.ObPos.x + 34,
         y: tile.ObPos.y + 15
       });
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 16:
@@ -5649,8 +5638,7 @@ const AkFeld = () => {
         x: tile.ObPos.x + 36,
         y: tile.ObPos.y + 13
       });
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 2:
@@ -5830,8 +5818,8 @@ const AkTagEnde = () => {
       //Je nach Schlafort Zustand verändern
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        AddResource(GESUNDHEIT, -5);
-        if (Guy.Resource[GESUNDHEIT] <= 0) {
+        changeHealth(gameData, -5);
+        if (gameData.guy.health <= 0) {
           gameData.guy.active = true;
           PapierText = DrawText(texts.TAGENDE5, TXTPAPIER, 1);
           Guy.AkNummer = 2;
@@ -5844,7 +5832,7 @@ const AkTagEnde = () => {
         }
       } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        AddResource(GESUNDHEIT, +20);
+        changeHealth(gameData, 20);
         gameData.guy.active = true;
         PapierText = DrawText(texts.TAGENDE4, TXTPAPIER, 1);
       } else if (isOnSea(gameData)) {
@@ -5856,8 +5844,8 @@ const AkTagEnde = () => {
         Stunden = 0;
         Minuten = 0;
       } else {
-        AddResource(GESUNDHEIT, -20);
-        if (Guy.Resource[GESUNDHEIT] <= 0) {
+        changeHealth(gameData, -20);
+        if (gameData.guy.health <= 0) {
           gameData.guy.active = true;
           PapierText = DrawText(texts.TAGENDE5, TXTPAPIER, 1);
           Guy.AkNummer = 2;
@@ -5928,7 +5916,7 @@ const AkTagEnde = () => {
       Minuten = 0;
       Guy.Zustand = GUYLINKS;
       Guy.Aktion = AKNICHTS;
-      if (Guy.Resource[GESUNDHEIT] > 10) SaveGame();
+      if (gameData.guy.health > 10) SaveGame();
       break;
   }
 }
@@ -6034,8 +6022,7 @@ const AkZelt = () => {
     case 13:
       gameData.guy.active = true;
       Guy.Zustand = GUYBINDENUNTEN;
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 15);
       break;
     case 4:
@@ -6058,8 +6045,7 @@ const AkZelt = () => {
     case 8:
       gameData.guy.active = true;
       Guy.Zustand = GUYBINDENOBEN;
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 15);
       break;
     case 9:
@@ -6147,8 +6133,7 @@ const AkBoot = () => {
     case 14:
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHLAGEN;
-      AddResource(WASSER, -2);
-      AddResource(NAHRUNG, -2);
+      changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 15);
       break;
     case 7:
@@ -6242,8 +6227,7 @@ const AkRohr = () => {
     case 13:
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHLAGEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
     case 7:
@@ -6254,8 +6238,7 @@ const AkRohr = () => {
     case 16:
       gameData.guy.active = true;
       Guy.Zustand = GUYFAELLEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
     case 10:
@@ -6350,8 +6333,7 @@ const AkSOS = () => {
       gameData.guy.active = true;
       gameData.guy.position.x += 4;
       Guy.Zustand = GUYHINLEGEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 3:
@@ -6363,8 +6345,7 @@ const AkSOS = () => {
       gameData.guy.active = true;
       gameData.guy.position.x -= 4;
       Guy.Zustand = GUYAUFSTEHEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 19:
@@ -6414,16 +6395,14 @@ const AkFeuerstelle = () => {
       gameData.guy.active = true;
       gameData.guy.position.x += 4;
       Guy.Zustand = GUYHINLEGEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 3:
       gameData.guy.active = true;
       gameData.guy.position.x -= 4;
       Guy.Zustand = GUYAUFSTEHEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       tile.Phase = (Bmp[FEUERSTELLE].Anzahl + 1);
       break;
@@ -6438,8 +6417,7 @@ const AkFeuerstelle = () => {
     case 7:
       gameData.guy.active = true;
       Guy.Zustand = GUYBINDENOBEN;
-      AddResource(WASSER, -1);
-      AddResource(NAHRUNG, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       if (tile.AkNummer !== 5)
       tile.Phase = (Bmp[FEUERSTELLE].Anzahl + tile.AkNummer - 4);
@@ -6492,8 +6470,7 @@ const AkHaus1 = () => {
     case 5:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER;
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 6:
@@ -6503,8 +6480,7 @@ const AkHaus1 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER;
       tile.Phase = (Bmp[HAUS1].Anzahl + 1);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, 0.5);
       AddTime(0, 1);
       break;
     case 10:
@@ -6514,8 +6490,7 @@ const AkHaus1 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER;
       tile.Phase = (Bmp[HAUS1].Anzahl + 2);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 14:
@@ -6525,8 +6500,7 @@ const AkHaus1 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER;
       tile.Phase = (Bmp[HAUS1].Anzahl + 3);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 18:
@@ -6566,8 +6540,7 @@ const AkHaus2 = () => {
     case 2:
       gameData.guy.active = true;
       Guy.Zustand = GUYKLETTERN1;
-      AddResource(NAHRUNG, -1);
-      AddResource(WASSER, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 3:
@@ -6576,8 +6549,7 @@ const AkHaus2 = () => {
     case 6:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 7:
@@ -6587,8 +6559,7 @@ const AkHaus2 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
       tile.Phase = (Bmp[HAUS2].Anzahl + 1);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 11:
@@ -6598,8 +6569,7 @@ const AkHaus2 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
       tile.Phase = (Bmp[HAUS2].Anzahl + 2);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 15:
@@ -6609,16 +6579,14 @@ const AkHaus2 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
       tile.Phase = (Bmp[HAUS2].Anzahl + 3);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 19:
       gameData.guy.active = true;
       Guy.Zustand = GUYKLETTERN2;
       tile.Phase = (Bmp[HAUS2].Anzahl + 4);
-      AddResource(NAHRUNG, -1);
-      AddResource(WASSER, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 20:
@@ -6658,8 +6626,7 @@ const AkHaus3 = () => {
     case 2:
       gameData.guy.active = true;
       Guy.Zustand = GUYKLETTERN1;
-      AddResource(NAHRUNG, -1);
-      AddResource(WASSER, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 3:
@@ -6668,8 +6635,7 @@ const AkHaus3 = () => {
     case 6:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 7:
@@ -6679,8 +6645,7 @@ const AkHaus3 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
       tile.Phase = (Bmp[HAUS3].Anzahl + 1);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 11:
@@ -6690,8 +6655,7 @@ const AkHaus3 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
       tile.Phase = (Bmp[HAUS3].Anzahl + 2);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 15:
@@ -6701,16 +6665,14 @@ const AkHaus3 = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
       tile.Phase = (Bmp[HAUS3].Anzahl + 3);
-      AddResource(NAHRUNG, -0.5);
-      AddResource(WASSER, -0.5);
+      changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 19:
       gameData.guy.active = true;
       Guy.Zustand = GUYKLETTERN2;
       tile.Phase = (Bmp[HAUS3].Anzahl + 4);
-      AddResource(NAHRUNG, -1);
-      AddResource(WASSER, -1);
+      changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 20:
@@ -6751,8 +6713,7 @@ const AkSchlafen = () => {
       if ((tile.Objekt === HAUS3) &&(tile.Phase < Bmp[tile.Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYKLETTERN1;
-        AddResource(NAHRUNG, -1);
-        AddResource(WASSER, -1);
+        changeWaterAndFood(gameData, -1, -1);
       }
       break;
     case 3:
@@ -6778,7 +6739,7 @@ const AkSchlafen = () => {
         if (Guy.AkNummer === 4) gameData.guy.position.x += 14;
         Guy.Zustand = GUYSCHLAFHAUS;
       } else Guy.Zustand = GUYSCHLAFEN;
-      AddResource(GESUNDHEIT, 5);
+      changeHealth(gameData, 5);
       AddTime(0, 30);
       break;
     case 6:
@@ -6793,8 +6754,7 @@ const AkSchlafen = () => {
       if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYKLETTERN2;
-        AddResource(NAHRUNG, -1);
-        AddResource(WASSER, -1);
+        changeWaterAndFood(gameData, -1, -1);
       } else {
         Guy.Zustand = GUYOBEN;
       }
@@ -7139,8 +7099,7 @@ const CalcGuyKoor = () => {
     if (isOnSea(gameData))
       AddTime(0, tileCosts * 3);
     else AddTime(0, tileCosts * 5);
-    AddResource(NAHRUNG, -1);
-    AddResource(WASSER, -1);
+    changeWaterAndFood(gameData, -1, -1);
   }
 
   const tileCosts = getCostsOfTile(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]);
