@@ -41,6 +41,7 @@ import goToNorthOfTile from './guy/goToNorthOfTile.js';
 import goToSouthOfTile from './guy/goToSouthOfTile.js';
 import directions from './terrain/directions.js';
 import goToOffset from './guy/goToOffset.js';
+import isOnSea from './guy/isOnSea.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -345,7 +346,6 @@ let PapierText;            //Wieviel Papier? (in Pixel) -1 = Kein Text
 let HauptMenue;            //Welches Menü?
 let TwoClicks;                //Für Aktionen mit zwei Mausklicks
 let Chance;                    //Wie groß ist die Chance am Tag gerettet zu werden
-let BootsFahrt;                //Gerade mit dem Boot unterwegs?
 let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
 let Spielbeenden = false;    //Wenn true wird das Spiel sofort beendet
 let Frage;                    //-1=KeineFrage;0=Frage wird gestellt;1=Ja;2=Nein
@@ -543,7 +543,6 @@ const SaveGame = () => {
   window.localStorage.setItem('gameDataV6', JSON.stringify({
     ...gameData,
     Guy,
-    BootsFahrt,
     Chance,
     HauptMenue,
     Minuten,
@@ -575,7 +574,6 @@ const LoadGame = () => {
   }
 
   Guy = gameData.Guy;
-  BootsFahrt = gameData.BootsFahrt;
   Chance = gameData.Chance;
   HauptMenue = gameData.HauptMenue;
   Minuten = gameData.Minuten;
@@ -2673,7 +2671,6 @@ const CheckKey = () => {
       gameData.guy.route = [];
       updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, false);
 
-      if (BootsFahrt) ChangeBootsFahrt();
       Guy.Zustand = GUYLINKS;
       Guy.Aktion = AKNICHTS;
       Spielzustand = GAME_PLAY;
@@ -2796,7 +2793,7 @@ const AddTime = (h, m) => {
     }
   AddResource(GESUNDHEIT, (60 * h + m) * (Guy.Resource[WASSER] - 50 + Guy.Resource[NAHRUNG] - 50) / 1000);
 
-  if ((Spielzustand === GAME_PLAY) && (!BootsFahrt)) {
+  if ((Spielzustand === GAME_PLAY) && (!isOnSea(gameData))) {
     if (Math.random() < (Chance / 100) * ((60 * h + m) / 720)) {
       gameData.guy.active = false;
       Guy.AkNummer = 0;
@@ -3674,7 +3671,6 @@ const startGame = async (newGame) => {
     for (let x = 0; x < MAXXKACH; x++) {
       for (let y = 0; y < MAXYKACH; y++) {
         const tile = gameData.terrain[x][y];
-        tile.Begehbar = [grounds.BEACH, grounds.GRASS, grounds.WETLAND].includes(tile.ground);
         tile.LaufZeit = tile.type === tileTypes.FLAT ? 1 : 2;
         tile.Objekt = -1;
         tile.ObPos = { x: 0, y: 0 };
@@ -3695,9 +3691,6 @@ const startGame = async (newGame) => {
     gameData.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
 
     Chance = 0;
-
-    BootsFahrt = false;
-    ChangeBootsFahrt();
 
     Tag = 1;
     Stunden = 0;
@@ -4057,7 +4050,7 @@ const ZeichneObjekte = () => {
 }
 
 const ZeichneGuy = () => {
-  if (BootsFahrt) {
+  if (isOnSea(gameData)) {
     if (Guy.Zustand === GUYSCHIFF) {
       ZeichneBilder(
         Math.floor(gameData.guy.position.x - 30 - gameData.camera.x),
@@ -4544,19 +4537,21 @@ const CalcRect = (rcBereich) => {
 }
 
 const CheckSpzButton = () => {
-  if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= FELD) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= FEUERSTELLE) &&
-    (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase >= Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl) &&
-    (Bmp[BUTTSTOP].Phase === -1)) {
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tileWest = gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y];
+  const tileNorth = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1];
+  const tileEast = gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y];
+  const tileSouth = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1];
+  if (tile.Objekt >= FELD && tile.Objekt <= FEUERSTELLE && tile.Phase >= Bmp[tile.Objekt].Anzahl && Bmp[BUTTSTOP].Phase === -1) {
     if (Bmp[BUTTWEITER].Phase === -1) Bmp[BUTTWEITER].Phase = 0;
   } else Bmp[BUTTWEITER].Phase = -1;
 
-  if ((Bmp[BUTTSTOP].Phase === -1) && (((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === BOOT) &&
-    (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) ||
-    ((BootsFahrt) &&
-      (((gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].object)) ||
-        ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].object)) ||
-        ((gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].object)) ||
-        ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].object)))))) {
+  if (Bmp[BUTTSTOP].Phase === -1 && ((tile.Objekt === BOOT && tile.Phase < Bmp[tile.Objekt].Anzahl) || 
+    (isOnSea(gameData) &&
+      ((tileWest.ground !== grounds.SEA && tileWest.Objekt === -1 && !tileWest.object) ||
+        (tileNorth.ground !== grounds.SEA && tileNorth.Objekt === -1 && !tileNorth.object) ||
+        (tileEast.ground !== grounds.SEA && tileEast.Objekt === -1 && !tileEast.object) ||
+        (tileSouth.ground !== grounds.SEA && tileSouth.Objekt === -1 && !tileSouth.object))))) {
     if (Bmp[BUTTABLEGEN].Phase === -1) Bmp[BUTTABLEGEN].Phase = 0;
   } else Bmp[BUTTABLEGEN].Phase = -1;
 }
@@ -4738,7 +4733,6 @@ const AkIntro = () => {
       Guy.Zustand = GUYSCHWIMMEN;
       break;
     case 4:
-      ChangeBootsFahrt();
       StopSound(WAVSCHWIMMEN); //Sound hier sofort stoppen
       Guy.Zustand = GUYLINKS;
       goToCenterOfTile(gameData);
@@ -4764,13 +4758,13 @@ const AkNeubeginnen = () => {
       break;
     case 2:
       gameData.guy.active = true;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTWARTEN;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
       else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.NEUBEGINNEN, TXTPAPIER, 1);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       else Guy.Zustand = GUYLINKS;
       if (Frage === 1) {
         startGame(true);
@@ -4791,13 +4785,13 @@ const AkTagNeubeginnen = () => {
       break;
     case 2:
       gameData.guy.active = true;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTWARTEN;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
       else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.TAGNEU, TXTPAPIER, 1);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       else Guy.Zustand = GUYLINKS;
       if (Frage === 1) {
         startGame(false);
@@ -4818,13 +4812,13 @@ const AkSpielverlassen = () => {
       break;
     case 2:
       gameData.guy.active = true;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTWARTEN;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
       else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.SPIELVERLASSEN, TXTPAPIER, 1);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       else Guy.Zustand = GUYLINKS;
       if (Frage === 1) {
         if (Guy.Resource[GESUNDHEIT] > 10) SaveGame();
@@ -4840,12 +4834,12 @@ const AkTod = () => {
   switch (Guy.AkNummer) {
     case 1:
       gameData.guy.active = true;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTWARTEN;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
       else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.TOD, TXTPAPIER, 1);
       break;
     case 2:
-      if (!BootsFahrt) {
+      if (!isOnSea(gameData)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYHINLEGEN;
       }
@@ -4854,7 +4848,7 @@ const AkTod = () => {
       gameData.guy.active = true;
       Nacht = false;
       Fade(100, 1);
-      if (BootsFahrt) Guy.Zustand = GUYBOOTTOD;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTTOD;
       else Guy.Zustand = GUYTOD;
       break;
     case 4:
@@ -4865,7 +4859,7 @@ const AkTod = () => {
       break;
     case 5:
       Nacht = false;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       else Guy.Zustand = GUYLINKS;
       Guy.Aktion = AKNICHTS;
       if (Frage === 2) {
@@ -4964,7 +4958,7 @@ const AkSuchen = () => {
     case 3:
     case 5:
     case 7:
-      if (BootsFahrt) {
+      if (isOnSea(gameData)) {
         if (Guy.AkNummer === 1) {
           gameData.guy.active = true;
           gameData.guy.position.y -= 2;
@@ -4980,7 +4974,7 @@ const AkSuchen = () => {
     case 6:
     case 8:
       gameData.guy.active = true;
-      if (BootsFahrt) {
+      if (isOnSea(gameData)) {
         if (Guy.AkNummer === 2) {
           gameData.guy.position.y += 5;
         }
@@ -4989,7 +4983,7 @@ const AkSuchen = () => {
       AddTime(0, 4);
       break;
     case 9:
-      if (BootsFahrt) {
+      if (isOnSea(gameData)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYTAUCHEN3;
         PlaySound(WAVPLATSCH, 100);
@@ -5000,7 +4994,7 @@ const AkSuchen = () => {
       break;
     case 11:
       gameData.guy.active = true;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       //Auf Strand und Fluss
       if (
         gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.BEACH ||
@@ -5053,7 +5047,7 @@ const AkSuchen = () => {
             } else PapierText = DrawText(texts.ROHLIANEZUVIEL, TXTPAPIER, 1);
             break;
         }
-      } else if (BootsFahrt) {
+      } else if (isOnSea(gameData)) {
         if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.SHIP_WRECK) {
           if (Guy.Inventar[ROHFERNROHR] === 0) {
             PapierText = DrawText(texts.FERNROHRGEFUNDEN, TXTPAPIER, 1);
@@ -5309,7 +5303,7 @@ const AkAngeln = () => {
     case 2:
       gameData.guy.active = true;
       PlaySound(WAVANGEL, 100);
-      if (BootsFahrt) {
+      if (isOnSea(gameData)) {
         gameData.guy.position.y -= 2;
         Guy.Zustand = GUYBOOTANGELN1;
       }
@@ -5366,7 +5360,7 @@ const AkAngeln = () => {
     case 5:
     case 6:
       gameData.guy.active = true;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTANGELN2;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTANGELN2;
 
       if (tile.object) {
         switch (tile.object.sprite) {
@@ -5420,7 +5414,7 @@ const AkAngeln = () => {
       break;
     case 7:
       gameData.guy.active = true;
-      if (BootsFahrt) Guy.Zustand = GUYBOOTANGELN3;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTANGELN3;
 
       if (tile.object) {
         switch (tile.object.sprite) {
@@ -5703,7 +5697,7 @@ const AkTagEnde = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       Bmp[BUTTSTOP].Phase = -1;
       if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || (BootsFahrt)) break;
+        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt.x = gameData.guy.position.x;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt.y = gameData.guy.position.y;
       goToInitialPosition();
@@ -5712,7 +5706,7 @@ const AkTagEnde = () => {
       Stunden = 12;
       Minuten = 0;
       if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || (BootsFahrt)) break;
+        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
       //Wohnbare Objekte in der Umgebung suchen
       Erg = {
         x: -1,
@@ -5766,7 +5760,7 @@ const AkTagEnde = () => {
       Stunden = 12;
       Minuten = 0;
       if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || (BootsFahrt)) break;
+        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         gameData.guy.active = true;
@@ -5777,7 +5771,7 @@ const AkTagEnde = () => {
       Stunden = 12;
       Minuten = 0;
       if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || (BootsFahrt)) break;
+        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         gameData.guy.active = true;
@@ -5795,7 +5789,7 @@ const AkTagEnde = () => {
     case 5:
       Stunden = 12;
       Minuten = 0;
-      if (BootsFahrt) break;
+      if (isOnSea(gameData)) break;
       gameData.guy.active = true;
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
@@ -5810,7 +5804,7 @@ const AkTagEnde = () => {
     case 6:
       Stunden = 12;
       Minuten = 0;
-      if (BootsFahrt) break;
+      if (isOnSea(gameData)) break;
       gameData.guy.active = true;
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
@@ -5853,7 +5847,7 @@ const AkTagEnde = () => {
         AddResource(GESUNDHEIT, +20);
         gameData.guy.active = true;
         PapierText = DrawText(texts.TAGENDE4, TXTPAPIER, 1);
-      } else if (BootsFahrt) {
+      } else if (isOnSea(gameData)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYBOOTWARTEN;
         PapierText = DrawText(texts.TAGENDE3, TXTPAPIER, 1);
@@ -5882,7 +5876,7 @@ const AkTagEnde = () => {
       Tag++;
       Stunden = 0;
       Minuten = 0;
-      //if (BootsFahrt) NeuesSpiel(true); //Später hier tot!!
+      //if (isOnSea(gameData)) NeuesSpiel(true); //Später hier tot!!
 
       gameData.guy.active = true;
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
@@ -5991,7 +5985,6 @@ const AkGerettet = () => {
       goToCenterOfTile(gameData);
       break;
     case 7:
-      if (!BootsFahrt) ChangeBootsFahrt();
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHIFF;
       gameData.guy.route = findRoute(gameData, { x: gameData.terrain.length - 1, y: gameData.guy.tile.y });
@@ -6824,7 +6817,6 @@ const AkAblegen = () => {
       });
       break;
     case 2:
-      ChangeBootsFahrt();
       gameData.guy.position.x = tile.position.x + tile.ObPos.x + Bmp[tile.Objekt].Breite / 2;
       gameData.guy.position.y = tile.position.y + tile.ObPos.y + Bmp[tile.Objekt].Hoehe / 2;
       tile.Objekt = -1;
@@ -6875,7 +6867,6 @@ const AkAnlegen = () => {
       tile.Objekt = BOOT;
       tile.AkNummer = Bmp[BOOT].AkAnzahl;
 
-      ChangeBootsFahrt();
       tile.ObPos.x = Math.floor(gameData.guy.position.x - tile.position.x - Bmp[tile.Objekt].Breite / 2);
       tile.ObPos.y = Math.floor(gameData.guy.position.y - tile.position.y - Bmp[tile.Objekt].Hoehe / 2);
 
@@ -6887,15 +6878,6 @@ const AkAnlegen = () => {
       gameData.guy.storedPosition.y = gameData.guy.position.y;
       break;
   }
-}
-
-const ChangeBootsFahrt = () => {
-  let x, y;
-
-  BootsFahrt = !BootsFahrt;
-  //Begehbarkeit umdrehen
-  for (y = 0; y < MAXYKACH; y++)
-    for (x = 0; x < MAXXKACH; x++) gameData.terrain[x][y].Begehbar = !gameData.terrain[x][y].Begehbar;
 }
 
 const Fade = (intensity, smooth) => {
@@ -7109,7 +7091,7 @@ const Animationen = () => {
     i = Math.floor(framesPerSecond / Bmp[Guy.Zustand].Geschwindigkeit);
     if (i < 1) i = 1;
     if (framesPerSecond - Bmp[Guy.Zustand].Geschwindigkeit < 0) loop = 2; else loop = 1;
-    if (BootsFahrt) loop = loop * 2;
+    if (isOnSea(gameData)) loop = loop * 2;
     for (k = 0; k < loop; k++) {
       if (frame % i === 0) {
         CalcGuyKoor();
@@ -7153,7 +7135,7 @@ const CalcGuyKoor = () => {
     gameData.guy.tile.y = routePoint.y;
     Entdecken();
 
-    if (BootsFahrt)
+    if (isOnSea(gameData))
       AddTime(0, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit * 3);
     else AddTime(0, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit * 5);
     AddResource(NAHRUNG, -1);
@@ -7165,7 +7147,7 @@ const CalcGuyKoor = () => {
     const Dy = wayPoint.y - gameData.guy.position.y;
 
     if (Guy.Zustand !== GUYSCHIFF && Guy.Zustand !== GUYSCHWIMMEN) {
-      if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
+      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       else Guy.Zustand = GUYLINKS;
 
       const direction = wayPoint.direction;
@@ -7176,7 +7158,7 @@ const CalcGuyKoor = () => {
     }
 
     let i;
-    if (BootsFahrt) i = 4; else i = 2;
+    if (isOnSea(gameData)) i = 4; else i = 2;
     if ((frame / gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit) % i === 0) {
       Bmp[Guy.Zustand].Phase++;
       if (Bmp[Guy.Zustand].Phase >= Bmp[Guy.Zustand].Anzahl) Bmp[Guy.Zustand].Phase = 0;
