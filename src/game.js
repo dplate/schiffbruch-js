@@ -368,7 +368,6 @@ let Guy = {
   Aktion: null,              //Welche Aktion (Suchen, fischen ...) (Übergeordnet über Zustand)
   Zustand: null,             //Was macht er gerade? (Animation)(linkslaufen,rechtslaufen...,angeln..)
   AkNummer: null,            //Bei welcher Aktion (für die Aktionsprozeduren)
-  Resource: Array(3),     //Wieviel Wasservorrat usw
   Inventar: Array(BILDANZ) //Welche Rohstoffe usw. besitzt man
 };
 
@@ -2799,15 +2798,6 @@ const AddTime = (h, m) => {
       Guy.Aktion = AKGERETTET;
     }
   }
-}
-
-const AddResource = (Art, Anzahl) => //Fügt wassser usw hinzu
-{
-  Guy.Resource[Art] += Anzahl;
-  if (Guy.Resource[Art] > 100) Guy.Resource[Art] = 100;
-  if (Guy.Resource[Art] < 0) Guy.Resource[Art] = 0;
-  //Wann tod
-  
 }
 
 const GetKachel = (PosX, PosY) => {
