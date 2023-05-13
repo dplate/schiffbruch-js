@@ -1,5 +1,5 @@
-import grounds from '../terrain/tiles/grounds.js';
-import isOnSea from './isOnSea.js';
+import grounds from '../../terrain/tiles/grounds.js';
+import isOnSea from '../isOnSea.js';
 
 const canGoOnTile = (gameData, tile) => {
   if (isOnSea(gameData)) {

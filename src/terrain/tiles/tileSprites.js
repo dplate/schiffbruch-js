@@ -1,22 +1,6 @@
-import grounds from '../terrain/tiles/grounds.js';
-import tileTypes from '../terrain/tiles/tileTypes.js';
-import images from './images.js';
-
-const tileTypeOffsets = {
-  [tileTypes.FLAT]: 0,
-  [tileTypes.SLOPE_NORTH]: 1,
-  [tileTypes.SLOPE_WEST]: 2,
-  [tileTypes.SLOPE_SOUTH]: 3,
-  [tileTypes.SLOPE_EAST]: 4,
-  [tileTypes.RIDGE_NORTH_EAST]: 5,
-  [tileTypes.RIDGE_NORTH_WEST]: 6,
-  [tileTypes.RIDGE_SOUTH_WEST]: 7,
-  [tileTypes.RIDGE_SOUTH_EAST]: 8,
-  [tileTypes.CANYON_SOUTH_EAST]: 9,
-  [tileTypes.CANYON_NORTH_EAST]: 10,
-  [tileTypes.CANYON_NORTH_WEST]: 11,
-  [tileTypes.CANYON_SOUTH_WEST]: 12,
-};
+import grounds from './grounds.js';
+import tileTypes from './tileTypes.js';
+import images from '../../images/images.js';
 
 const width = 54;
 const height = 44;

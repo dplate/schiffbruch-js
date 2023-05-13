@@ -18,6 +18,10 @@ const images = {
   BUILDINGS: {
     file: 'buildings.png',
     instance: null
+  },
+  INVENTORY: {
+    file: 'inventory.png',
+    instance: null
   }
 };
 

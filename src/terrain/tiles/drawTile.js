@@ -1,5 +1,5 @@
-import tileSprites from '../../images/tileSprites.js';
 import drawObject from '../objects/drawObject.js';
+import tileSprites from './tileSprites.js';
 
 const drawTile = (gameData, area, x, y, forTreasureMap, canvasContext) => {
   const tile = gameData.terrain[x][y];

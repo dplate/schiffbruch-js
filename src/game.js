@@ -29,22 +29,30 @@ import isOnGround from './terrain/objects/isOnGround.js';
 import isRiver from './terrain/objects/isRiver.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
-import findRoute from './guy/findRoute.js';
-import goToOnTile from './guy/goToOnTile.js';
-import goTo from './guy/goTo.js';
-import goToCenterOfTile from './guy/goToCenterOfTile.js';
-import goToWestOfTile from './guy/goToWestOfTile.js';
-import goToStoredPosition from './guy/goToStoredPosition.js';
-import goToObject from './guy/goToObject.js';
-import goToEastOfTile from './guy/goToEastOfTile.js';
-import goToNorthOfTile from './guy/goToNorthOfTile.js';
-import goToSouthOfTile from './guy/goToSouthOfTile.js';
+import findRoute from './guy/routing/findRoute.js';
+import goToOnTile from './guy/routing/goToOnTile.js';
+import goTo from './guy/routing/goTo.js';
+import goToCenterOfTile from './guy/routing/goToCenterOfTile.js';
+import goToWestOfTile from './guy/routing/goToWestOfTile.js';
+import goToStoredPosition from './guy/routing/goToStoredPosition.js';
+import goToObject from './guy/routing/goToObject.js';
+import goToEastOfTile from './guy/routing/goToEastOfTile.js';
+import goToNorthOfTile from './guy/routing/goToNorthOfTile.js';
+import goToSouthOfTile from './guy/routing/goToSouthOfTile.js';
 import directions from './terrain/directions.js';
-import goToOffset from './guy/goToOffset.js';
+import goToOffset from './guy/routing/goToOffset.js';
 import isOnSea from './guy/isOnSea.js';
-import getCostsOfTile from './guy/getCostsOfTile.js';
+import getCostsOfTile from './guy/routing/getCostsOfTile.js';
 import changeWaterAndFood from './guy/changeWaterAndFood.js';
 import changeHealth from './guy/changeHealth.js';
+import createInventory from './guy/inventory/createInventory.js';
+import items from './guy/inventory/items.js';
+import changeItem from './guy/inventory/changeItem.js';
+import findItemUnderCursor from './guy/inventory/findItemUnderCursor.js';
+import itemTextIds from './guy/inventory/itemTextIds.js';
+import drawItems from './guy/inventory/drawItems.js';
+import itemSprites from './guy/inventory/itemSprites.js';
+import drawItem from './guy/inventory/drawItem.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -176,23 +184,7 @@ const BUTTDESTROY = BUTTZELT + 10;
 const SAEULE1 = 140;
 const SAEULE2 = SAEULE1 + 1;
 const SAEULE3 = SAEULE1 + 2;
-const ROHAST = 143;
-const ROHSTAMM = ROHAST + 1;
-const ROHSTEIN = ROHAST + 2;
-const ROHAXT = ROHAST + 3;
-const ROHBLATT = ROHAST + 4;
-const ROHEGGE = ROHAST + 5;
-const ROHLIANE = ROHAST + 6;
-const ROHANGEL = ROHAST + 7;
-const ROHHAMMER = ROHAST + 8;
-const ROHFERNROHR = ROHAST + 9;
-const ROHSTREICHHOLZ = ROHAST + 10;
-const ROHSCHAUFEL = ROHAST + 11;
-const ROHKARTE = ROHAST + 12;
-const ROHSCHLEUDER = ROHAST + 13;
-const ROEMISCH1 = 157;
-const ROEMISCH2 = ROEMISCH1 + 1;
-const INVPAPIER = 159;
+const INVPAPIER = 157;
 const RING = INVPAPIER + 1;
 const JA = INVPAPIER + 2;
 const NEIN = INVPAPIER + 3;
@@ -325,7 +317,7 @@ const mouseUpdates = {
 const pressedKeyCodes = {};
 
 // Sound
-let audio;  
+let audio;
 const lpdsbWav = Array(WAVANZ); //Wavedateispeicher
 
 let Spielzustand = GAME_LOGO;       // in welchem Zustand ist das Spiel?
@@ -368,7 +360,6 @@ let Guy = {
   Aktion: null,              //Welche Aktion (Suchen, fischen ...) (Übergeordnet über Zustand)
   Zustand: null,             //Was macht er gerade? (Animation)(linkslaufen,rechtslaufen...,angeln..)
   AkNummer: null,            //Bei welcher Aktion (für die Aktionsprozeduren)
-  Inventar: Array(BILDANZ) //Welche Rohstoffe usw. besitzt man
 };
 
 const Bmp = Array.from(Array(BILDANZ), () => ({
@@ -383,7 +374,7 @@ const Bmp = Array.from(Array(BILDANZ), () => ({
   Geschwindigkeit: null, //Wieviel Bilder/sec
   Sound: null,    //Welcher Sound gehört dazu
   //zum bauen
-  Rohstoff: Array(BILDANZ), //Anzahl des i.Rohstoffs, den man zum Bau benötigt
+  Rohstoffe: {},
   AkAnzahl: null,    //Anzahl der Aktionsfaellen, die zum Bau benötigt werden
   First: null        //Ist es das erstemal gebaut, dann Hilfetext
 }));
@@ -424,7 +415,8 @@ const gameData = {
     },
     water: null,
     food: null,
-    health: null
+    health: null,
+    inventory: null
   }
 };
 
@@ -448,7 +440,7 @@ const initCanvases = async (window) => {
   cursorsImage = await loadImage('cursors.png');
   buttonsImage = await loadImage('buttons.png');
   textfieldImage = await loadImage('textfield.png');
-  inventarImage = await loadImage('inventar.png');
+  inventarImage = await loadImage('inventory.png');
   buildingsImage = await loadImage('buildings.png');
   creditsImage = await loadImage('credits.png');
   logoImage = await loadImage('logo.png');
@@ -503,8 +495,8 @@ const initInput = (window) => {
 }
 
 const initAudio = () => {
-  audio = setupAudio(); 
-  return audio;  
+  audio = setupAudio();
+  return audio;
 }
 
 const LoadSound = async (Sound) => {
@@ -512,8 +504,6 @@ const LoadSound = async (Sound) => {
 }
 
 const PlaySound = (Sound, Volume) => {
-  let z;
-
   if (Sound === 0) return;
 
   lpdsbWav[Sound].setGain((Wav[Sound].Volume / 100) * (Volume / 100));
@@ -536,7 +526,7 @@ const SaveGame = () => {
       First: Bmp[i].First
     });
   }
-  
+
   window.localStorage.setItem('gameDataV6', JSON.stringify({
     ...gameData,
     Guy,
@@ -556,17 +546,17 @@ const LoadGame = () => {
 
   const rawGameData = window.localStorage.getItem('gameDataV6');
   if (!rawGameData) {
-    return false;  
+    return false;
   }
 
   let parsedGameData = null;
   try {
     parsedGameData = JSON.parse(rawGameData);
-  } catch(error) {
+  } catch (error) {
     console.warn('Cannot parse saved gamed, ignoring...', error)
     return false;
   };
-  for(const key in parsedGameData) {
+  for (const key in parsedGameData) {
     gameData[key] = parsedGameData[key];
   }
 
@@ -610,8 +600,6 @@ const InitStructs = async () => {
     Bmp[i].Breite = 0;
     Bmp[i].Hoehe = 0;
     Bmp[i].Sound = 0;
-    for (k = 0; k < BILDANZ; k++)
-      Bmp[i].Rohstoff[k] = 0;
     Bmp[i].AkAnzahl = 0;
     Bmp[i].First = true;
   }
@@ -1253,8 +1241,8 @@ const InitStructs = async () => {
   Bmp[ZELT].rcDes.right = Bmp[ZELT].rcDes.left + Bmp[ZELT].Breite;
   Bmp[ZELT].rcDes.top = 9;
   Bmp[ZELT].rcDes.bottom = Bmp[ZELT].rcDes.top + Bmp[ZELT].Hoehe;
-  Bmp[ZELT].Rohstoff[ROHAST] = 5;
-  Bmp[ZELT].Rohstoff[ROHBLATT] = 5;
+  Bmp[ZELT].Rohstoffe[items.BRANCH] = 5;
+  Bmp[ZELT].Rohstoffe[items.LEAF] = 5;
   Bmp[ZELT].AkAnzahl = 16;
 
   Bmp[BOOT].Anzahl = 2;
@@ -1269,8 +1257,8 @@ const InitStructs = async () => {
   Bmp[BOOT].rcDes.right = Bmp[BOOT].rcDes.left + Bmp[BOOT].Breite;
   Bmp[BOOT].rcDes.top = 20;
   Bmp[BOOT].rcDes.bottom = Bmp[BOOT].rcDes.top + Bmp[BOOT].Hoehe;
-  Bmp[BOOT].Rohstoff[ROHAST] = 2;
-  Bmp[BOOT].Rohstoff[ROHSTAMM] = 1;
+  Bmp[BOOT].Rohstoffe[items.BRANCH] = 2;
+  Bmp[BOOT].Rohstoffe[items.LOG] = 1;
   Bmp[BOOT].AkAnzahl = 16;
 
   Bmp[ROHR].Anzahl = 2;
@@ -1285,7 +1273,7 @@ const InitStructs = async () => {
   Bmp[ROHR].rcDes.right = Bmp[ROHR].rcDes.left + Bmp[ROHR].Breite;
   Bmp[ROHR].rcDes.top = 16;
   Bmp[ROHR].rcDes.bottom = Bmp[ROHR].rcDes.top + Bmp[ROHR].Hoehe;
-  Bmp[ROHR].Rohstoff[ROHSTAMM] = 1;
+  Bmp[ROHR].Rohstoffe[items.LOG] = 1;
   Bmp[ROHR].AkAnzahl = 18;
 
   Bmp[SOS].Anzahl = 1;
@@ -1300,7 +1288,7 @@ const InitStructs = async () => {
   Bmp[SOS].rcDes.right = Bmp[SOS].rcDes.left + Bmp[SOS].Breite;
   Bmp[SOS].rcDes.top = 20;
   Bmp[SOS].rcDes.bottom = Bmp[SOS].rcDes.top + Bmp[SOS].Hoehe;
-  Bmp[SOS].Rohstoff[ROHSTEIN] = 10;
+  Bmp[SOS].Rohstoffe[items.STONE] = 10;
   Bmp[SOS].AkAnzahl = 20;
 
   Bmp[HAUS1].Anzahl = 1;
@@ -1315,7 +1303,7 @@ const InitStructs = async () => {
   Bmp[HAUS1].rcDes.right = Bmp[HAUS1].rcDes.left + Bmp[HAUS1].Breite;
   Bmp[HAUS1].rcDes.top = 0;
   Bmp[HAUS1].rcDes.bottom = Bmp[HAUS1].rcDes.top + Bmp[HAUS1].Hoehe;
-  Bmp[HAUS1].Rohstoff[ROHAST] = 4;
+  Bmp[HAUS1].Rohstoffe[items.BRANCH] = 4;
   Bmp[HAUS1].AkAnzahl = 19;
   Bmp[HAUS1].Sound = WAVWALD;
 
@@ -1331,8 +1319,8 @@ const InitStructs = async () => {
   Bmp[HAUS2].rcDes.right = Bmp[HAUS2].rcDes.left + Bmp[HAUS2].Breite;
   Bmp[HAUS2].rcDes.top = 0;
   Bmp[HAUS2].rcDes.bottom = Bmp[HAUS2].rcDes.top + Bmp[HAUS2].Hoehe;
-  Bmp[HAUS2].Rohstoff[ROHAST] = 3;
-  Bmp[HAUS2].Rohstoff[ROHSTAMM] = 3;
+  Bmp[HAUS2].Rohstoffe[items.BRANCH] = 3;
+  Bmp[HAUS2].Rohstoffe[items.LOG] = 3;
   Bmp[HAUS2].AkAnzahl = 21;
   Bmp[HAUS2].Sound = WAVWALD;
 
@@ -1348,9 +1336,9 @@ const InitStructs = async () => {
   Bmp[HAUS3].rcDes.right = Bmp[HAUS3].rcDes.left + Bmp[HAUS3].Breite;
   Bmp[HAUS3].rcDes.top = 0;
   Bmp[HAUS3].rcDes.bottom = Bmp[HAUS3].rcDes.top + Bmp[HAUS3].Hoehe;
-  Bmp[HAUS3].Rohstoff[ROHAST] = 4;
-  Bmp[HAUS3].Rohstoff[ROHSTAMM] = 4;
-  Bmp[HAUS3].Rohstoff[ROHBLATT] = 5;
+  Bmp[HAUS3].Rohstoffe[items.BRANCH] = 4;
+  Bmp[HAUS3].Rohstoffe[items.LOG] = 4;
+  Bmp[HAUS3].Rohstoffe[items.LEAF] = 5;
   Bmp[HAUS3].AkAnzahl = 21;
   Bmp[HAUS3].Sound = WAVWALD;
 
@@ -1366,8 +1354,8 @@ const InitStructs = async () => {
   Bmp[FEUERSTELLE].rcDes.right = Bmp[FEUERSTELLE].rcDes.left + Bmp[FEUERSTELLE].Breite;
   Bmp[FEUERSTELLE].rcDes.top = 10;
   Bmp[FEUERSTELLE].rcDes.bottom = Bmp[FEUERSTELLE].rcDes.top + Bmp[FEUERSTELLE].Hoehe;
-  Bmp[FEUERSTELLE].Rohstoff[ROHAST] = 5;
-  Bmp[FEUERSTELLE].Rohstoff[ROHSTAMM] = 4;
+  Bmp[FEUERSTELLE].Rohstoffe[items.BRANCH] = 5;
+  Bmp[FEUERSTELLE].Rohstoffe[items.LOG] = 4;
   Bmp[FEUERSTELLE].AkAnzahl = 9;
 
   //Feuer
@@ -1951,117 +1939,6 @@ const InitStructs = async () => {
   Bmp[SAEULE3].Hoehe = (Bmp[SAEULE3].rcSrc.bottom - Bmp[SAEULE3].rcSrc.top);
   Bmp[SAEULE3].Surface = panelImage;
 
-  //Rohstoffe
-  for (i = ROHAST; i <= ROHSCHLEUDER; i++) {
-    Bmp[i].Anzahl = 1;
-    Bmp[i].rcSrc.left = 18 + (i - ROHAST) * 16;
-    Bmp[i].rcSrc.top = 0;
-    Bmp[i].rcSrc.right = Bmp[i].rcSrc.left + 16;
-    Bmp[i].rcSrc.bottom = Bmp[i].rcSrc.top + 15;
-    Bmp[i].Breite = (Bmp[i].rcSrc.right - Bmp[i].rcSrc.left);
-    Bmp[i].Hoehe = (Bmp[i].rcSrc.bottom - Bmp[i].rcSrc.top);
-    Bmp[i].Surface = inventarImage;
-  }
-  //RohAst
-  Bmp[ROHAST].rcDes.left = rcPanel.left + 34;
-  Bmp[ROHAST].rcDes.top = rcPanel.top + 230;
-  Bmp[ROHAST].rcDes.right = Bmp[ROHAST].rcDes.left + 16;
-  Bmp[ROHAST].rcDes.bottom = Bmp[ROHAST].rcDes.top + 15;
-  //ROHSTEIN
-  Bmp[ROHSTEIN].rcDes.left = rcPanel.left + 34;
-  Bmp[ROHSTEIN].rcDes.top = rcPanel.top + 250;
-  Bmp[ROHSTEIN].rcDes.right = Bmp[ROHSTEIN].rcDes.left + 16;
-  Bmp[ROHSTEIN].rcDes.bottom = Bmp[ROHSTEIN].rcDes.top + 15;
-  //ROHSTAMM
-  Bmp[ROHSTAMM].rcDes.left = rcPanel.left + 34;
-  Bmp[ROHSTAMM].rcDes.top = rcPanel.top + 310;
-  Bmp[ROHSTAMM].rcDes.right = Bmp[ROHSTAMM].rcDes.left + 16;
-  Bmp[ROHSTAMM].rcDes.bottom = Bmp[ROHSTAMM].rcDes.top + 15;
-  //ROHAXT
-  Bmp[ROHAXT].rcDes.left = rcPanel.left + 150;
-  Bmp[ROHAXT].rcDes.top = rcPanel.top + 230;
-  Bmp[ROHAXT].rcDes.right = Bmp[ROHAXT].rcDes.left + 16;
-  Bmp[ROHAXT].rcDes.bottom = Bmp[ROHAXT].rcDes.top + 15;
-  //ROHBLATT
-  Bmp[ROHBLATT].rcDes.left = rcPanel.left + 34;
-  Bmp[ROHBLATT].rcDes.top = rcPanel.top + 270;
-  Bmp[ROHBLATT].rcDes.right = Bmp[ROHBLATT].rcDes.left + 16;
-  Bmp[ROHBLATT].rcDes.bottom = Bmp[ROHBLATT].rcDes.top + 15;
-  //ROHEGGE
-  Bmp[ROHEGGE].rcDes.left = rcPanel.left + 150;
-  Bmp[ROHEGGE].rcDes.top = rcPanel.top + 250;
-  Bmp[ROHEGGE].rcDes.right = Bmp[ROHEGGE].rcDes.left + 16;
-  Bmp[ROHEGGE].rcDes.bottom = Bmp[ROHEGGE].rcDes.top + 15;
-  //ROHLIANE
-  Bmp[ROHLIANE].rcDes.left = rcPanel.left + 34;
-  Bmp[ROHLIANE].rcDes.top = rcPanel.top + 290;
-  Bmp[ROHLIANE].rcDes.right = Bmp[ROHLIANE].rcDes.left + 16;
-  Bmp[ROHLIANE].rcDes.bottom = Bmp[ROHLIANE].rcDes.top + 15;
-  //ROHANGEL
-  Bmp[ROHANGEL].rcDes.left = rcPanel.left + 150;
-  Bmp[ROHANGEL].rcDes.top = rcPanel.top + 270;
-  Bmp[ROHANGEL].rcDes.right = Bmp[ROHANGEL].rcDes.left + 16;
-  Bmp[ROHANGEL].rcDes.bottom = Bmp[ROHANGEL].rcDes.top + 15;
-  //ROHHAMMER
-  Bmp[ROHHAMMER].rcDes.left = rcPanel.left + 150;
-  Bmp[ROHHAMMER].rcDes.top = rcPanel.top + 290;
-  Bmp[ROHHAMMER].rcDes.right = Bmp[ROHHAMMER].rcDes.left + 16;
-  Bmp[ROHHAMMER].rcDes.bottom = Bmp[ROHHAMMER].rcDes.top + 15;
-  //ROHFERNROHR
-  Bmp[ROHFERNROHR].rcDes.left = rcPanel.left + 150;
-  Bmp[ROHFERNROHR].rcDes.top = rcPanel.top + 310;
-  Bmp[ROHFERNROHR].rcDes.right = Bmp[ROHFERNROHR].rcDes.left + 16;
-  Bmp[ROHFERNROHR].rcDes.bottom = Bmp[ROHFERNROHR].rcDes.top + 15;
-  //ROHSTREICHHOLZ
-  Bmp[ROHSTREICHHOLZ].rcDes.left = rcPanel.left + 105;
-  Bmp[ROHSTREICHHOLZ].rcDes.top = rcPanel.top + 230;
-  Bmp[ROHSTREICHHOLZ].rcDes.right = Bmp[ROHSTREICHHOLZ].rcDes.left + 16;
-  Bmp[ROHSTREICHHOLZ].rcDes.bottom = Bmp[ROHSTREICHHOLZ].rcDes.top + 15;
-  //ROHSCHAUFEL
-  Bmp[ROHSCHAUFEL].rcDes.left = rcPanel.left + 105;
-  Bmp[ROHSCHAUFEL].rcDes.top = rcPanel.top + 250;
-  Bmp[ROHSCHAUFEL].rcDes.right = Bmp[ROHSCHAUFEL].rcDes.left + 16;
-  Bmp[ROHSCHAUFEL].rcDes.bottom = Bmp[ROHSCHAUFEL].rcDes.top + 15;
-  //ROHKARTE
-  Bmp[ROHKARTE].rcDes.left = rcPanel.left + 105;
-  Bmp[ROHKARTE].rcDes.top = rcPanel.top + 270;
-  Bmp[ROHKARTE].rcDes.right = Bmp[ROHKARTE].rcDes.left + 16;
-  Bmp[ROHKARTE].rcDes.bottom = Bmp[ROHKARTE].rcDes.top + 15;
-  //ROHSCHLEUDER
-  Bmp[ROHSCHLEUDER].rcDes.left = rcPanel.left + 105;
-  Bmp[ROHSCHLEUDER].rcDes.top = rcPanel.top + 290;
-  Bmp[ROHSCHLEUDER].rcDes.right = Bmp[ROHSCHLEUDER].rcDes.left + 16;
-  Bmp[ROHSCHLEUDER].rcDes.bottom = Bmp[ROHSCHLEUDER].rcDes.top + 15;
-
-  //ROEMISCH1
-  Bmp[ROEMISCH1].Anzahl = 1;
-  Bmp[ROEMISCH1].rcSrc.left = 0;
-  Bmp[ROEMISCH1].rcSrc.top = 0;
-  Bmp[ROEMISCH1].rcSrc.right = Bmp[ROEMISCH1].rcSrc.left + 3;
-  Bmp[ROEMISCH1].rcSrc.bottom = Bmp[ROEMISCH1].rcSrc.top + 13;
-  Bmp[ROEMISCH1].rcDes.left = rcPanel.left + 50;
-  Bmp[ROEMISCH1].rcDes.top = rcPanel.top;
-  Bmp[ROEMISCH1].rcDes.right = Bmp[ROEMISCH1].rcDes.left + 3;
-  Bmp[ROEMISCH1].rcDes.bottom = Bmp[ROEMISCH1].rcDes.top + 13;
-  Bmp[ROEMISCH1].Breite = (Bmp[ROEMISCH1].rcSrc.right - Bmp[ROEMISCH1].rcSrc.left);
-  Bmp[ROEMISCH1].Hoehe = (Bmp[ROEMISCH1].rcSrc.bottom - Bmp[ROEMISCH1].rcSrc.top);
-  Bmp[ROEMISCH1].Surface = inventarImage;
-
-  //ROEMISCH2
-  Bmp[ROEMISCH2].Anzahl = 1;
-  Bmp[ROEMISCH2].rcSrc.left = 3;
-  Bmp[ROEMISCH2].rcSrc.top = 0;
-  Bmp[ROEMISCH2].rcSrc.right = Bmp[ROEMISCH2].rcSrc.left + 15;
-  Bmp[ROEMISCH2].rcSrc.bottom = Bmp[ROEMISCH2].rcSrc.top + 10;
-  Bmp[ROEMISCH2].rcDes.left = rcPanel.left + 50;
-  Bmp[ROEMISCH2].rcDes.top = rcPanel.top;
-  Bmp[ROEMISCH2].rcDes.right = Bmp[ROEMISCH2].rcDes.left + 15;
-  Bmp[ROEMISCH2].rcDes.bottom = Bmp[ROEMISCH2].rcDes.top + 10;
-  Bmp[ROEMISCH2].Breite = (Bmp[ROEMISCH2].rcSrc.right - Bmp[ROEMISCH2].rcSrc.left);
-  Bmp[ROEMISCH2].Hoehe = (Bmp[ROEMISCH2].rcSrc.bottom - Bmp[ROEMISCH2].rcSrc.top);
-  Bmp[ROEMISCH2].Surface = inventarImage;
-
-
   //INVPAPIER
   Bmp[INVPAPIER].Anzahl = 1;
   Bmp[INVPAPIER].rcSrc.left = 0;
@@ -2472,9 +2349,6 @@ const InitStructs = async () => {
   TextBereich[TXTCHANCE].rcText.right = TextBereich[TXTCHANCE].rcText.left + 3 * S2XPIXEL;
   TextBereich[TXTCHANCE].rcText.bottom = TextBereich[TXTCHANCE].rcText.top + S2YPIXEL;
 
-  for (i = ROHAST; i <= ROHSCHLEUDER; i++) {
-    Guy.Inventar[i] = 0;
-  }
   CursorTyp = CUPFEIL;
   MouseAktiv = true;
   PapierText = -1;
@@ -2498,8 +2372,8 @@ const drawImage = (image, canvasContext) => {
   const destinationWidth = rcRectdes.right - rcRectdes.left;
   const destinationHeight = rcRectdes.bottom - rcRectdes.top;
   canvasContext.drawImage(
-    image, 
-    rcRectsrc.left, rcRectsrc.top, sourceWidth, sourceHeight, 
+    image,
+    rcRectsrc.left, rcRectsrc.top, sourceWidth, sourceHeight,
     rcRectdes.left, rcRectdes.top, destinationWidth, destinationHeight
   );
 }
@@ -2694,46 +2568,46 @@ const CheckKey = () => {
     if (pressedKeyCodes[DIK_G]) {
       gameData.options.grid = !gameData.options.grid;
     }
-    
+
     if (pressedKeyCodes[DIK_C])  //Zum testen
     {
-      let x,y;
-      for (y=0;y<MAXYKACH;y++)
-        for (x=0;x<MAXXKACH;x++)
+      let x, y;
+      for (y = 0; y < MAXYKACH; y++)
+        for (x = 0; x < MAXXKACH; x++)
           gameData.terrain[x][y].discovered = true;
-        updateMinimap();
+      updateMinimap();
     }
 
     if (pressedKeyCodes[DIK_I])  //Zum testen
     {
-      Guy.Inventar[ROHAST] = 10;
-      Guy.Inventar[ROHSTEIN] = 10;
-      Guy.Inventar[ROHBLATT] = 10;
-      Guy.Inventar[ROHLIANE] = 10;
-      Guy.Inventar[ROHSTAMM] = 9;
+      changeItem(gameData, items.BRANCH, 10);
+      changeItem(gameData, items.STONE, 10);
+      changeItem(gameData, items.LEAF, 10);
+      changeItem(gameData, items.LIANA, 10);
+      changeItem(gameData, items.LOG, 10);
     }
     if (pressedKeyCodes[DIK_W])  //Zum testen
     {
-      Guy.Inventar[ROHAXT]   = 1;
-      Guy.Inventar[ROHEGGE]  = 1;
-      Guy.Inventar[ROHANGEL]  = 1;
-      Guy.Inventar[ROHHAMMER]   = 1;
-      Guy.Inventar[ROHFERNROHR] = 1;
-      Guy.Inventar[ROHSTREICHHOLZ] = 1;
-      Guy.Inventar[ROHSCHAUFEL] = 1;
-      Guy.Inventar[ROHKARTE] = 1;
-      Guy.Inventar[ROHSCHLEUDER] = 1;
+      changeItem(gameData, items.AXE, 1);
+      changeItem(gameData, items.HARROW, 1);
+      changeItem(gameData, items.FISHING_ROD, 1);
+      changeItem(gameData, items.HAMMER, 1);
+      changeItem(gameData, items.SPYGLASS, 1);
+      changeItem(gameData, items.MATCHES, 1);
+      changeItem(gameData, items.SHOVEL, 1);
+      changeItem(gameData, items.MAP, 1);
+      changeItem(gameData, items.SLING, 1);
 
-      Bmp[BUTTFAELLEN].Phase  = 0;
-      Bmp[BUTTANGELN].Phase  = 0;
-      Bmp[BUTTANZUENDEN].Phase  = 0;
+      Bmp[BUTTFAELLEN].Phase = 0;
+      Bmp[BUTTANGELN].Phase = 0;
+      Bmp[BUTTANZUENDEN].Phase = 0;
       Bmp[BUTTAUSSCHAU].Phase = 0;
       Bmp[BUTTSCHATZKARTE].Phase = 0;
       Bmp[BUTTSCHATZ].Phase = 0;
       Bmp[BUTTSCHLEUDER].Phase = 0;
-      Bmp[BUTTFELD].Phase  = 0;
-      Bmp[BUTTBOOT].Phase  = 0;
-      Bmp[BUTTROHR].Phase  = 0;
+      Bmp[BUTTFELD].Phase = 0;
+      Bmp[BUTTBOOT].Phase = 0;
+      Bmp[BUTTROHR].Phase = 0;
       Bmp[BUTTHAUS1].Phase = 0;
       Bmp[BUTTHAUS2].Phase = 0;
       Bmp[BUTTHAUS3].Phase = 0;
@@ -2780,7 +2654,7 @@ const AddTime = (h, m) => {
           tile.Phase = Bmp[tile.Objekt].Anzahl - 1;
         }
       } else if (tile.object?.sprite === spriteTypes.BUSH) {
-        tile.object.frame += (60 * h + m) * 0.0005; 
+        tile.object.frame += (60 * h + m) * 0.0005;
         tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
       }
     }
@@ -2831,54 +2705,15 @@ const GetKachel = (PosX, PosY) => {
 }
 
 const MakeRohString = (x, y, Objekt) => {
-  let TmpString;
-  let keinRohstoff;
-  let i;
-
   RohString = '';
-  keinRohstoff = true;
-  if (Objekt === -1) {
-    for (i = 0; i < BILDANZ; i++) {
-      if (gameData.terrain[x][y].Rohstoff[i] !== 0) keinRohstoff = false;
-    }
-  } else {
-    for (i = 0; i < BILDANZ; i++) {
-      if (Bmp[Objekt].Rohstoff[i] !== 0) keinRohstoff = false;
-    }
+  const neededItems = Object.entries((Objekt === -1) ? gameData.terrain[x][y].Rohstoffe : Bmp[Objekt].Rohstoffe).filter(([, amount]) => amount);
+  if (neededItems.length) {
+    RohString += ': ';
+    neededItems.forEach(([item, amount]) => {
+      RohString += `${texts[itemTextIds[item]]}=${amount} `;
+    });
   }
-  if (keinRohstoff) return;
-  RohString += ': ';
-  for (i = 0; i < BILDANZ; i++) {
-    if (Objekt === -1) {
-      if (gameData.terrain[x][y].Rohstoff[i] === 0) continue;
-    } else {
-      if (Bmp[Objekt].Rohstoff[i] === 0) continue;
-    }
-    RohString += ' ';
-    switch (i) {
-      case ROHAST:
-        TmpString = texts.AST;
-        break;
-      case ROHSTEIN:
-        TmpString = texts.STEIN;
-        break;
-      case ROHBLATT:
-        TmpString = texts.BLATT;
-        break;
-      case ROHLIANE:
-        TmpString = texts.LIANE;
-        break;
-      case ROHSTAMM:
-        TmpString = texts.STAMM;
-        break;
-    }
-    RohString += TmpString;
-    RohString += '=';
-    if (Objekt === -1) TmpString = gameData.terrain[x][y].Rohstoff[i];
-    else TmpString = Bmp[Objekt].Rohstoff[i];
-    RohString += TmpString;
-  }
-}
+};
 
 const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   let Erg; //Die angeklickte Kachel
@@ -2981,8 +2816,8 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       console.log(gameData.terrain[Erg.x][Erg.y]);
       //Klicksound abspielen
       PlaySound(WAVKLICK2, 100);
-      if (gameData.guy.route.length && 
-        (Erg.x === gameData.guy.route[gameData.guy.route.length - 1].x) && 
+      if (gameData.guy.route.length &&
+        (Erg.x === gameData.guy.route[gameData.guy.route.length - 1].x) &&
         (Erg.y === gameData.guy.route[gameData.guy.route.length - 1].y)) {
         Bmp[BUTTSTOP].Phase = 0;
         gameData.guy.active = true;
@@ -3021,14 +2856,14 @@ const MouseInPanel = (Button, Push) => {
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOUND].rcDes)) {
     if (audio.isRunning()) DrawText(texts.SOUNDAUS, TXTTEXTFELD, 2);
     else DrawText(texts.SOUNDAN, TXTTEXTFELD, 2);
-    
+
     if ((Button === 0) && (Push === 1)) {
       if (audio.isRunning()) {
         audio.suspend();
       } else {
         audio.resume();
         PlaySound(WAVKLICK2, 100);
-      } 
+      }
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBEENDEN].rcDes)) {
     DrawText(texts.BEENDEN, TXTTEXTFELD, 2);
@@ -3165,9 +3000,9 @@ const MouseInPanel = (Button, Push) => {
       Guy.AkNummer = 0;
       if (isEatable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FELD &&
-         gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase === Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl - 1)) {
+          gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase === Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl - 1)) {
         Guy.Aktion = AKESSEN;
-      }else if (
+      } else if (
         isDrinkable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6) ||
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ROHR && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase === 1)
@@ -3193,7 +3028,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (Guy.Inventar[ROHSTAMM] <= 10) {
+      if (gameData.guy.inventory[items.LOG] <= 10) {
         if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object)) {
           Guy.Aktion = AKFAELLEN;
         } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE ||
@@ -3534,62 +3369,16 @@ const MouseInPanel = (Button, Push) => {
       } else PapierText = DrawText(texts.KEINBAUWERK, TXTPAPIER, 1);
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (HauptMenue === MEINVENTAR)) {
-    for (i = ROHAST; i <= ROHSCHLEUDER; i++) {
-      if (InRect(MousePosition.x, MousePosition.y, Bmp[i].rcDes) && (Guy.Inventar[i] > 0)) {
-        if ((Button === 0) && (Push === 1)) {
-          if (TwoClicks === -1) {
-            CursorTyp = i;
-            TwoClicks = i;
-          } else CheckBenutze(i);
-        }
-        switch (i) {
-          case ROHAST:
-            DrawText(texts.AST, TXTTEXTFELD, 2);
-            break;
-          case ROHSTEIN:
-            DrawText(texts.STEIN, TXTTEXTFELD, 2);
-            break;
-          case ROHAXT:
-            DrawText(texts.AXT, TXTTEXTFELD, 2);
-            break;
-          case ROHBLATT:
-            DrawText(texts.BLATT, TXTTEXTFELD, 2);
-            break;
-          case ROHSTAMM:
-            DrawText(texts.STAMM, TXTTEXTFELD, 2);
-            break;
-          case ROHEGGE:
-            DrawText(texts.EGGE, TXTTEXTFELD, 2);
-            break;
-          case ROHLIANE:
-            DrawText(texts.LIANE, TXTTEXTFELD, 2);
-            break;
-          case ROHANGEL:
-            DrawText(texts.ANGEL, TXTTEXTFELD, 2);
-            break;
-          case ROHHAMMER:
-            DrawText(texts.HAMMER, TXTTEXTFELD, 2);
-            break;
-          case ROHFERNROHR:
-            DrawText(texts.FERNROHR, TXTTEXTFELD, 2);
-            break;
-          case ROHSTREICHHOLZ:
-            DrawText(texts.STREICHHOLZ, TXTTEXTFELD, 2);
-            break;
-          case ROHSCHAUFEL:
-            DrawText(texts.SCHAUFEL, TXTTEXTFELD, 2);
-            break;
-          case ROHKARTE:
-            DrawText(texts.KARTE, TXTTEXTFELD, 2);
-            break;
-          case ROHSCHLEUDER:
-            DrawText(texts.SCHLEUDER, TXTTEXTFELD, 2);
-            break;
-        }
-
-        break;
+    const item = findItemUnderCursor(gameData, MousePosition);
+    if (item) {
+      if ((Button === 0) && (Push === 1)) {
+        if (TwoClicks === -1) {
+          CursorTyp = item;
+          TwoClicks = item;
+        } else CheckBenutze(item);
       }
-    }
+      DrawText(texts[itemTextIds[item]], TXTTEXTFELD, 2);
+    };
   } else if (InRect(MousePosition.x, MousePosition.y, TextBereich[TXTTAGESZEIT].rcText))
     DrawText(texts.SOSPAET, TXTTEXTFELD, 2);
   else if (InRect(MousePosition.x, MousePosition.y, TextBereich[TXTCHANCE].rcText))
@@ -3651,7 +3440,7 @@ const startGame = async (newGame) => {
     await new Promise(window.requestAnimationFrame);
     gameData.treasure = hideTreasure(gameData);
     addPirateWreck(gameData.terrain);
-    
+
     for (let x = 0; x < MAXXKACH; x++) {
       for (let y = 0; y < MAXYKACH; y++) {
         const tile = gameData.terrain[x][y];
@@ -3662,7 +3451,7 @@ const startGame = async (newGame) => {
         tile.AkNummer = 0;
         tile.GPosAlt = { x: 0, y: 0 };
         tile.Timer = 0;
-        tile.Rohstoff = Array(BILDANZ).fill(0);
+        tile.Rohstoffe = {};
       }
     }
 
@@ -3676,6 +3465,7 @@ const startGame = async (newGame) => {
     gameData.guy.water = 100;
     gameData.guy.food = 100;
     gameData.guy.health = 100;
+    gameData.guy.inventory = createInventory();
 
     Chance = 0;
 
@@ -3789,12 +3579,17 @@ const Zeige = () => {
   //Cursor
   if (CursorTyp === CUPFEIL) ZeichneBilder(MousePosition.x, MousePosition.y,
     CursorTyp, rcGesamt, false, -1);
-  else ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2,
-    MousePosition.y - Bmp[CursorTyp].Hoehe / 2,
-    CursorTyp, rcGesamt, false, -1);
+  else if (items.list.includes(CursorTyp)) {
+    const position = {
+      x: MousePosition.x - itemSprites[CursorTyp].width / 2,
+      y: MousePosition.y - itemSprites[CursorTyp].height / 2
+    };
+    drawItem(CursorTyp, position, primaryCanvasContext);
+  } else {
+    ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2, MousePosition.y - Bmp[CursorTyp].Hoehe / 2, CursorTyp, rcGesamt, false, -1);
+  }
 
   if (Nacht) Fade(100, 0); //Das muß hier stehen, damit man die Textnachricht in der Nacht lesen kann
-
 }
 
 const ZeigeIntro = () => {
@@ -3957,9 +3752,9 @@ const ZeichneObjekte = () => {
         //this happens in drawObject now
       } else if (gameData.terrain[x][y].Objekt > -1 &&
         (gameData.terrain[x][y].Objekt <= SCHLEUSE6
-        || gameData.terrain[x][y].Objekt === FELD   
-        || gameData.terrain[x][y].Objekt === ROHR
-        || gameData.terrain[x][y].Objekt === SOS)) {
+          || gameData.terrain[x][y].Objekt === FELD
+          || gameData.terrain[x][y].Objekt === ROHR
+          || gameData.terrain[x][y].Objekt === SOS)) {
         //Sound abspielen
         if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
           ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
@@ -3974,7 +3769,7 @@ const ZeichneObjekte = () => {
         ZeichneBilder(
           gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x,
           gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y,
-          gameData.terrain[x][y].Objekt, 
+          gameData.terrain[x][y].Objekt,
           { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
           gameData.terrain[x][y].Reverse,
           gameData.terrain[x][y].Phase);
@@ -3987,21 +3782,20 @@ const ZeichneObjekte = () => {
               Guyzeichnen = false;
             }
           }
-          
+
           drawSprite(
-            object.sprite, 
-            object.frame, 
-            gameData.terrain[x][y].position.x + object.x - gameData.camera.x, 
+            object.sprite,
+            object.frame,
+            gameData.terrain[x][y].position.x + object.x - gameData.camera.x,
             gameData.terrain[x][y].position.y + object.y - gameData.camera.y,
             primaryCanvasContext
           );
         } else if (gameData.terrain[x][y].Objekt === FEUER ||
-          gameData.terrain[x][y].Objekt === BAUM1DOWN || 
-          gameData.terrain[x][y].Objekt === BAUM2DOWN || 
-          gameData.terrain[x][y].Objekt === BAUM3DOWN || 
-          gameData.terrain[x][y].Objekt === BAUM4DOWN || 
-          gameData.terrain[x][y].Objekt >= ZELT)
-        {
+          gameData.terrain[x][y].Objekt === BAUM1DOWN ||
+          gameData.terrain[x][y].Objekt === BAUM2DOWN ||
+          gameData.terrain[x][y].Objekt === BAUM3DOWN ||
+          gameData.terrain[x][y].Objekt === BAUM4DOWN ||
+          gameData.terrain[x][y].Objekt >= ZELT) {
           //Sound abspielen
           if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
             ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
@@ -4023,8 +3817,8 @@ const ZeichneObjekte = () => {
           ZeichneBilder(
             gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x,
             gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y,
-            gameData.terrain[x][y].Objekt, 
-            { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
+            gameData.terrain[x][y].Objekt,
+            { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
             false,
             gameData.terrain[x][y].Phase
           );
@@ -4042,27 +3836,27 @@ const ZeichneGuy = () => {
       ZeichneBilder(
         Math.floor(gameData.guy.position.x - 30 - gameData.camera.x),
         Math.floor(gameData.guy.position.y - 28 - gameData.camera.y),
-        Guy.Zustand, 
-        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
-        false, 
+        Guy.Zustand,
+        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
+        false,
         -1
       );
     } else {
       ZeichneBilder(
         Math.floor(gameData.guy.position.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
         Math.floor(gameData.guy.position.y - (Bmp[Guy.Zustand].Hoehe) / 2 - gameData.camera.y),
-        Guy.Zustand, 
-        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
-        false, 
+        Guy.Zustand,
+        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
+        false,
         -1
       );
     }
   } else ZeichneBilder(
     Math.floor(gameData.guy.position.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
     Math.floor(gameData.guy.position.y - (Bmp[Guy.Zustand].Hoehe) - gameData.camera.y),
-    Guy.Zustand, 
-    { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
-    false, 
+    Guy.Zustand,
+    { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
+    false,
     -1
   );
   //Sound abspielen
@@ -4233,33 +4027,8 @@ const ZeichnePanel = () => {
       ZeichneBilder(Bmp[INVPAPIER].rcDes.left,
         Bmp[INVPAPIER].rcDes.top,
         INVPAPIER, rcPanel, false, -1);
-      for (i = ROHAST; i <= ROHSCHLEUDER; i++) {
-        if (Guy.Inventar[i] <= 0) continue;
-        ZeichneBilder(Bmp[i].rcDes.left,
-          Bmp[i].rcDes.top,
-          i, rcPanel, false, -1);
-        Bmp[ROEMISCH1].rcDes.top = Bmp[i].rcDes.top;
-        Bmp[ROEMISCH2].rcDes.top = Bmp[i].rcDes.top;
-        for (j = 1; j <= Guy.Inventar[i]; j++) {
-          if (j < 5) {
-            ZeichneBilder(Bmp[i].rcDes.left + 20 + j * 4,
-              Bmp[ROEMISCH1].rcDes.top,
-              ROEMISCH1, rcPanel, false, -1);
-          } else if (j === 5) ZeichneBilder(Bmp[i].rcDes.left + 23,
-            Bmp[ROEMISCH2].rcDes.top,
-            ROEMISCH2, rcPanel, false, -1);
-          else if ((j > 5) && (j < 10)) {
-            ZeichneBilder(Bmp[i].rcDes.left + 20 + j * 4,
-              Bmp[ROEMISCH1].rcDes.top,
-              ROEMISCH1, rcPanel, false, -1);
-          } else if (j === 10)
-            ZeichneBilder(Bmp[i].rcDes.left + 43,
-              Bmp[ROEMISCH2].rcDes.top,
-              ROEMISCH2, rcPanel, false, -1);
-        }
-      }
+      drawItems(gameData, primaryCanvasContext);
       break;
-
   }
 
   //Säule1
@@ -4489,7 +4258,7 @@ const DrawSchatzkarte = () => {
   Textloeschen(TXTPAPIER);
   TextBereich[TXTPAPIER].Aktiv = true;
   PapierText = treasureMapCanvas.height;
-  
+
   rcRectsrc.left = 0;
   rcRectsrc.right = treasureMapCanvas.width;
   rcRectsrc.top = 0;
@@ -4533,7 +4302,7 @@ const CheckSpzButton = () => {
     if (Bmp[BUTTWEITER].Phase === -1) Bmp[BUTTWEITER].Phase = 0;
   } else Bmp[BUTTWEITER].Phase = -1;
 
-  if (Bmp[BUTTSTOP].Phase === -1 && ((tile.Objekt === BOOT && tile.Phase < Bmp[tile.Objekt].Anzahl) || 
+  if (Bmp[BUTTSTOP].Phase === -1 && ((tile.Objekt === BOOT && tile.Phase < Bmp[tile.Objekt].Anzahl) ||
     (isOnSea(gameData) &&
       ((tileWest.ground !== grounds.SEA && tileWest.Objekt === -1 && !tileWest.object) ||
         (tileNorth.ground !== grounds.SEA && tileNorth.Objekt === -1 && !tileNorth.object) ||
@@ -4544,27 +4313,26 @@ const CheckSpzButton = () => {
 }
 
 const CheckRohstoff = () => {
-  let i;
   let Benoetigt; //Anzahl der Gesamtbenötigten Rohstoffe
   let GebrauchtTmp; //Soviel Rohstoffe werden für diesen Schritt benötigt
   let Gebraucht; //Soviel Rohstoffe werden für diesen Schritt benötigt
   let Check;     //Wenn kein Rohstoff mehr vorhanden nur noch einmal die While-Schleife
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   Benoetigt = 0;
-  for (i = 0; i < BILDANZ; i++) Benoetigt += Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Rohstoff[i];
+  Object.entries(Bmp[tile.Objekt].Rohstoffe).forEach(([, amount]) => Benoetigt += amount);
 
-  GebrauchtTmp = Benoetigt / Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].AkAnzahl;
-  Gebraucht = Math.floor(GebrauchtTmp * gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer) -
-    Math.floor(GebrauchtTmp * (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer - 1));
+  GebrauchtTmp = Benoetigt / Bmp[tile.Objekt].AkAnzahl;
+  Gebraucht = Math.floor(GebrauchtTmp * tile.AkNummer) - Math.floor(GebrauchtTmp * (tile.AkNummer - 1));
+  if (Gebraucht === 0) return true;
 
   while (1) {
     Check = false;
-    for (i = 0; i < BILDANZ; i++) {
-      if (Gebraucht === 0) return true;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Rohstoff[i] > 0) &&
-        (Guy.Inventar[i] > 0)) {
-        Guy.Inventar[i]--;
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Rohstoff[i]--;
+    const neededItems = Object.entries(tile.Rohstoffe).filter(([, amount]) => amount).map(([item]) => item);
+    for (const neededItem of neededItems) {
+      if (gameData.guy.inventory[neededItem] > 0) {
+        changeItem(gameData, neededItem, -1);
+        tile.Rohstoffe[neededItem]--;
         Gebraucht--;
         if (Gebraucht === 0) return true;
         Check = true;
@@ -4905,7 +4673,7 @@ const AkDestroy = () => {
       break;
     case 6:
       i = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt;
-      
+
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x = 0;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y = 0;
@@ -4915,7 +4683,7 @@ const AkDestroy = () => {
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
       if (i === SOS) Chance -= 0.1;
       else if (i === ROHR) FillRohr();
-      goToStoredPosition();
+      goToStoredPosition(gameData);
       break;
     case 7:
       Guy.Aktion = AKNICHTS;
@@ -4928,12 +4696,14 @@ const AkSuchen = () => {
   let Erg;
   let i;
 
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+
   if (Guy.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   while (1) {
-    Ziel.x = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].position.x + Math.floor(Math.random() * KXPIXEL);
-    Ziel.y = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].position.y + Math.floor(Math.random() * KYPIXEL);
+    Ziel.x = tile.position.x + Math.floor(Math.random() * KXPIXEL);
+    Ziel.y = tile.position.y + Math.floor(Math.random() * KYPIXEL);
     Erg = GetKachel(Ziel.x, Ziel.y);
     if (Erg && Erg.x === gameData.guy.tile.x && Erg.y === gameData.guy.tile.y) break; //Wenn das gefundene Ziel in der Kachel, dann fertig
   }
@@ -4981,74 +4751,68 @@ const AkSuchen = () => {
       gameData.guy.active = true;
       if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       //Auf Strand und Fluss
-      if (
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.BEACH ||
-        isRiver(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6)
+      if (tile.ground === grounds.BEACH || isRiver(tile.object) || (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6)
       ) {
-        if (Guy.Inventar[ROHSTEIN] < 10) {
+        if (gameData.guy.inventory[items.STONE] < 10) {
           PapierText = DrawText(texts.ROHSTEINGEFUNDEN, TXTPAPIER, 1);
-          Guy.Inventar[ROHSTEIN] += 3;
-          if (Guy.Inventar[ROHSTEIN] > 10) Guy.Inventar[ROHSTEIN] = 10;
+          changeItem(gameData, items.STONE, 3);
         } else PapierText = DrawText(texts.ROHSTEINZUVIEL, TXTPAPIER, 1);
 
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BUSH) {
+      } else if (tile.object?.sprite === spriteTypes.BUSH) {
         i = Math.floor(Math.random() * 2);
         switch (i) {
           case 0:
-            if (Guy.Inventar[ROHAST] < 10) {
+            if (gameData.guy.inventory[items.BRANCH] < 10) {
               PapierText = DrawText(texts.ROHASTGEFUNDEN, TXTPAPIER, 1);
-              Guy.Inventar[ROHAST]++;
+              changeItem(gameData, items.BRANCH, 1);
             } else PapierText = DrawText(texts.ROHASTZUVIEL, TXTPAPIER, 1);
             break;
           case 1:
-            if (Guy.Inventar[ROHBLATT] < 10) {
+            if (gameData.guy.inventory[items.LEAF] < 10) {
               PapierText = DrawText(texts.ROHBLATTGEFUNDEN, TXTPAPIER, 1);
-              Guy.Inventar[ROHBLATT]++;
+              changeItem(gameData, items.LEAF, 1);
             } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
             break;
         }
-      } else if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) || 
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE || 
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= HAUS1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= HAUS3)) {
+      } else if (isNormalTree(tile.object) || tile.object?.sprite === spriteTypes.BIG_TREE || (tile.Objekt >= HAUS1 && tile.Objekt <= HAUS3)) {
         i = Math.floor(Math.random() * 3);
         switch (i) {
           case 0:
-            if (Guy.Inventar[ROHAST] < 10) {
+            if (gameData.guy.inventory[items.BRANCH] < 10) {
               PapierText = DrawText(texts.ROHASTGEFUNDEN, TXTPAPIER, 1);
-              Guy.Inventar[ROHAST]++;
+              changeItem(gameData, items.BRANCH, 1);
             } else PapierText = DrawText(texts.ROHASTZUVIEL, TXTPAPIER, 1);
             break;
           case 1:
-            if (Guy.Inventar[ROHBLATT] < 10) {
+            if (gameData.guy.inventory[items.LEAF] < 10) {
               PapierText = DrawText(texts.ROHBLATTGEFUNDEN, TXTPAPIER, 1);
-              Guy.Inventar[ROHBLATT]++;
+              changeItem(gameData, items.LEAF, 1);
             } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
             break;
           case 2:
-            if (Guy.Inventar[ROHLIANE] < 10) {
+            if (gameData.guy.inventory[items.LIANA] < 10) {
               PapierText = DrawText(texts.ROHLIANEGEFUNDEN, TXTPAPIER, 1);
-              Guy.Inventar[ROHLIANE]++;
+              changeItem(gameData, items.LIANA, 1);
             } else PapierText = DrawText(texts.ROHLIANEZUVIEL, TXTPAPIER, 1);
             break;
         }
       } else if (isOnSea(gameData)) {
-        if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.SHIP_WRECK) {
-          if (Guy.Inventar[ROHFERNROHR] === 0) {
+        if (tile.object?.sprite === spriteTypes.SHIP_WRECK) {
+          if (!gameData.guy.inventory[items.SPYGLASS]) {
             PapierText = DrawText(texts.FERNROHRGEFUNDEN, TXTPAPIER, 1);
-            Guy.Inventar[ROHFERNROHR] = 1;
+            changeItem(gameData, items.SPYGLASS, 1);
             Bmp[BUTTAUSSCHAU].Phase = 0;
-            Guy.Inventar[ROHHAMMER] = 1;
+            changeItem(gameData, items.HAMMER, 1);
             Bmp[BUTTHAUS1].Phase = 0;
             Bmp[BUTTHAUS2].Phase = 0;
             Bmp[BUTTHAUS3].Phase = 0;
           } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
-        } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.PIRATE_WRECK) {
-          if (Guy.Inventar[ROHKARTE] === 0) {
+        } else if (tile.object?.sprite === spriteTypes.PIRATE_WRECK) {
+          if (!gameData.guy.inventory[items.MAP]) {
             PapierText = DrawText(texts.KARTEGEFUNDEN, TXTPAPIER, 1);
-            Guy.Inventar[ROHKARTE] = 1;
+            changeItem(gameData, items.MAP, 1);
             Bmp[BUTTSCHATZKARTE].Phase = 0;
-            Guy.Inventar[ROHSCHAUFEL] = 1;
+            changeItem(gameData, items.SHOVEL, 1);
             Bmp[BUTTSCHATZ].Phase = 0;
           } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
         } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
@@ -5207,14 +4971,10 @@ const AkFaellen = () => {
       break;
     case 9:
       tile.Objekt = -1;
-      Guy.Inventar[ROHSTAMM]++;
-      if (Guy.Inventar[ROHSTAMM] > 10) Guy.Inventar[ROHSTAMM] = 10;
-      Guy.Inventar[ROHAST] += 5;
-      if (Guy.Inventar[ROHAST] > 10) Guy.Inventar[ROHAST] = 10;
-      Guy.Inventar[ROHBLATT] += 5;
-      if (Guy.Inventar[ROHBLATT] > 10) Guy.Inventar[ROHBLATT] = 10;
-      Guy.Inventar[ROHLIANE] += 2;
-      if (Guy.Inventar[ROHLIANE] > 10) Guy.Inventar[ROHLIANE] = 10;
+      changeItem(gameData, items.LOG, 1);
+      changeItem(gameData, items.BRANCH, 5);
+      changeItem(gameData, items.LEAF, 5);
+      changeItem(gameData, items.LIANA, 2);
       Guy.Aktion = AKNICHTS;
       break;
   }
@@ -5231,55 +4991,55 @@ const AkAngeln = () => {
       if (tile.object) {
         switch (tile.object.sprite) {
           case spriteTypes.RIVER_SLOPE_NORTH:
-            goToOnTile(gameData, { x: 35, y: 26});
+            goToOnTile(gameData, { x: 35, y: 26 });
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
-            goToOnTile(gameData, { x: 19, y: 26});
+            goToOnTile(gameData, { x: 19, y: 26 });
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
-            goToOnTile(gameData, { x: 22, y: 20});
+            goToOnTile(gameData, { x: 22, y: 20 });
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
-            goToOnTile(gameData, { x: 34, y: 23});
+            goToOnTile(gameData, { x: 34, y: 23 });
             break;
-          case spriteTypes.RIVER_NORTH_SOUTH:  
+          case spriteTypes.RIVER_NORTH_SOUTH:
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
-            goToOnTile(gameData, { x: 34, y: 33});
+            goToOnTile(gameData, { x: 34, y: 33 });
             break;
-          case spriteTypes.RIVER_WEST_EAST:  
+          case spriteTypes.RIVER_WEST_EAST:
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
-            goToOnTile(gameData, { x: 20, y: 33});
+            goToOnTile(gameData, { x: 20, y: 33 });
             break;
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
-            goToOnTile(gameData, { x: 22, y: 26});
+            goToOnTile(gameData, { x: 22, y: 26 });
             break;
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            goToOnTile(gameData, { x: 32, y: 26});
+            goToOnTile(gameData, { x: 32, y: 26 });
             break;
         }
       } else {
         switch (tile.Objekt) {
           case SCHLEUSE2:
           case SCHLEUSE3:
-            goToOnTile(gameData, { x: 34, y: 33});
+            goToOnTile(gameData, { x: 34, y: 33 });
             break;
           case SCHLEUSE1:
           case SCHLEUSE5:
-            goToOnTile(gameData, { x: 20, y: 33});
+            goToOnTile(gameData, { x: 20, y: 33 });
             break;
           case SCHLEUSE4:
-            goToOnTile(gameData, { x: 22, y: 26});
+            goToOnTile(gameData, { x: 22, y: 26 });
             break;
           case SCHLEUSE6:
-            goToOnTile(gameData, { x: 32, y: 26});
+            goToOnTile(gameData, { x: 32, y: 26 });
             break;
         }
       }
@@ -5294,29 +5054,29 @@ const AkAngeln = () => {
       if (tile.object) {
         switch (tile.object.sprite) {
           case spriteTypes.RIVER_SLOPE_NORTH:
-          case spriteTypes.RIVER_NORTH_SOUTH:  
-          case spriteTypes.RIVER_WEST_SOUTH:  
-          case spriteTypes.RIVER_MOUTH_NORTH:  
-          case spriteTypes.RIVER_SPRING_SOUTH:  
+          case spriteTypes.RIVER_NORTH_SOUTH:
+          case spriteTypes.RIVER_WEST_SOUTH:
+          case spriteTypes.RIVER_MOUTH_NORTH:
+          case spriteTypes.RIVER_SPRING_SOUTH:
             Guy.Zustand = GUYANGELN1LINKS;
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
-          case spriteTypes.RIVER_WEST_EAST:  
-          case spriteTypes.RIVER_WEST_NORTH:  
-          case spriteTypes.RIVER_MOUTH_WEST:  
-          case spriteTypes.RIVER_SPRING_EAST:  
+          case spriteTypes.RIVER_WEST_EAST:
+          case spriteTypes.RIVER_WEST_NORTH:
+          case spriteTypes.RIVER_MOUTH_WEST:
+          case spriteTypes.RIVER_SPRING_EAST:
             Guy.Zustand = GUYANGELN1OBEN;
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
-          case spriteTypes.RIVER_NORTH_EAST:  
-          case spriteTypes.RIVER_MOUTH_SOUTH:  
-          case spriteTypes.RIVER_SPRING_NORTH:  
+          case spriteTypes.RIVER_NORTH_EAST:
+          case spriteTypes.RIVER_MOUTH_SOUTH:
+          case spriteTypes.RIVER_SPRING_NORTH:
             Guy.Zustand = GUYANGELN1RECHTS;
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
-          case spriteTypes.RIVER_SOUTH_EAST:  
-          case spriteTypes.RIVER_MOUTH_EAST:  
-          case spriteTypes.RIVER_SPRING_WEST:  
+          case spriteTypes.RIVER_SOUTH_EAST:
+          case spriteTypes.RIVER_MOUTH_EAST:
+          case spriteTypes.RIVER_SPRING_WEST:
             Guy.Zustand = GUYANGELN1UNTEN;
             break;
         }
@@ -5349,29 +5109,29 @@ const AkAngeln = () => {
       if (tile.object) {
         switch (tile.object.sprite) {
           case spriteTypes.RIVER_SLOPE_NORTH:
-          case spriteTypes.RIVER_NORTH_SOUTH:  
-          case spriteTypes.RIVER_WEST_SOUTH:  
-          case spriteTypes.RIVER_MOUTH_NORTH:  
-          case spriteTypes.RIVER_SPRING_SOUTH:  
+          case spriteTypes.RIVER_NORTH_SOUTH:
+          case spriteTypes.RIVER_WEST_SOUTH:
+          case spriteTypes.RIVER_MOUTH_NORTH:
+          case spriteTypes.RIVER_SPRING_SOUTH:
             Guy.Zustand = GUYANGELN2LINKS;
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
-          case spriteTypes.RIVER_WEST_EAST:  
-          case spriteTypes.RIVER_WEST_NORTH:  
-          case spriteTypes.RIVER_MOUTH_WEST:  
-          case spriteTypes.RIVER_SPRING_EAST:  
+          case spriteTypes.RIVER_WEST_EAST:
+          case spriteTypes.RIVER_WEST_NORTH:
+          case spriteTypes.RIVER_MOUTH_WEST:
+          case spriteTypes.RIVER_SPRING_EAST:
             Guy.Zustand = GUYANGELN2OBEN;
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
-          case spriteTypes.RIVER_NORTH_EAST:  
-          case spriteTypes.RIVER_MOUTH_SOUTH:  
-          case spriteTypes.RIVER_SPRING_NORTH:  
+          case spriteTypes.RIVER_NORTH_EAST:
+          case spriteTypes.RIVER_MOUTH_SOUTH:
+          case spriteTypes.RIVER_SPRING_NORTH:
             Guy.Zustand = GUYANGELN2RECHTS;
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
-          case spriteTypes.RIVER_SOUTH_EAST:  
-          case spriteTypes.RIVER_MOUTH_EAST:  
-          case spriteTypes.RIVER_SPRING_WEST:  
+          case spriteTypes.RIVER_SOUTH_EAST:
+          case spriteTypes.RIVER_MOUTH_EAST:
+          case spriteTypes.RIVER_SPRING_WEST:
             Guy.Zustand = GUYANGELN2UNTEN;
             break;
         }
@@ -5403,29 +5163,29 @@ const AkAngeln = () => {
       if (tile.object) {
         switch (tile.object.sprite) {
           case spriteTypes.RIVER_SLOPE_NORTH:
-          case spriteTypes.RIVER_NORTH_SOUTH:  
-          case spriteTypes.RIVER_WEST_SOUTH:  
-          case spriteTypes.RIVER_MOUTH_NORTH:  
-          case spriteTypes.RIVER_SPRING_SOUTH:  
+          case spriteTypes.RIVER_NORTH_SOUTH:
+          case spriteTypes.RIVER_WEST_SOUTH:
+          case spriteTypes.RIVER_MOUTH_NORTH:
+          case spriteTypes.RIVER_SPRING_SOUTH:
             Guy.Zustand = GUYANGELN3LINKS;
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
-          case spriteTypes.RIVER_WEST_EAST:  
-          case spriteTypes.RIVER_WEST_NORTH:  
-          case spriteTypes.RIVER_MOUTH_WEST:  
-          case spriteTypes.RIVER_SPRING_EAST:  
+          case spriteTypes.RIVER_WEST_EAST:
+          case spriteTypes.RIVER_WEST_NORTH:
+          case spriteTypes.RIVER_MOUTH_WEST:
+          case spriteTypes.RIVER_SPRING_EAST:
             Guy.Zustand = GUYANGELN3OBEN;
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
-          case spriteTypes.RIVER_NORTH_EAST:  
-          case spriteTypes.RIVER_MOUTH_SOUTH:  
-          case spriteTypes.RIVER_SPRING_NORTH:  
+          case spriteTypes.RIVER_NORTH_EAST:
+          case spriteTypes.RIVER_MOUTH_SOUTH:
+          case spriteTypes.RIVER_SPRING_NORTH:
             Guy.Zustand = GUYANGELN3RECHTS;
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
-          case spriteTypes.RIVER_SOUTH_EAST:  
-          case spriteTypes.RIVER_MOUTH_EAST:  
-          case spriteTypes.RIVER_SPRING_WEST:  
+          case spriteTypes.RIVER_SOUTH_EAST:
+          case spriteTypes.RIVER_MOUTH_EAST:
+          case spriteTypes.RIVER_SPRING_WEST:
             Guy.Zustand = GUYANGELN3UNTEN;
             break;
         }
@@ -5549,7 +5309,7 @@ const AkSchatz = () => {
       goToStoredPosition(gameData);
       if (gameData.guy.tile.x === gameData.treasure.x && gameData.guy.tile.y === gameData.treasure.y && !gameData.treasure.found) {
         PapierText = DrawText(texts.SCHATZGEFUNDEN, TXTPAPIER, 1);
-        Guy.Inventar[ROHSTREICHHOLZ] = 1;
+        changeItem(gameData, items.MATCHES, 1);
         Bmp[BUTTANZUENDEN].Phase = 0;
         gameData.treasure.found = true;
       } else PapierText = DrawText(texts.KEINSCHATZ, TXTPAPIER, 1);
@@ -5561,13 +5321,11 @@ const AkSchatz = () => {
 }
 
 const AkFeld = () => {
-  let i;
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[FELD].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[FELD].Rohstoffe };
     tile.Objekt = FELD;
     tile.ObPos.x = Bmp[FELD].rcDes.left;
     tile.ObPos.y = Bmp[FELD].rcDes.top;
@@ -5578,7 +5336,7 @@ const AkFeld = () => {
     tile.AkNummer--;
     return;
   }
-  
+
   switch (tile.AkNummer) {
     case 1:
       goToOnTile(gameData, {
@@ -5801,8 +5559,7 @@ const AkTagEnde = () => {
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= BAUM1DOWN) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= BAUM4DOWN)) {
         gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
-        Guy.Inventar[ROHSTAMM]++;
-        if (Guy.Inventar[ROHSTAMM] > 10) Guy.Inventar[ROHSTAMM] = 10;
+        changeItem(gameData, items.LOG, 1);
       }
 
       //Je nach Schlafort Zustand verändern
@@ -5982,14 +5739,11 @@ const AkGerettet = () => {
 }
 
 const AkZelt = () => {
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = ZELT;
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[ZELT].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[ZELT].Rohstoffe };
     tile.Phase = Bmp[tile.Objekt].Anzahl;
     tile.ObPos.x = Bmp[ZELT].rcDes.left;
     tile.ObPos.y = Bmp[ZELT].rcDes.top;
@@ -6076,14 +5830,11 @@ const AkZelt = () => {
 }
 
 const AkBoot = () => {
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = BOOT;
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[BOOT].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[BOOT].Rohstoffe };
     tile.Phase = Bmp[BOOT].Anzahl;
     tile.ObPos.x = Bmp[BOOT].rcDes.left;
     tile.ObPos.y = Bmp[BOOT].rcDes.top;
@@ -6172,14 +5923,11 @@ const AkBoot = () => {
 }
 
 const AkRohr = () => {
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = ROHR;
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[ROHR].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[ROHR].Rohstoffe };
     tile.Phase = Bmp[ROHR].Anzahl;
     tile.ObPos.x = Bmp[ROHR].rcDes.left;
     tile.ObPos.y = Bmp[ROHR].rcDes.top;
@@ -6255,14 +6003,11 @@ const AkRohr = () => {
 }
 
 const AkSOS = () => {
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = SOS;
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[SOS].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[SOS].Rohstoffe };
     tile.Phase = Bmp[SOS].Anzahl;
     tile.ObPos.x = Bmp[SOS].rcDes.left;
     tile.ObPos.y = Bmp[SOS].rcDes.top;
@@ -6357,14 +6102,11 @@ const AkSOS = () => {
 }
 
 const AkFeuerstelle = () => {
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = FEUERSTELLE;
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[FEUERSTELLE].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[FEUERSTELLE].Rohstoffe };
     tile.Phase = Bmp[FEUERSTELLE].Anzahl;
     tile.ObPos.x = Bmp[FEUERSTELLE].rcDes.left;
     tile.ObPos.y = Bmp[FEUERSTELLE].rcDes.top;
@@ -6410,7 +6152,7 @@ const AkFeuerstelle = () => {
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       if (tile.AkNummer !== 5)
-      tile.Phase = (Bmp[FEUERSTELLE].Anzahl + tile.AkNummer - 4);
+        tile.Phase = (Bmp[FEUERSTELLE].Anzahl + tile.AkNummer - 4);
       break;
     case 8:
       goToStoredPosition(gameData);
@@ -6428,13 +6170,11 @@ const AkFeuerstelle = () => {
 }
 
 const AkHaus1 = () => {
-  let i;
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[HAUS1].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[HAUS1].Rohstoffe };
     tile.Phase = Bmp[HAUS1].Anzahl;
     tile.originalObject = tile.object;
     tile.object = null;
@@ -6505,13 +6245,10 @@ const AkHaus1 = () => {
 }
 
 const AkHaus2 = () => {
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[HAUS2].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[HAUS2].Rohstoffe };
     tile.Phase = Bmp[HAUS2].Anzahl;
     tile.Objekt = HAUS2;
   }
@@ -6591,13 +6328,10 @@ const AkHaus2 = () => {
 }
 
 const AkHaus3 = () => {
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    for (i = 0; i < BILDANZ; i++)
-      tile.Rohstoff[i] = Bmp[HAUS3].Rohstoff[i];
+    tile.Rohstoffe = { ...Bmp[HAUS3].Rohstoffe };
     tile.Phase = Bmp[HAUS3].Anzahl;
     tile.Objekt = HAUS3;
   }
@@ -6700,7 +6434,7 @@ const AkSchlafen = () => {
         });
       break;
     case 2:
-      if ((tile.Objekt === HAUS3) &&(tile.Phase < Bmp[tile.Objekt].Anzahl)) {
+      if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYKLETTERN1;
         changeWaterAndFood(gameData, -1, -1);
@@ -6947,46 +6681,46 @@ const FillRohr = () => {
     }
 }
 
-const CheckBenutze = (Objekt) => {
-  if (((Objekt === ROHSTEIN) && (TwoClicks === ROHAST)) ||
-    ((Objekt === ROHAST) && (TwoClicks === ROHSTEIN))) {
-    if (Guy.Inventar[ROHAXT] < 1) {
-      Guy.Inventar[ROHSTEIN]--;
-      Guy.Inventar[ROHAST]--;
-      Guy.Inventar[ROHAXT] = 1;
+const CheckBenutze = (item) => {
+  if ((item === items.STONE && TwoClicks === items.BRANCH) ||
+    (item === items.BRANCH && TwoClicks === items.STONE)) {
+    if (!gameData.guy.inventory[items.AXE]) {
+      changeItem(gameData, items.STONE, -1);
+      changeItem(gameData, items.BRANCH, -1);
+      changeItem(gameData, items.AXE, 1);
       Bmp[BUTTFAELLEN].Phase = 0;
       Bmp[BUTTBOOT].Phase = 0;
       Bmp[BUTTROHR].Phase = 0;
       PapierText = DrawText(texts.BAUEAXT, TXTPAPIER, 1);
       PlaySound(WAVERFINDUNG, 100);
-    } else if (Guy.Inventar[ROHEGGE] < 1) {
-      Guy.Inventar[ROHSTEIN]--;
-      Guy.Inventar[ROHAST]--;
-      Guy.Inventar[ROHEGGE] = 1;
+    } else if (!gameData.guy.inventory[items.HARROW]) {
+      changeItem(gameData, items.STONE, -1);
+      changeItem(gameData, items.BRANCH, -1);
+      changeItem(gameData, items.HARROW, 1);
       Bmp[BUTTFELD].Phase = 0;
       PapierText = DrawText(texts.BAUEEGGE, TXTPAPIER, 1);
       PlaySound(WAVERFINDUNG, 100);
     } else {
       PapierText = DrawText(texts.STEINPLUSASTNICHTS, TXTPAPIER, 1);
     }
-  } else if (((Objekt === ROHLIANE) && (TwoClicks === ROHAST)) ||
-    ((Objekt === ROHAST) && (TwoClicks === ROHLIANE))) {
-    if (Guy.Inventar[ROHANGEL] < 1) {
-      Guy.Inventar[ROHLIANE]--;
-      Guy.Inventar[ROHAST]--;
-      Guy.Inventar[ROHANGEL] = 1;
+  } else if ((item === items.LIANA && TwoClicks === items.BRANCH) ||
+    (item === items.BRANCH && TwoClicks === items.LIANA)) {
+    if (!gameData.guy.inventory[items.FISHING_ROD]) {
+      changeItem(gameData, items.LIANA, -1);
+      changeItem(gameData, items.BRANCH, -1);
+      changeItem(gameData, items.FISHING_ROD, 1);
       Bmp[BUTTANGELN].Phase = 0;
       PapierText = DrawText(texts.BAUEANGEL, TXTPAPIER, 1);
       PlaySound(WAVERFINDUNG, 100);
     } else {
       PapierText = DrawText(texts.ASTPLUSLIANENICHTS, TXTPAPIER, 1);
     }
-  } else if (((Objekt === ROHLIANE) && (TwoClicks === ROHSTEIN)) ||
-    ((Objekt === ROHSTEIN) && (TwoClicks === ROHLIANE))) {
-    if (Guy.Inventar[ROHSCHLEUDER] < 1) {
-      Guy.Inventar[ROHLIANE]--;
-      Guy.Inventar[ROHSTEIN]--;
-      Guy.Inventar[ROHSCHLEUDER] = 1;
+  } else if (((item === items.LIANA) && (TwoClicks === items.STONE)) ||
+    ((item === items.STONE) && (TwoClicks === items.LIANA))) {
+    if (!gameData.guy.inventory[items.SLING]) {
+      changeItem(gameData, items.LIANA, -1);
+      changeItem(gameData, items.STONE, -1);
+      changeItem(gameData, items.SLING, 1);
       Bmp[BUTTSCHLEUDER].Phase = 0;
       PapierText = DrawText(texts.BAUESCHLEUDER, TXTPAPIER, 1);
       PlaySound(WAVERFINDUNG, 100);

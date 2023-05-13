@@ -1,6 +1,5 @@
-import directions from '../terrain/directions.js';
-import tileEdges from '../terrain/tiles/tileEdges.js';
-import tileTypes from '../terrain/tiles/tileTypes.js';
+import directions from '../../terrain/directions.js';
+import tileEdges from '../../terrain/tiles/tileEdges.js';
 import canGoOnTile from './canGoOnTile.js';
 import getCostsOfTile from './getCostsOfTile.js';
 

@@ -1,4 +1,4 @@
-import sprites from '../images/sprites.js';
+import sprites from '../../images/sprites.js';
 import goToOnTile from './goToOnTile.js';
 
 const goToObject = (gameData, offsetX = 0, offsetY = 0) => {

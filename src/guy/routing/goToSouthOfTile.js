@@ -1,4 +1,4 @@
-import tileEdges from '../terrain/tiles/tileEdges.js';
+import tileEdges from '../../terrain/tiles/tileEdges.js';
 import goToOnTile from './goToOnTile.js';
 
 const goToSouthOfTile = (gameData) => {
