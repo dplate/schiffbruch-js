@@ -30,6 +30,17 @@ import isRiver from './terrain/objects/isRiver.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import findRoute from './guy/findRoute.js';
+import goToOnTile from './guy/goToOnTile.js';
+import goTo from './guy/goTo.js';
+import goToCenterOfTile from './guy/goToCenterOfTile.js';
+import goToWestOfTile from './guy/goToWestOfTile.js';
+import goToStoredPosition from './guy/goToStoredPosition.js';
+import goToObject from './guy/goToObject.js';
+import goToEastOfTile from './guy/goToEastOfTile.js';
+import goToNorthOfTile from './guy/goToNorthOfTile.js';
+import goToSouthOfTile from './guy/goToSouthOfTile.js';
+import directions from './terrain/directions.js';
+import goToOffset from './guy/goToOffset.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -323,8 +334,6 @@ let MouseAktiv = false;    // Mouse angestellt?
 let CursorTyp;        //Welcher Cursortyp?
 let Button0down;    //linke Maustaste gedrückt gehalten
 let Button1down;    //rechte Maustaste gedrückt gehalten
-let RoutePunkt;        //Aktueller Index in RouteKoor
-let Schrittx, Schritty; //Zum Figur laufen lassen
 let timestampInSeconds;            //Start der Sekunde
 let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
@@ -344,10 +353,6 @@ const pi = 3.1415926535;        //pi, was sonst
 let AbspannNr = 0;            //Zähler für Abspann
 let AbspannZustand = 0;            //Wo im Abspann
 
-// Pathfinding
-let Step;
-let Steps;
-
 //Bereiche
 const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
 const rcPanel = { left: MAXX - 205, top: 0, right: MAXX, bottom: MAXY };
@@ -360,18 +365,9 @@ let TextBereich = Array.from(Array(TEXTANZ), () => ({
 }));
 
 const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
-const RouteZiel = { x: null, y: null };     // Koordinaten des Endes der Route
-const RouteStart = { x: null, y: null };    // Koordinaten des Starts der Route
-const RouteKoor = Array.from(Array(2 * MAXXKACH * MAXYKACH), () => ({ x: null, y: null })); // Liste der Routenkoordinaten
-const SaveRoute = Array.from(Array(MAXXKACH * MAXYKACH), () => ({ x: null, y: null }));   //Zum zwischenspeichern der Route
-let NewPos = { x: null, y: null };            // Nur innerhalb des Pathfindings benutzt
-const GuyPosScreenStart = { x: null, y: null }; // Absolute StartPosition bei einem Schritt (Für CalcGuyKoor)
 
 let Guy = {
   Aktion: null,              //Welche Aktion (Suchen, fischen ...) (Übergeordnet über Zustand)
-  Pos: { x: null, y: null },       // KachelPosition der Spielfigur
-  PosAlt: { x: null, y: null },    //Die ursprünglich Position in der Kachel (für die Aktionsprozeduren)
-  PosScreen: { x: null, y: null }, // Absolute Position der Spielfigur
   Zustand: null,             //Was macht er gerade? (Animation)(linkslaufen,rechtslaufen...,angeln..)
   AkNummer: null,            //Bei welcher Aktion (für die Aktionsprozeduren)
   Resource: Array(3),     //Wieviel Wasservorrat usw
@@ -419,7 +415,19 @@ const gameData = {
   },
   guy: {
     active: false,
-    route: []
+    route: [],
+    position: {
+      x: 0,
+      y: 0
+    },
+    prevPosition: {
+      x: 0,
+      y: 0
+    },
+    tile: {
+      x: 0,
+      y: 0
+    }
   }
 };
 
@@ -531,8 +539,8 @@ const SaveGame = () => {
       First: Bmp[i].First
     });
   }
-
-  window.localStorage.setItem('gameDataV5', JSON.stringify({
+  
+  window.localStorage.setItem('gameDataV6', JSON.stringify({
     ...gameData,
     Guy,
     BootsFahrt,
@@ -550,7 +558,7 @@ const SaveGame = () => {
 const LoadGame = () => {
   let i;
 
-  const rawGameData = window.localStorage.getItem('gameDataV5');
+  const rawGameData = window.localStorage.getItem('gameDataV6');
   if (!rawGameData) {
     return false;  
   }
@@ -2652,28 +2660,24 @@ const CheckKey = () => {
       StopSound(WAVSTURM); //Sound hier sofort stoppen
       StopSound(WAVSCHWIMMEN); //Sound hier sofort stoppen
       gameData.guy.active = false;
-      for (x = Guy.Pos.x; x < MAXXKACH; x++) {
-        Guy.Pos.x = x;
+      for (x = gameData.guy.tile.x; x < MAXXKACH; x++) {
+        gameData.guy.tile.x = x;
         Entdecken();
-        if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground !== grounds.SEA) break;
+        if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) break;
       }
-      addShipWreck(gameData.terrain[Guy.Pos.x - 2][Guy.Pos.y]);
+      addShipWreck(gameData.terrain[gameData.guy.tile.x - 2][gameData.guy.tile.y]);
 
-      const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
-      Guy.PosScreen.x = tile.position.x + tileEdges[tile.type].center.x;
-      Guy.PosScreen.y = tile.position.y + tileEdges[tile.type].center.y;
+      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+      gameData.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
+      gameData.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
       gameData.guy.route = [];
-      RouteStart.x = -1;
-      RouteStart.y = -1;
-      RouteZiel.x = -1;
-      RouteZiel.y = -1;
-      updateCamera(gameData.camera, Guy.PosScreen, primaryCanvasContext, false);
+      updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, false);
 
       if (BootsFahrt) ChangeBootsFahrt();
       Guy.Zustand = GUYLINKS;
       Guy.Aktion = AKNICHTS;
       Spielzustand = GAME_PLAY;
-      Guy.PosAlt = { ...Guy.PosScreen };
+      gameData.guy.storedPosition = { ...gameData.guy.position };
       SaveGame();
       return (1);
     }
@@ -2989,26 +2993,20 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   if ((Button === 0) && (Push === 1)) {
     if (Erg &&
       (gameData.terrain[Erg.x][Erg.y].discovered) && !gameData.guy.active &&
-      ((Erg.x !== Guy.Pos.x) || (Erg.y !== Guy.Pos.y)) &&
+      ((Erg.x !== gameData.guy.tile.x) || (Erg.y !== gameData.guy.tile.y)) &&
       (Erg.x > 0) && (Erg.x < MAXXKACH - 1) &&
       (Erg.y > 0) && (Erg.y < MAXYKACH - 1)) {
 
       console.log(gameData.terrain[Erg.x][Erg.y]);
       //Klicksound abspielen
       PlaySound(WAVKLICK2, 100);
-      if ((Erg.x === RouteZiel.x) && (Erg.y === RouteZiel.y)) {
+      if (gameData.guy.route.length && 
+        (Erg.x === gameData.guy.route[gameData.guy.route.length - 1].x) && 
+        (Erg.y === gameData.guy.route[gameData.guy.route.length - 1].y)) {
         Bmp[BUTTSTOP].Phase = 0;
         gameData.guy.active = true;
-        RoutePunkt = -1;
-        Steps = 0;
-        Step = 0;
       } else {
-        gameData.guy.route = [];
-        RouteStart.x = Guy.Pos.x;
-        RouteStart.y = Guy.Pos.y;
-        RouteZiel.x = Erg.x;
-        RouteZiel.y = Erg.y;
-        FindTheWay();
+        gameData.guy.route = findRoute(gameData, Erg);
       }
     } else PlaySound(WAVKLICK, 100);
   }
@@ -3114,13 +3112,9 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Bmp[BUTTSTOP].Phase = 0;
-      gameData.guy.route = [];
-      RouteZiel.x = -1;
-      RouteZiel.y = -1;
-      Guy.PosAlt = { ...Guy.PosScreen };
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
-      switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt) {
+      gameData.guy.storedPosition = { ...gameData.guy.position };
+      goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+      switch (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt) {
         case ZELT:
           Guy.Aktion = AKZELT;
           break;
@@ -3168,7 +3162,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground !== grounds.SEA) Guy.Aktion = AKABLEGEN;
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) Guy.Aktion = AKABLEGEN;
       else Guy.Aktion = AKANLEGEN;
 
     }
@@ -3188,14 +3182,14 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (isEatable(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) ||
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === FELD &&
-         gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase === Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl - 1)) {
+      if (isEatable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FELD &&
+         gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase === Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl - 1)) {
         Guy.Aktion = AKESSEN;
       }else if (
-        isDrinkable(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) ||
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6) ||
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ROHR && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase === 1)
+        isDrinkable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6) ||
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ROHR && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase === 1)
       )
         Guy.Aktion = AKTRINKEN;
       else PapierText = DrawText(texts.KEINESSENTRINKEN, TXTPAPIER, 1);
@@ -3206,7 +3200,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTSCHLAFEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground !== grounds.SEA) {
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLAFEN;
       } else PapierText = DrawText(texts.NICHTAUFWASSERSCHLAFEN, TXTPAPIER, 1);
@@ -3219,11 +3213,11 @@ const MouseInPanel = (Button, Push) => {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
       if (Guy.Inventar[ROHSTAMM] <= 10) {
-        if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object)) {
+        if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object)) {
           Guy.Aktion = AKFAELLEN;
-        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE ||
-          (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1 &&
-            gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3))
+        } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE ||
+          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= HAUS1 &&
+            gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= HAUS3))
           PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
         else PapierText = DrawText(texts.KEINBAUM, TXTPAPIER, 1);
       } else PapierText = DrawText(texts.ROHSTAMMZUVIEL, TXTPAPIER, 1);
@@ -3235,8 +3229,8 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (isFishable(gameData.terrain[Guy.Pos.x][Guy.Pos.y]) ||
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6)
+      if (isFishable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]) ||
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6)
       ) Guy.Aktion = AKANGELN;
       else PapierText = DrawText(texts.KEINWASSER, TXTPAPIER, 1);
     }
@@ -3247,8 +3241,8 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === FEUERSTELLE) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FEUERSTELLE) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
         Guy.Aktion = AKANZUENDEN;
       else PapierText = DrawText(texts.KEINEFEUERST, TXTPAPIER, 1);
     }
@@ -3259,7 +3253,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground !== grounds.SEA) {
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKAUSSCHAU;
       } else PapierText = DrawText(texts.WELLENZUHOCH, TXTPAPIER, 1);
@@ -3271,10 +3265,10 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground !== grounds.SEA &&
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].type === tileTypes.FLAT &&
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 &&
-        !gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) {
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA &&
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT &&
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
+        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHATZ;
       } else PapierText = DrawText(texts.GRABENBEDINGUNGEN, TXTPAPIER, 1);
@@ -3286,12 +3280,12 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
       Guy.AkNummer = 0;
-      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object)) {
+      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object)) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLEUDER;
-      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE) ||
-        ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1) &&
-          (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3)))
+      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE) ||
+        ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= HAUS1) &&
+          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= HAUS3)))
         PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
       else PapierText = DrawText(texts.KEINVOGEL, TXTPAPIER, 1);
     }
@@ -3315,18 +3309,17 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTFELD].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 &&
-        !gameData.terrain[Guy.Pos.x][Guy.Pos.y].object &&
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].type === tileTypes.FLAT &&
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground === grounds.WETLAND) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
+        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT &&
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.WETLAND) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKFELD;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) && (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === FELD)) {
+      } else if ((Bmp[BUTTWEITER].Phase !== -1) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FELD)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKFELD;
       } else PapierText = DrawText(texts.FELDBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -3342,18 +3335,17 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTZELT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 &&
-        !gameData.terrain[Guy.Pos.x][Guy.Pos.y].object &&
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].type === tileTypes.FLAT) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
+        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKZELT;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKZELT;
       } else PapierText = DrawText(texts.ZELTBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -3369,22 +3361,21 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTBOOT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1) &&
-        !gameData.terrain[Guy.Pos.x][Guy.Pos.y].object &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground === grounds.BEACH) &&
-        ((gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].ground === grounds.SEA) ||
-          (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].ground === grounds.SEA) ||
-          (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].ground === grounds.SEA) ||
-          (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].ground === grounds.SEA))) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1) &&
+        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.BEACH) &&
+        ((gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) ||
+          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) ||
+          (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) ||
+          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA))) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKBOOT;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === BOOT)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === BOOT)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKBOOT;
       } else PapierText = DrawText(texts.BOOTBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -3400,18 +3391,17 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTROHR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 &&
-        !gameData.terrain[Guy.Pos.x][Guy.Pos.y].object &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].type === tileTypes.FLAT)) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
+        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKROHR;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ROHR)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ROHR)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKROHR;
       } else PapierText = DrawText(texts.ROHRBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -3427,18 +3417,17 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTSOS].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 &&
-        !gameData.terrain[Guy.Pos.x][Guy.Pos.y].object &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].type === tileTypes.FLAT)) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
+        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKSOS;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === SOS)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === SOS)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKSOS;
       } else PapierText = DrawText(texts.SOSBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -3454,18 +3443,17 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object))
+      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.spite === spriteTypes.BIG_TREE) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS1;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS1)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKHAUS1;
       } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
     }
@@ -3481,20 +3469,19 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object))
+      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE)
+      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE)
         PapierText = DrawText(texts.NICHTOHNELEITER, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS1) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS2;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS2)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS2)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKHAUS2;
       } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
     }
@@ -3510,21 +3497,20 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object))
+      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE ||
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS1)
+      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE ||
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS1)
         PapierText = DrawText(texts.NICHTOHNEPLATTFORM, TXTPAPIER, 1);
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS2) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS2) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS3;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKHAUS3;
       } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
     }
@@ -3540,18 +3526,17 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTFEUERST].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 &&
-        !gameData.terrain[Guy.Pos.x][Guy.Pos.y].object &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].type === tileTypes.FLAT)) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
+        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKFEUERSTELLE;
       } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === FEUERSTELLE)) {
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FEUERSTELLE)) {
         Bmp[BUTTSTOP].Phase = 0;
-        Guy.PosAlt = { ...Guy.PosScreen };
-        ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x,
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y);
+        gameData.guy.storedPosition = { ...gameData.guy.position };
+        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
         Guy.Aktion = AKFEUERSTELLE;
       } else PapierText = DrawText(texts.FEUERSTELLENBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -3561,8 +3546,8 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTDESTROY].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       PlaySound(WAVKLICK2, 100);
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= FELD) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= FEUERSTELLE)) {
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= FELD) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= FEUERSTELLE)) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKDESTROY;
       } else PapierText = DrawText(texts.KEINBAUWERK, TXTPAPIER, 1);
@@ -3697,18 +3682,17 @@ const startGame = async (newGame) => {
         tile.Phase = -1;
         tile.AkNummer = 0;
         tile.GPosAlt = { x: 0, y: 0 };
-        tile.GPosAlt.y = 0;
         tile.Timer = 0;
         tile.Rohstoff = Array(BILDANZ).fill(0);
       }
     }
 
     //Guy Position
-    Guy.Pos.x = 1;
-    Guy.Pos.y = Math.floor(MAXYKACH / 2);
-    const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
-    Guy.PosScreen.x = tile.position.x + tileEdges[tile.type].center.x;
-    Guy.PosScreen.y = tile.position.y + tileEdges[tile.type].center.y;
+    gameData.guy.tile.x = 1;
+    gameData.guy.tile.y = Math.floor(MAXYKACH / 2);
+    const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+    gameData.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
+    gameData.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
 
     Chance = 0;
 
@@ -3737,7 +3721,7 @@ const startGame = async (newGame) => {
   updateMinimap();
 
   Entdecken();
-  Guy.PosAlt = { ...Guy.PosScreen };
+  gameData.guy.storedPosition = { ...gameData.guy.position };
 }
 
 const updateMinimap = () => {
@@ -3976,15 +3960,17 @@ const ZeichneObjekte = () => {
   for (y = 0; y < MAXYKACH; y++)
     for (x = 0; x < MAXXKACH; x++) {
 
-      Guyzeichnen = (Guy.Pos.x === x) && (Guy.Pos.y === y);
+      Guyzeichnen = (gameData.guy.tile.x === x) && (gameData.guy.tile.y === y);
 
       //Die nichtsichbaren Kacheln (oder nicht betroffenen) ausfiltern
-      if (!((gameData.terrain[x][y].position.x > gameData.camera.x - KXPIXEL) &&
-        (gameData.terrain[x][y].position.x < gameData.camera.x + gameData.camera.width + KXPIXEL) &&
-        (gameData.terrain[x][y].position.y > gameData.camera.y - KYPIXEL) &&
-        (gameData.terrain[x][y].position.y < gameData.camera.y + gameData.camera.height + KYPIXEL) &&
-        (gameData.terrain[x][y].discovered) &&
-        (gameData.terrain[x][y].Objekt !== -1 || gameData.terrain[x][y].object || Guyzeichnen))) continue;
+      if ((gameData.terrain[x][y].position.x <= gameData.camera.x - KXPIXEL ||
+        gameData.terrain[x][y].position.x >= gameData.camera.x + gameData.camera.width + KXPIXEL ||
+        gameData.terrain[x][y].position.y <= gameData.camera.y - KYPIXEL ||
+        gameData.terrain[x][y].position.y >= gameData.camera.y + gameData.camera.height + KYPIXEL ||
+        !gameData.terrain[x][y].discovered) &&
+        !Guyzeichnen) {
+        continue;
+      }
 
       //Der Guy ist immer vor diesen Objekten
       if (isOnGround(gameData.terrain[x][y].object)) {
@@ -3995,12 +3981,12 @@ const ZeichneObjekte = () => {
         || gameData.terrain[x][y].Objekt === ROHR
         || gameData.terrain[x][y].Objekt === SOS)) {
         //Sound abspielen
-        if (((Guy.Pos.x - 1 <= x) && (x <= Guy.Pos.x + 1)) &&
-          ((Guy.Pos.y - 1 <= y) && (y <= Guy.Pos.y + 1))) {
-          if ((x === Guy.Pos.x) && (y === Guy.Pos.y))
+        if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
+          ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
+          if ((x === gameData.guy.tile.x) && (y === gameData.guy.tile.y))
             PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 100);
-          else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 || (
-            Bmp[gameData.terrain[x][y].Objekt].Sound !== Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Sound
+          else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 || (
+            Bmp[gameData.terrain[x][y].Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
           ))
             PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 50);
         }
@@ -4016,7 +4002,7 @@ const ZeichneObjekte = () => {
         if (gameData.terrain[x][y].Objekt === -1 && gameData.terrain[x][y].object) {
           const object = gameData.terrain[x][y].object;
           if (Guyzeichnen) {
-            if ((Guy.PosScreen.y) < (gameData.terrain[x][y].position.y + object.y + sprites[object.sprite].height)) {
+            if ((gameData.guy.position.y) < (gameData.terrain[x][y].position.y + object.y + sprites[object.sprite].height)) {
               ZeichneGuy();
               Guyzeichnen = false;
             }
@@ -4037,17 +4023,17 @@ const ZeichneObjekte = () => {
           gameData.terrain[x][y].Objekt >= ZELT)
         {
           //Sound abspielen
-          if (((Guy.Pos.x - 1 <= x) && (x <= Guy.Pos.x + 1)) &&
-            ((Guy.Pos.y - 1 <= y) && (y <= Guy.Pos.y + 1))) {
-            if ((x === Guy.Pos.x) && (y === Guy.Pos.y))
+          if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
+            ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
+            if ((x === gameData.guy.tile.x) && (y === gameData.guy.tile.y))
               PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 100);
-            else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === -1 || (
-              Bmp[gameData.terrain[x][y].Objekt].Sound !== Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Sound
+            else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 || (
+              Bmp[gameData.terrain[x][y].Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
             ))
               PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 50);
           }
           if (Guyzeichnen) {
-            if ((Guy.PosScreen.y) < (gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y
+            if ((gameData.guy.position.y) < (gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y
               + Bmp[gameData.terrain[x][y].Objekt].Hoehe)) {
               ZeichneGuy();
               Guyzeichnen = false;
@@ -4064,7 +4050,9 @@ const ZeichneObjekte = () => {
           );
         }
       }
-      if (Guyzeichnen) ZeichneGuy();
+      if (Guyzeichnen) {
+        ZeichneGuy();
+      }
     }
 }
 
@@ -4072,8 +4060,8 @@ const ZeichneGuy = () => {
   if (BootsFahrt) {
     if (Guy.Zustand === GUYSCHIFF) {
       ZeichneBilder(
-        Math.floor(Guy.PosScreen.x - 30 - gameData.camera.x),
-        Math.floor(Guy.PosScreen.y - 28 - gameData.camera.y),
+        Math.floor(gameData.guy.position.x - 30 - gameData.camera.x),
+        Math.floor(gameData.guy.position.y - 28 - gameData.camera.y),
         Guy.Zustand, 
         { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
         false, 
@@ -4081,8 +4069,8 @@ const ZeichneGuy = () => {
       );
     } else {
       ZeichneBilder(
-        Math.floor(Guy.PosScreen.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
-        Math.floor(Guy.PosScreen.y - (Bmp[Guy.Zustand].Hoehe) / 2 - gameData.camera.y),
+        Math.floor(gameData.guy.position.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
+        Math.floor(gameData.guy.position.y - (Bmp[Guy.Zustand].Hoehe) / 2 - gameData.camera.y),
         Guy.Zustand, 
         { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
         false, 
@@ -4090,8 +4078,8 @@ const ZeichneGuy = () => {
       );
     }
   } else ZeichneBilder(
-    Math.floor(Guy.PosScreen.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
-    Math.floor(Guy.PosScreen.y - (Bmp[Guy.Zustand].Hoehe) - gameData.camera.y),
+    Math.floor(gameData.guy.position.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
+    Math.floor(gameData.guy.position.y - (Bmp[Guy.Zustand].Hoehe) - gameData.camera.y),
     Guy.Zustand, 
     { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }, 
     false, 
@@ -4141,8 +4129,8 @@ const ZeichnePanel = () => {
   drawImage(minimapCanvasContext.canvas, primaryCanvasContext);
 
   //Spielfigur
-  rcRectdes.left = rcKarte.left + 2 * Guy.Pos.x;
-  rcRectdes.top = rcKarte.top + 2 * Guy.Pos.y;
+  rcRectdes.left = rcKarte.left + 2 * gameData.guy.tile.x;
+  rcRectdes.top = rcKarte.top + 2 * gameData.guy.tile.y;
   rcRectdes.right = rcRectdes.left + 2;
   rcRectdes.bottom = rcRectdes.top + 2;
   fillCanvas(rcRectdes, 255, 0, 0, 1, primaryCanvasContext);
@@ -4556,19 +4544,19 @@ const CalcRect = (rcBereich) => {
 }
 
 const CheckSpzButton = () => {
-  if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= FELD) && (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= FEUERSTELLE) &&
-    (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase >= Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl) &&
+  if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= FELD) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= FEUERSTELLE) &&
+    (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase >= Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl) &&
     (Bmp[BUTTSTOP].Phase === -1)) {
     if (Bmp[BUTTWEITER].Phase === -1) Bmp[BUTTWEITER].Phase = 0;
   } else Bmp[BUTTWEITER].Phase = -1;
 
-  if ((Bmp[BUTTSTOP].Phase === -1) && (((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === BOOT) &&
-    (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) ||
+  if ((Bmp[BUTTSTOP].Phase === -1) && (((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === BOOT) &&
+    (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) ||
     ((BootsFahrt) &&
-      (((gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].ground !== grounds.SEA) && (gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].Objekt === -1 && !gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].object)) ||
-        ((gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].ground !== grounds.SEA) && (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].Objekt === -1 && !gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].object)) ||
-        ((gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].ground !== grounds.SEA) && (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].Objekt === -1 && !gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].object)) ||
-        ((gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].ground !== grounds.SEA) && (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].Objekt === -1 && !gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].object)))))) {
+      (((gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].object)) ||
+        ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].object)) ||
+        ((gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].object)) ||
+        ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground !== grounds.SEA) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].Objekt === -1 && !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].object)))))) {
     if (Bmp[BUTTABLEGEN].Phase === -1) Bmp[BUTTABLEGEN].Phase = 0;
   } else Bmp[BUTTABLEGEN].Phase = -1;
 }
@@ -4581,20 +4569,20 @@ const CheckRohstoff = () => {
   let Check;     //Wenn kein Rohstoff mehr vorhanden nur noch einmal die While-Schleife
 
   Benoetigt = 0;
-  for (i = 0; i < BILDANZ; i++) Benoetigt += Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Rohstoff[i];
+  for (i = 0; i < BILDANZ; i++) Benoetigt += Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Rohstoff[i];
 
-  GebrauchtTmp = Benoetigt / Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].AkAnzahl;
-  Gebraucht = Math.floor(GebrauchtTmp * gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) -
-    Math.floor(GebrauchtTmp * (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer - 1));
+  GebrauchtTmp = Benoetigt / Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].AkAnzahl;
+  Gebraucht = Math.floor(GebrauchtTmp * gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer) -
+    Math.floor(GebrauchtTmp * (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer - 1));
 
   while (1) {
     Check = false;
     for (i = 0; i < BILDANZ; i++) {
       if (Gebraucht === 0) return true;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] > 0) &&
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Rohstoff[i] > 0) &&
         (Guy.Inventar[i] > 0)) {
         Guy.Inventar[i]--;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i]--;
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Rohstoff[i]--;
         Gebraucht--;
         if (Gebraucht === 0) return true;
         Check = true;
@@ -4612,8 +4600,6 @@ const CheckRohstoff = () => {
 const Event = (Eventnr) => {
   if (Eventnr !== AKNICHTS) {
     gameData.guy.route = [];
-    RouteZiel.x = -1;
-    RouteZiel.y = -1;
   }
   switch (Eventnr) {
     case AKNICHTS:
@@ -4711,30 +4697,33 @@ const Event = (Eventnr) => {
   }
 }
 
+const goToInitialPosition = () => {
+  const Erg = GetKachel(gameData.guy.storedPosition.x, gameData.guy.storedPosition.y);
+  if (Erg && Erg.x === gameData.guy.tile.x && Erg.y === gameData.guy.tile.y) {
+    goTo(gameData, gameData.guy.storedPosition);
+  } else {
+    const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+    goToCenterOfTile(gameData);
+  }
+}
+
 const AkIntro = () => {
   let x;
-  const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       //Intro Route herstellen
       gameData.guy.active = true;
-      RoutePunkt = -1;
-      Steps = 0;
-      Step = 0;
-      RouteStart.x = Guy.Pos.x;
-      RouteStart.y = Guy.Pos.y;
-      RouteZiel.y = Guy.Pos.y;
-      for (x = Guy.Pos.x; x < MAXXKACH; x++)//Zielkoordinate für Introroute finden
+      for (x = gameData.guy.tile.x; x < MAXXKACH; x++)//Zielkoordinate für Introroute finden
       {
-        if (gameData.terrain[x][Guy.Pos.y].ground !== grounds.SEA) break;
-        RouteZiel.x = x - 1;
+        if (gameData.terrain[x][gameData.guy.tile.y].ground !== grounds.SEA) break;
       }
-      FindTheWay();
+      gameData.guy.route = findRoute(gameData, { x: x - 2, y: gameData.guy.tile.y });
       break;
     case 2:
-      Guy.PosScreen.y -= 10;
+      gameData.guy.position.y -= 10;
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHIFFDOWN;
       PlaySound(WAVPLATSCH, 100);
@@ -4742,22 +4731,21 @@ const AkIntro = () => {
       break;
     case 3:
       addShipWreck(tile);
-
-      ChangeBootsFahrt();
-      Guy.Pos.x += 2;
-      Guy.PosScreen.y += 10;
+      gameData.guy.tile.x += 2;
+      gameData.guy.position.y += 10;
+      goToWestOfTile(gameData);
+      Entdecken();
       Guy.Zustand = GUYSCHWIMMEN;
-      const targetTile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
-      ShortRoute(targetTile.position.x + tileEdges[targetTile.type].west.x, targetTile.position.y + tileEdges[targetTile.type].west.y);
       break;
     case 4:
+      ChangeBootsFahrt();
       StopSound(WAVSCHWIMMEN); //Sound hier sofort stoppen
       Guy.Zustand = GUYLINKS;
-      ShortRoute(tile.position.x + tileEdges[tile.type].center.x, tile.position.y + tileEdges[tile.type].center.y);
+      goToCenterOfTile(gameData);
       break;
     case 5:
-      updateCamera(gameData.camera, Guy.PosScreen, primaryCanvasContext, false);
-      Guy.PosAlt = { ...Guy.PosScreen };
+      updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, false);
+      gameData.guy.storedPosition = { ...gameData.guy.position };
       Spielzustand = GAME_PLAY;
       Guy.Aktion = AKNICHTS;
       PapierText = DrawText(texts.INTROTEXT, TXTPAPIER, 1);
@@ -4771,10 +4759,7 @@ const AkNeubeginnen = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      Erg = GetKachel(Guy.PosAlt.x, Guy.PosAlt.y);
-      if (Erg && Erg.x === Guy.Pos.x && Erg.y === Guy.Pos.y) ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
-      else if (RoutePunkt % 2 === 0) ShortRoute(RouteKoor[RoutePunkt].x, RouteKoor[RoutePunkt].y); //Nur bis zur Mitte der aktuellen Kacheln laufen
-      else ShortRoute(RouteKoor[RoutePunkt + 1].x, RouteKoor[RoutePunkt + 1].y);
+      goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
@@ -4801,10 +4786,7 @@ const AkTagNeubeginnen = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      Erg = GetKachel(Guy.PosAlt.x, Guy.PosAlt.y);
-      if (Erg && Erg.x === Guy.Pos.x && Erg.y === Guy.Pos.y) ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
-      else if (RoutePunkt % 2 === 0) ShortRoute(RouteKoor[RoutePunkt].x, RouteKoor[RoutePunkt].y); //Nur bis zur Mitte der aktuellen Kacheln laufen
-      else ShortRoute(RouteKoor[RoutePunkt + 1].x, RouteKoor[RoutePunkt + 1].y);
+      goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
@@ -4831,10 +4813,7 @@ const AkSpielverlassen = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      Erg = GetKachel(Guy.PosAlt.x, Guy.PosAlt.y);
-      if (Erg && Erg.x === Guy.Pos.x && Erg.y === Guy.Pos.y) ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
-      else if (RoutePunkt % 2 === 0) ShortRoute(RouteKoor[RoutePunkt].x, RouteKoor[RoutePunkt].y); //Nur bis zur Mitte der aktuellen Kacheln laufen
-      else ShortRoute(RouteKoor[RoutePunkt + 1].x, RouteKoor[RoutePunkt + 1].y);
+      goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
@@ -4901,11 +4880,10 @@ const AkAbbruch = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
-      tile.GPosAlt.x = Guy.PosScreen.x;
-      tile.GPosAlt.y = Guy.PosScreen.y;
-
-      ShortRoute(tile.position.x + tileEdges[tile.type].center.x, tile.position.y + tileEdges[tile.type].center.y);
+      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+      tile.GPosAlt.x = gameData.guy.position.x;
+      tile.GPosAlt.y = gameData.guy.position.y;
+      goToCenterOfTile(gameData);
       break;
     case 2:
       Guy.Aktion = AKNICHTS;
@@ -4918,15 +4896,17 @@ const AkDestroy = () => {
   let i; //Um sich kurz das Objekt zu merken
 
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Breite + 4,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe);
+      goToOnTile(gameData, {
+        x: gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x
+          + Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Breite + 4,
+        y: gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y
+          + Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Hoehe
+      });
       break;
     case 2:
     case 4:
@@ -4945,18 +4925,18 @@ const AkDestroy = () => {
       AddTime(0, 5);
       break;
     case 6:
-      i = gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt;
+      i = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt;
       
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = -1;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = 0;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = 0;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = -1;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].object = gameData.terrain[Guy.Pos.x][Guy.Pos.y].originalObject;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].originalObject = null
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = 0;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x = 0;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y = 0;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = -1;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].originalObject;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].originalObject = null
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
       if (i === SOS) Chance -= 0.1;
       else if (i === ROHR) FillRohr();
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition();
       break;
     case 7:
       Guy.Aktion = AKNICHTS;
@@ -4970,13 +4950,13 @@ const AkSuchen = () => {
   let i;
 
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   while (1) {
-    Ziel.x = gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + Math.floor(Math.random() * KXPIXEL);
-    Ziel.y = gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + Math.floor(Math.random() * KYPIXEL);
+    Ziel.x = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].position.x + Math.floor(Math.random() * KXPIXEL);
+    Ziel.y = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].position.y + Math.floor(Math.random() * KYPIXEL);
     Erg = GetKachel(Ziel.x, Ziel.y);
-    if (Erg && Erg.x === Guy.Pos.x && Erg.y === Guy.Pos.y) break; //Wenn das gefundene Ziel in der Kachel, dann fertig
+    if (Erg && Erg.x === gameData.guy.tile.x && Erg.y === gameData.guy.tile.y) break; //Wenn das gefundene Ziel in der Kachel, dann fertig
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
@@ -4987,11 +4967,13 @@ const AkSuchen = () => {
       if (BootsFahrt) {
         if (Guy.AkNummer === 1) {
           gameData.guy.active = true;
-          Guy.PosScreen.y -= 2;
+          gameData.guy.position.y -= 2;
           Guy.Zustand = GUYTAUCHEN1;
           PlaySound(WAVPLATSCH, 100);
         }
-      } else ShortRoute(Ziel.x, Ziel.y);
+      } else {
+        goTo(gameData, Ziel);
+      }
       break;
     case 2:
     case 4:
@@ -5000,7 +4982,7 @@ const AkSuchen = () => {
       gameData.guy.active = true;
       if (BootsFahrt) {
         if (Guy.AkNummer === 2) {
-          Guy.PosScreen.y += 5;
+          gameData.guy.position.y += 5;
         }
         Guy.Zustand = GUYTAUCHEN2;
       } else Guy.Zustand = GUYSUCHEN;
@@ -5014,16 +4996,16 @@ const AkSuchen = () => {
       }
       break;
     case 10:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 11:
       gameData.guy.active = true;
       if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
       //Auf Strand und Fluss
       if (
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground === grounds.BEACH ||
-        isRiver(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) ||
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= SCHLEUSE1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= SCHLEUSE6)
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.BEACH ||
+        isRiver(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6)
       ) {
         if (Guy.Inventar[ROHSTEIN] < 10) {
           PapierText = DrawText(texts.ROHSTEINGEFUNDEN, TXTPAPIER, 1);
@@ -5031,7 +5013,7 @@ const AkSuchen = () => {
           if (Guy.Inventar[ROHSTEIN] > 10) Guy.Inventar[ROHSTEIN] = 10;
         } else PapierText = DrawText(texts.ROHSTEINZUVIEL, TXTPAPIER, 1);
 
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BUSH) {
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BUSH) {
         i = Math.floor(Math.random() * 2);
         switch (i) {
           case 0:
@@ -5047,9 +5029,9 @@ const AkSuchen = () => {
             } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
             break;
         }
-      } else if (isNormalTree(gameData.terrain[Guy.Pos.x][Guy.Pos.y].object) || 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.BIG_TREE || 
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= HAUS1 && gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= HAUS3)) {
+      } else if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) || 
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE || 
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= HAUS1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= HAUS3)) {
         i = Math.floor(Math.random() * 3);
         switch (i) {
           case 0:
@@ -5072,7 +5054,7 @@ const AkSuchen = () => {
             break;
         }
       } else if (BootsFahrt) {
-        if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.SHIP_WRECK) {
+        if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.SHIP_WRECK) {
           if (Guy.Inventar[ROHFERNROHR] === 0) {
             PapierText = DrawText(texts.FERNROHRGEFUNDEN, TXTPAPIER, 1);
             Guy.Inventar[ROHFERNROHR] = 1;
@@ -5082,7 +5064,7 @@ const AkSuchen = () => {
             Bmp[BUTTHAUS2].Phase = 0;
             Bmp[BUTTHAUS3].Phase = 0;
           } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
-        } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].object?.sprite === spriteTypes.PIRATE_WRECK) {
+        } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.PIRATE_WRECK) {
           if (Guy.Inventar[ROHKARTE] === 0) {
             PapierText = DrawText(texts.KARTEGEFUNDEN, TXTPAPIER, 1);
             Guy.Inventar[ROHKARTE] = 1;
@@ -5103,24 +5085,19 @@ const AkSuchen = () => {
 
 const AkEssen = () => {
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
-  const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       if (tile.object) {
-        ShortRoute(Math.floor(
-          tile.position.x + tile.object.x + sprites[tile.object.sprite].width / 2
-        ), Math.floor(
-          tile.position.y + tile.object.y + sprites[tile.object.sprite].height + 2
-        ));
+        goToObject(gameData, 0, 2);
       } else {
-        ShortRoute(Math.floor(
-          tile.position.x + tile.ObPos.x + Bmp[tile.Objekt].Breite / 2
-        ), Math.floor(
-          tile.position.y + tile.ObPos.y + Bmp[tile.Objekt].Hoehe + 2
-        ));
+        goToOnTile(gameData, {
+          x: tile.ObPos.x + Bmp[tile.Objekt].Breite / 2,
+          y: tile.ObPos.y + Bmp[tile.Objekt].Hoehe + 2
+        });
       }
       break;
     case 2:
@@ -5136,7 +5113,7 @@ const AkEssen = () => {
       } else {
         tile.Phase = 0;
       }
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 5:
       Guy.Aktion = AKNICHTS;
@@ -5146,35 +5123,23 @@ const AkEssen = () => {
 
 const AkSchleuder = () => {
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 - 14
-      ), Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 9
-      ));
+      goToObject(gameData, -14, 9);
       break;
     case 2:
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHLEUDER;
-      Guy.PosScreen.x += 5;
+      gameData.guy.position.x += 5;
       AddTime(0, 2);
       PlaySound(WAVSCHLEUDER, 100);
       break;
     case 3:
-      Guy.PosScreen.x -= 5;
-      ShortRoute(Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 + 6
-      ), Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 2
-      ));
+      gameData.guy.position.x -= 5;
+      goToObject(gameData, 6, 2);
       break;
     case 4:
       gameData.guy.active = true;
@@ -5183,7 +5148,7 @@ const AkSchleuder = () => {
       AddTime(0, 20);
       break;
     case 5:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 6:
       Guy.Aktion = AKNICHTS;
@@ -5193,13 +5158,12 @@ const AkSchleuder = () => {
 
 const AkTrinken = () => {
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(Guy.PosScreen.x - 4,
-        Guy.PosScreen.y - 2);
+      goToOffset(gameData, -4, -2);
       break;
     case 2:
     case 3:
@@ -5209,7 +5173,7 @@ const AkTrinken = () => {
       AddTime(0, 3);
       break;
     case 4:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 5:
       Guy.Aktion = AKNICHTS;
@@ -5221,17 +5185,14 @@ const AkFaellen = () => {
   let i;
 
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
-  const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   const tree = tile.object;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(Math.floor(
-        tile.position.x + tree.x + sprites[tree.sprite].width / 2 + 9
-      ), Math.floor(tile.position.y + tree.y + sprites[tree.sprite].height + 3
-      ));
+      goToObject(gameData, 9, 3);
       break;
     case 2:
     case 3:
@@ -5264,7 +5225,7 @@ const AkFaellen = () => {
       PlaySound(WAVBAUMFAELLT, 100);
       break;
     case 8:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 9:
       tile.Objekt = -1;
@@ -5283,64 +5244,64 @@ const AkFaellen = () => {
 
 const AkAngeln = () => {
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
-  const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       if (tile.object) {
         switch (tile.object.sprite) {
           case spriteTypes.RIVER_SLOPE_NORTH:
-            ShortRoute(tile.position.x + 35, tile.position.y + 26);
+            goToOnTile(gameData, { x: 35, y: 26});
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
-            ShortRoute(tile.position.x + 19, tile.position.y + 26);
+            goToOnTile(gameData, { x: 19, y: 26});
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
-            ShortRoute(tile.position.x + 22, tile.position.y + 20);
+            goToOnTile(gameData, { x: 22, y: 20});
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
-            ShortRoute(tile.position.x + 34, tile.position.y + 23);
+            goToOnTile(gameData, { x: 34, y: 23});
             break;
           case spriteTypes.RIVER_NORTH_SOUTH:  
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
-            ShortRoute(tile.position.x + 34, tile.position.y + 33);
+            goToOnTile(gameData, { x: 34, y: 33});
             break;
           case spriteTypes.RIVER_WEST_EAST:  
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
-            ShortRoute(tile.position.x + 20, tile.position.y + 33);
+            goToOnTile(gameData, { x: 20, y: 33});
             break;
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
-            ShortRoute(tile.position.x + 22, tile.position.y + 26);
+            goToOnTile(gameData, { x: 22, y: 26});
             break;
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            ShortRoute(tile.position.x + 32, tile.position.y + 26);
+            goToOnTile(gameData, { x: 32, y: 26});
             break;
         }
       } else {
         switch (tile.Objekt) {
           case SCHLEUSE2:
           case SCHLEUSE3:
-            ShortRoute(tile.position.x + 34, tile.position.y + 33);
+            goToOnTile(gameData, { x: 34, y: 33});
             break;
           case SCHLEUSE1:
           case SCHLEUSE5:
-            ShortRoute(tile.position.x + 20, tile.position.y + 33);
+            goToOnTile(gameData, { x: 20, y: 33});
             break;
           case SCHLEUSE4:
-            ShortRoute(tile.position.x + 22, tile.position.y + 26);
+            goToOnTile(gameData, { x: 22, y: 26});
             break;
           case SCHLEUSE6:
-            ShortRoute(tile.position.x + 32, tile.position.y + 26);
+            goToOnTile(gameData, { x: 32, y: 26});
             break;
         }
       }
@@ -5349,7 +5310,7 @@ const AkAngeln = () => {
       gameData.guy.active = true;
       PlaySound(WAVANGEL, 100);
       if (BootsFahrt) {
-        Guy.PosScreen.y -= 2;
+        gameData.guy.position.y -= 2;
         Guy.Zustand = GUYBOOTANGELN1;
       }
       if (tile.object) {
@@ -5510,7 +5471,7 @@ const AkAngeln = () => {
       }
       break;
     case 8:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 9:
       Guy.Resource[NAHRUNG] += 20;
@@ -5521,37 +5482,35 @@ const AkAngeln = () => {
 
 const AkAnzuenden = () => {
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2 - 10
-      ), Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y
-        + Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe + 1
-      ));
+      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + Bmp[tile.Objekt].Breite / 2 - 10,
+        y: tile.ObPos.y + Bmp[tile.Objekt].Hoehe + 1
+      });
       break;
     case 2:
       gameData.guy.active = true;
       Guy.Zustand = GUYANZUENDEN;
-      Guy.PosScreen.x += 5;
+      gameData.guy.position.x += 5;
       AddTime(0, 1);
       break;
     case 3:
       gameData.guy.active = true;
       Guy.Zustand = GUYWARTEN;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = FEUER;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[FEUER].rcDes.left;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[FEUER].rcDes.top;
-      Chance += 2 + 2 * gameData.terrain[Guy.Pos.x][Guy.Pos.y].height;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = FEUER;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x = Bmp[FEUER].rcDes.left;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y = Bmp[FEUER].rcDes.top;
+      Chance += 2 + 2 * gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       AddTime(0, 2);
-      Guy.PosScreen.x -= 5;
+      gameData.guy.position.x -= 5;
       break;
     case 4:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 5:
       Guy.Aktion = AKNICHTS;
@@ -5561,7 +5520,7 @@ const AkAnzuenden = () => {
 
 const AkAusschau = () => {
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
@@ -5569,7 +5528,7 @@ const AkAusschau = () => {
       gameData.guy.active = true;
       Guy.Zustand = GUYAUSSCHAU;
       AddTime(0, 40);
-      Chance += 1 + gameData.terrain[Guy.Pos.x][Guy.Pos.y].height;
+      Chance += 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       break;
     case 2:
       gameData.guy.active = true;
@@ -5582,10 +5541,10 @@ const AkAusschau = () => {
       AddTime(0, 40);
       break;
     case 4:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 5:
-      Chance -= 1 + gameData.terrain[Guy.Pos.x][Guy.Pos.y].height;
+      Chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       Guy.Aktion = AKNICHTS;
       break;
   }
@@ -5593,14 +5552,14 @@ const AkAusschau = () => {
 
 const AkSchatz = () => {
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };
+    gameData.guy.storedPosition = { ...gameData.guy.position };
   }
   Guy.AkNummer++;
 
   switch (Guy.AkNummer) {
     case 1:
-      Guy.PosScreen.x -= 5;
-      Guy.PosScreen.y += 1;
+      gameData.guy.position.x -= 5;
+      gameData.guy.position.y += 1;
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHAUFELN;
       break;
@@ -5608,10 +5567,10 @@ const AkSchatz = () => {
       AddTime(0, 20);
       AddResource(WASSER, -10);
       AddResource(NAHRUNG, -10);
-      Guy.PosScreen.x += 5;
-      Guy.PosScreen.y -= 1;
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
-      if (Guy.Pos.x === gameData.treasure.x && Guy.Pos.y === gameData.treasure.y && !gameData.treasure.found) {
+      gameData.guy.position.x += 5;
+      gameData.guy.position.y -= 1;
+      goToStoredPosition(gameData);
+      if (gameData.guy.tile.x === gameData.treasure.x && gameData.guy.tile.y === gameData.treasure.y && !gameData.treasure.found) {
         PapierText = DrawText(texts.SCHATZGEFUNDEN, TXTPAPIER, 1);
         Guy.Inventar[ROHSTREICHHOLZ] = 1;
         Bmp[BUTTANZUENDEN].Phase = 0;
@@ -5626,62 +5585,76 @@ const AkSchatz = () => {
 
 const AkFeld = () => {
   let i;
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[FELD].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = FELD;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[FELD].rcDes.left;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[FELD].rcDes.top;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[FELD].Anzahl;
+      tile.Rohstoff[i] = Bmp[FELD].Rohstoff[i];
+    tile.Objekt = FELD;
+    tile.ObPos.x = Bmp[FELD].rcDes.left;
+    tile.ObPos.y = Bmp[FELD].rcDes.top;
+    tile.Phase = Bmp[FELD].Anzahl;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 23);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 22,
+        y: tile.ObPos.y + 23
+      });
       break;
     case 4:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 4;
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 25,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
+      tile.Phase = 4;
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 25,
+        y: tile.ObPos.y + 21
+      });
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 7:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 5;
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 19);
+      tile.Phase = 5;
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 28,
+        y: tile.ObPos.y + 19
+      });
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 10:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 6;
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 17);
+      tile.Phase = 6;
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 31,
+        y: tile.ObPos.y + 17
+      });
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 13:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 7;
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 34,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
+      tile.Phase = 7;
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 34,
+        y: tile.ObPos.y + 15
+      });
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
       break;
     case 16:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 8;
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 36,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
+      tile.Phase = 8;
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 36,
+        y: tile.ObPos.y + 13
+      });
       AddResource(WASSER, -2);
       AddResource(NAHRUNG, -2);
       AddTime(0, 30);
@@ -5702,13 +5675,13 @@ const AkFeld = () => {
       Guy.Zustand = GUYFELD;
       break;
     case 19:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = FELD;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[FELD].rcDes.left;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[FELD].rcDes.top;
+      goToStoredPosition(gameData);
+      tile.Objekt = FELD;
+      tile.ObPos.x = Bmp[FELD].rcDes.left;
+      tile.ObPos.y = Bmp[FELD].rcDes.top;
       break;
     case 20:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      tile.Phase = 0;
       Bmp[BUTTSTOP].Phase = -1;
       if (Bmp[FELD].First) {
         PapierText = DrawText(texts.FELDHILFE, TXTPAPIER, 1);
@@ -5731,12 +5704,9 @@ const AkTagEnde = () => {
       Bmp[BUTTSTOP].Phase = -1;
       if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
         (Guy.Zustand === GUYSCHLAFHAUS) || (BootsFahrt)) break;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.x = Guy.PosScreen.x;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].GPosAlt.y = Guy.PosScreen.y;
-      Erg = GetKachel(Guy.PosAlt.x, Guy.PosAlt.y);
-      if (Erg && Erg.x === Guy.Pos.x && Erg.y === Guy.Pos.y) ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
-      else if (RoutePunkt % 2 === 0) ShortRoute(RouteKoor[RoutePunkt].x, RouteKoor[RoutePunkt].y); //Nur bis zur Mitte der aktuellen Kacheln laufen
-      else ShortRoute(RouteKoor[RoutePunkt + 1].x, RouteKoor[RoutePunkt + 1].y);
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt.x = gameData.guy.position.x;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt.y = gameData.guy.position.y;
+      goToInitialPosition();
       break;
     case 2:
       Stunden = 12;
@@ -5748,53 +5718,48 @@ const AkTagEnde = () => {
         x: -1,
         y: -1
       };
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) || (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3)) {
-        Erg.x = Guy.Pos.x;
-        Erg.y = Guy.Pos.y;
-      } else if (gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].Objekt === HAUS3) {
-        Erg.x = Guy.Pos.x - 1;
-        Erg.y = Guy.Pos.y;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].Objekt === HAUS3) {
-        Erg.x = Guy.Pos.x;
-        Erg.y = Guy.Pos.y - 1;
-      } else if (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].Objekt === HAUS3) {
-        Erg.x = Guy.Pos.x + 1;
-        Erg.y = Guy.Pos.y;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].Objekt === HAUS3) {
-        Erg.x = Guy.Pos.x;
-        Erg.y = Guy.Pos.y + 1;
-      } else if (gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].Objekt === ZELT) {
-        Erg.x = Guy.Pos.x - 1;
-        Erg.y = Guy.Pos.y;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].Objekt === ZELT) {
-        Erg.x = Guy.Pos.x;
-        Erg.y = Guy.Pos.y - 1;
-      } else if (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].Objekt === ZELT) {
-        Erg.x = Guy.Pos.x + 1;
-        Erg.y = Guy.Pos.y;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].Objekt === ZELT) {
-        Erg.x = Guy.Pos.x;
-        Erg.y = Guy.Pos.y + 1;
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) || (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3)) {
+        Erg.x = gameData.guy.tile.x;
+        Erg.y = gameData.guy.tile.y;
+      } else if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].Objekt === HAUS3) {
+        Erg.x = gameData.guy.tile.x - 1;
+        Erg.y = gameData.guy.tile.y;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].Objekt === HAUS3) {
+        Erg.x = gameData.guy.tile.x;
+        Erg.y = gameData.guy.tile.y - 1;
+      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].Objekt === HAUS3) {
+        Erg.x = gameData.guy.tile.x + 1;
+        Erg.y = gameData.guy.tile.y;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].Objekt === HAUS3) {
+        Erg.x = gameData.guy.tile.x;
+        Erg.y = gameData.guy.tile.y + 1;
+      } else if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].Objekt === ZELT) {
+        Erg.x = gameData.guy.tile.x - 1;
+        Erg.y = gameData.guy.tile.y;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].Objekt === ZELT) {
+        Erg.x = gameData.guy.tile.x;
+        Erg.y = gameData.guy.tile.y - 1;
+      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].Objekt === ZELT) {
+        Erg.x = gameData.guy.tile.x + 1;
+        Erg.y = gameData.guy.tile.y;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].Objekt === ZELT) {
+        Erg.x = gameData.guy.tile.x;
+        Erg.y = gameData.guy.tile.y + 1;
       }
       if ((Erg.x !== -1) && (Erg.y !== -1)) {
-        Guy.Pos.x = Erg.x;
-        Guy.Pos.y = Erg.y;
-        if ((gameData.terrain[Erg.x][Erg.y].Objekt === ZELT) &&
-          (gameData.terrain[Erg.x][Erg.y].Phase < Bmp[gameData.terrain[Erg.x][Erg.y].Objekt].Anzahl))
-          ShortRoute(Math.floor(
-            gameData.terrain[Erg.x][Erg.y].position.x + gameData.terrain[Erg.x][Erg.y].ObPos.x + 3
-          ), Math.floor(
-            gameData.terrain[Erg.x][Erg.y].position.y + gameData.terrain[Erg.x][Erg.y].ObPos.y + 20
-          ));
-        else if ((gameData.terrain[Erg.x][Erg.y].Objekt === HAUS3) &&
-          (gameData.terrain[Erg.x][Erg.y].Phase < Bmp[gameData.terrain[Erg.x][Erg.y].Objekt].Anzahl))
-          ShortRoute(Math.floor(
-            gameData.terrain[Erg.x][Erg.y].position.x + gameData.terrain[Erg.x][Erg.y].ObPos.x +
-            sprites[spriteTypes.BIG_TREE].width / 2
-          ), Math.floor(
-            gameData.terrain[Erg.x][Erg.y].position.y + gameData.terrain[Erg.x][Erg.y].ObPos.y +
-            sprites[spriteTypes.BIG_TREE].height + 1
-          ));
+        gameData.guy.tile.x = Erg.x;
+        gameData.guy.tile.y = Erg.y;
+        const tile = gameData.terrain[Erg.x][Erg.y];
+        if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+          goToOnTile(gameData, {
+            x: tile.ObPos.x + 3,
+            y: tile.ObPos.y + 20
+          });
+        else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+          goToOnTile(gameData, {
+            x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2,
+            y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+          });
       }
       break;
     case 3:
@@ -5802,8 +5767,8 @@ const AkTagEnde = () => {
       Minuten = 0;
       if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
         (Guy.Zustand === GUYSCHLAFHAUS) || (BootsFahrt)) break;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYKLETTERN1;
       }
@@ -5813,16 +5778,16 @@ const AkTagEnde = () => {
       Minuten = 0;
       if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
         (Guy.Zustand === GUYSCHLAFHAUS) || (BootsFahrt)) break;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYGEHINZELT;
-      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYGEHINHAUS;
       } else {
-        Guy.PosScreen.x += 3;
+        gameData.guy.position.x += 3;
         gameData.guy.active = true;
         Guy.Zustand = GUYHINLEGEN;
       }
@@ -5832,13 +5797,13 @@ const AkTagEnde = () => {
       Minuten = 0;
       if (BootsFahrt) break;
       gameData.guy.active = true;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
-        if (Guy.Zustand !== GUYSCHLAFZELT) Guy.PosScreen.x += 4;
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
+        if (Guy.Zustand !== GUYSCHLAFZELT) gameData.guy.position.x += 4;
         Guy.Zustand = GUYSCHLAFZELT;
-      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
-        if (Guy.Zustand !== GUYSCHLAFHAUS) Guy.PosScreen.x += 14;
+      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
+        if (Guy.Zustand !== GUYSCHLAFHAUS) gameData.guy.position.x += 14;
         Guy.Zustand = GUYSCHLAFHAUS;
       } else Guy.Zustand = GUYSCHLAFEN;
       break;
@@ -5847,11 +5812,11 @@ const AkTagEnde = () => {
       Minuten = 0;
       if (BootsFahrt) break;
       gameData.guy.active = true;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
         Guy.Zustand = GUYSCHLAFZELT;
-      else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
+      else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
         Guy.Zustand = GUYSCHLAFHAUS;
       else Guy.Zustand = GUYSCHLAFEN;
       break;
@@ -5861,16 +5826,16 @@ const AkTagEnde = () => {
       Minuten = 0;
       PlaySound(WAVWOLF, 100);
       //Falsche Objekte Löschen
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt >= BAUM1DOWN) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt <= BAUM4DOWN)) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = -1;
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= BAUM1DOWN) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= BAUM4DOWN)) {
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
         Guy.Inventar[ROHSTAMM]++;
         if (Guy.Inventar[ROHSTAMM] > 10) Guy.Inventar[ROHSTAMM] = 10;
       }
 
       //Je nach Schlafort Zustand verändern
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         AddResource(GESUNDHEIT, -5);
         if (Guy.Resource[GESUNDHEIT] <= 0) {
           gameData.guy.active = true;
@@ -5883,8 +5848,8 @@ const AkTagEnde = () => {
           gameData.guy.active = true;
           PapierText = DrawText(texts.TAGENDE2, TXTPAPIER, 1);
         }
-      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         AddResource(GESUNDHEIT, +20);
         gameData.guy.active = true;
         PapierText = DrawText(texts.TAGENDE4, TXTPAPIER, 1);
@@ -5920,11 +5885,11 @@ const AkTagEnde = () => {
       //if (BootsFahrt) NeuesSpiel(true); //Später hier tot!!
 
       gameData.guy.active = true;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
         Guy.Zustand = GUYSCHLAFZELT;
-      else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
+      else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
         Guy.Zustand = GUYSCHLAFHAUS;
       else Guy.Zustand = GUYSCHLAFEN;
       break;
@@ -5936,11 +5901,11 @@ const AkTagEnde = () => {
       Stunden = 0;
       Minuten = 0;
       gameData.guy.active = true;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
         Guy.Zustand = GUYSCHLAFZELT;
-      else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
+      else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
         Guy.Zustand = GUYSCHLAFHAUS;
       else Guy.Zustand = GUYSCHLAFEN;
       break;
@@ -5949,17 +5914,17 @@ const AkTagEnde = () => {
       Minuten = 0;
       StopSound(WAVSCHNARCHEN);
       gameData.guy.active = true;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
-        Guy.PosScreen.x -= 14;
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
+        gameData.guy.position.x -= 14;
         Guy.Zustand = GUYGEHAUSHAUS;
       } else Guy.Zustand = GUYAUFSTEHEN;
       break;
     case 11:
       Stunden = 0;
       Minuten = 0;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
+        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYKLETTERN2;
       }
@@ -5975,16 +5940,12 @@ const AkTagEnde = () => {
 }
 
 const AkGerettet = () => {
-  let Erg;
   let x;
 
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      Erg = GetKachel(Guy.PosAlt.x, Guy.PosAlt.y);
-      if (Erg && Erg.x === Guy.Pos.x && Erg.y === Guy.Pos.y) ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
-      else if (RoutePunkt % 2 === 0) ShortRoute(RouteKoor[RoutePunkt].x, RouteKoor[RoutePunkt].y); //Nur bis zur Mitte der aktuellen Kacheln laufen
-      else ShortRoute(RouteKoor[RoutePunkt + 1].x, RouteKoor[RoutePunkt + 1].y);
+      goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
@@ -6004,58 +5965,38 @@ const AkGerettet = () => {
     case 4:
       // Route herstellen
       gameData.guy.active = true;
-      Guy.Zustand = GUYLINKS;
-      RoutePunkt = -1;
-      Steps = 0;
-      Step = 0;
-      RouteStart.x = Guy.Pos.x;
-      RouteStart.y = Guy.Pos.y;
-      RouteZiel.y = Guy.Pos.y;
+      Guy.Zustand = GUYRECHTS;
       for (x = MAXXKACH - 1; x > 1; x--)//Position des Rettungsschiffs festlegen
       {
-        if (gameData.terrain[x][Guy.Pos.y].ground !== grounds.SEA) break;
-        RouteZiel.x = x + 1;
+        if (gameData.terrain[x][gameData.guy.tile.y].ground !== grounds.SEA) break;
       }
       //Schiff hinbauen
-      gameData.terrain[RouteZiel.x][RouteZiel.y].Phase = 0;
-      gameData.terrain[RouteZiel.x][RouteZiel.y].object = null;
-      gameData.terrain[RouteZiel.x][RouteZiel.y].Objekt = GUYSCHIFF;
-      gameData.terrain[RouteZiel.x][RouteZiel.y].ObPos.x = 10;
-      gameData.terrain[RouteZiel.x][RouteZiel.y].ObPos.y = 10;
-      RouteZiel.x -= 2;
-      FindTheWay();
-      Guy.Zustand = GUYLINKS;
+      gameData.terrain[x + 2][gameData.guy.tile.y].Phase = 0;
+      gameData.terrain[x + 2][gameData.guy.tile.y].object = null;
+      gameData.terrain[x + 2][gameData.guy.tile.y].Objekt = GUYSCHIFF;
+      gameData.terrain[x + 2][gameData.guy.tile.y].ObPos.x = 10;
+      gameData.terrain[x + 2][gameData.guy.tile.y].ObPos.y = 10;
+
+      gameData.guy.route = findRoute(gameData, { x, y: gameData.guy.tile.y });
+      Guy.Zustand = GUYRECHTS;
       break;
     case 5:
-      Guy.Zustand = GUYLINKS;
-      ShortRoute(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].east.x, 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].east.y
-      );
+      Guy.Zustand = GUYRECHTS;
+      goToEastOfTile(gameData);
       break;
     case 6:
-      Guy.Pos.x += 2;
+      gameData.guy.tile.x += 2;
+      Entdecken();
       Guy.Zustand = GUYSCHWIMMEN;
-      ShortRoute(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].center.x, 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].center.y
-      );
+      goToCenterOfTile(gameData);
       break;
     case 7:
-      Guy.PosScreen.y -= 10;
       if (!BootsFahrt) ChangeBootsFahrt();
       gameData.guy.active = true;
       Guy.Zustand = GUYSCHIFF;
-      RoutePunkt = -1;
-      Steps = 0;
-      Step = 0;
-      RouteStart.x = Guy.Pos.x;
-      RouteStart.y = Guy.Pos.y;
-      RouteZiel.y = Guy.Pos.y;
-      RouteZiel.x = MAXXKACH - 2;
-      FindTheWay();
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = -1;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].object = createWaves();
+      gameData.guy.route = findRoute(gameData, { x: gameData.terrain.length - 1, y: gameData.guy.tile.y });
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
+      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object = createWaves();
       break;
     case 8:
       gameData.guy.active = true;
@@ -6072,24 +6013,27 @@ const AkGerettet = () => {
 const AkZelt = () => {
   let i;
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = ZELT;
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    tile.Objekt = ZELT;
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[ZELT].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[ZELT].rcDes.left;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[ZELT].rcDes.top;
+      tile.Rohstoff[i] = Bmp[ZELT].Rohstoff[i];
+    tile.Phase = Bmp[tile.Objekt].Anzahl;
+    tile.ObPos.x = Bmp[ZELT].rcDes.left;
+    tile.ObPos.y = Bmp[ZELT].rcDes.top;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 22,
+        y: tile.ObPos.y + 12
+      });
       break;
     case 2:
     case 3:
@@ -6102,18 +6046,20 @@ const AkZelt = () => {
       AddTime(0, 15);
       break;
     case 4:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 2;
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      tile.Phase = 2;
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 31,
+        y: tile.ObPos.y + 20
+      });
       break;
     case 5:
-      ShortRoute(Guy.PosAlt.x,
-        Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 6:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 3,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
-
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 3,
+        y: tile.ObPos.y + 20
+      });
       break;
     case 7:
     case 8:
@@ -6124,27 +6070,32 @@ const AkZelt = () => {
       AddTime(0, 15);
       break;
     case 9:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 3;
-      ShortRoute(Guy.PosAlt.x,
-        Guy.PosAlt.y);
+      tile.Phase = 3;
+      goToStoredPosition(gameData);
       break;
     case 10:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 31,
+        y: tile.ObPos.y + 20
+      });
       break;
     case 11:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 22,
+        y: tile.ObPos.y + 12
+      });
       break;
     case 14:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 31,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 31,
+        y: tile.ObPos.y + 20
+      });
       break;
     case 15:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 16:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      tile.Phase = 0;
       Bmp[BUTTSTOP].Phase = -1;
       if (Bmp[ZELT].First) {
         PapierText = DrawText(texts.ZELTHILFE, TXTPAPIER, 1);
@@ -6158,33 +6109,39 @@ const AkZelt = () => {
 const AkBoot = () => {
   let i;
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = BOOT;
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    tile.Objekt = BOOT;
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[BOOT].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[BOOT].Anzahl;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[BOOT].rcDes.left;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[BOOT].rcDes.top;
+      tile.Rohstoff[i] = Bmp[BOOT].Rohstoff[i];
+    tile.Phase = Bmp[BOOT].Anzahl;
+    tile.ObPos.x = Bmp[BOOT].rcDes.left;
+    tile.ObPos.y = Bmp[BOOT].rcDes.top;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 30,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 30,
+        y: tile.ObPos.y + 21
+      });
       break;
     case 2:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 29,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
-      break;
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 29,
+        y: tile.ObPos.y + 20
+      });
     case 3:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 19);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[BOOT].Anzahl + 1);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 28,
+        y: tile.ObPos.y + 19
+      });
+      tile.Phase = (Bmp[BOOT].Anzahl + 1);
       break;
     case 4:
     case 5:
@@ -6202,35 +6159,39 @@ const AkBoot = () => {
       AddTime(0, 15);
       break;
     case 7:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 22,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 16);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[BOOT].Anzahl + 2);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 22,
+        y: tile.ObPos.y + 16
+      });
+      tile.Phase = (Bmp[BOOT].Anzahl + 2);
       break;
     case 11:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 14,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 11);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[BOOT].Anzahl + 3);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 14,
+        y: tile.ObPos.y + 11
+      });
+      tile.Phase = (Bmp[BOOT].Anzahl + 3);
       break;
     case 15:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 16:
-      if (gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].ground === grounds.SEA) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = 0;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = 10;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].ground === grounds.SEA) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 1;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = 25;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = 10;
-      } else if (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].ground === grounds.SEA) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = 30;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = 27;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].ground === grounds.SEA) {
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 1;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = 0;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = 28;
+      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) {
+        tile.Phase = 0;
+        tile.ObPos.x = 0;
+        tile.ObPos.y = 10;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) {
+        tile.Phase = 1;
+        tile.ObPos.x = 25;
+        tile.ObPos.y = 10;
+      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) {
+        tile.Phase = 0;
+        tile.ObPos.x = 30;
+        tile.ObPos.y = 27;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA) {
+        tile.Phase = 1;
+        tile.ObPos.x = 0;
+        tile.ObPos.y = 28;
       }
       Bmp[BUTTSTOP].Phase = -1;
       if (Bmp[BOOT].First) {
@@ -6245,33 +6206,40 @@ const AkBoot = () => {
 const AkRohr = () => {
   let i;
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = ROHR;
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    tile.Objekt = ROHR;
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[ROHR].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[ROHR].Anzahl;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[ROHR].rcDes.left;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[ROHR].rcDes.top;
+      tile.Rohstoff[i] = Bmp[ROHR].Rohstoff[i];
+    tile.Phase = Bmp[ROHR].Anzahl;
+    tile.ObPos.x = Bmp[ROHR].rcDes.left;
+    tile.ObPos.y = Bmp[ROHR].rcDes.top;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 30,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 21);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 30,
+        y: tile.ObPos.y + 21
+      });
       break;
     case 2:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 29,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 29,
+        y: tile.ObPos.y + 20
+      });
       break;
     case 3:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[ROHR].Anzahl + 1);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 28,
+        y: tile.ObPos.y + 15
+      });
+      tile.Phase = (Bmp[ROHR].Anzahl + 1);
       break;
     case 4:
     case 5:
@@ -6298,15 +6266,17 @@ const AkRohr = () => {
       AddTime(0, 5);
       break;
     case 10:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 17,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[ROHR].Anzahl + 2);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 17,
+        y: tile.ObPos.y + 13
+      });
+      tile.Phase = (Bmp[ROHR].Anzahl + 2);
       break;
     case 17:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 18:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      tile.Phase = 0;
       FillRohr();
       Bmp[BUTTSTOP].Phase = -1;
       if (Bmp[ROHR].First) {
@@ -6321,49 +6291,62 @@ const AkRohr = () => {
 const AkSOS = () => {
   let i;
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = SOS;
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    tile.Objekt = SOS;
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[SOS].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[SOS].Anzahl;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[SOS].rcDes.left;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[SOS].rcDes.top;
+      tile.Rohstoff[i] = Bmp[SOS].Rohstoff[i];
+    tile.Phase = Bmp[SOS].Anzahl;
+    tile.ObPos.x = Bmp[SOS].rcDes.left;
+    tile.ObPos.y = Bmp[SOS].rcDes.top;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 4,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 13);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 4,
+        y: tile.ObPos.y + 13
+      });
       break;
     case 4:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 12,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 17);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 1);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 12,
+        y: tile.ObPos.y + 17
+      });
+      tile.Phase = (Bmp[SOS].Anzahl + 1);
       break;
     case 7:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 12,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 9);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 2);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 12,
+        y: tile.ObPos.y + 9
+      });
+      tile.Phase = (Bmp[SOS].Anzahl + 2);
       break;
     case 10:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 19,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 12);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 3);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 19,
+        y: tile.ObPos.y + 12
+      });
+      tile.Phase = (Bmp[SOS].Anzahl + 3);
       break;
     case 13:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 21,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 5);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 4);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 21,
+        y: tile.ObPos.y + 5
+      });
+      tile.Phase = (Bmp[SOS].Anzahl + 4);
       break;
     case 16:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 28,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 8);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[SOS].Anzahl + 5);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 28,
+        y: tile.ObPos.y + 8
+      });
+      tile.Phase = (Bmp[SOS].Anzahl + 5);
       break;
     case 2:
     case 5:
@@ -6372,7 +6355,7 @@ const AkSOS = () => {
     case 14:
     case 17:
       gameData.guy.active = true;
-      Guy.PosScreen.x += 4;
+      gameData.guy.position.x += 4;
       Guy.Zustand = GUYHINLEGEN;
       AddResource(WASSER, -1);
       AddResource(NAHRUNG, -1);
@@ -6385,18 +6368,18 @@ const AkSOS = () => {
     case 15:
     case 18:
       gameData.guy.active = true;
-      Guy.PosScreen.x -= 4;
+      gameData.guy.position.x -= 4;
       Guy.Zustand = GUYAUFSTEHEN;
       AddResource(WASSER, -1);
       AddResource(NAHRUNG, -1);
       AddTime(0, 1);
       break;
     case 19:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 20:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground === grounds.GRASS) || (gameData.terrain[Guy.Pos.x][Guy.Pos.y].ground === grounds.WETLAND))
+      tile.Phase = 0;
+      if ((tile.ground === grounds.GRASS) || (tile.ground === grounds.WETLAND))
         Chance += 1;
       else Chance += 2; //Dürfte nur noch der Strand übrig sein
       Bmp[BUTTSTOP].Phase = -1;
@@ -6412,28 +6395,31 @@ const AkSOS = () => {
 const AkFeuerstelle = () => {
   let i;
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = FEUERSTELLE;
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    tile.Objekt = FEUERSTELLE;
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[FEUERSTELLE].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[FEUERSTELLE].Anzahl;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Bmp[FEUERSTELLE].rcDes.left;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Bmp[FEUERSTELLE].rcDes.top;
+      tile.Rohstoff[i] = Bmp[FEUERSTELLE].Rohstoff[i];
+    tile.Phase = Bmp[FEUERSTELLE].Anzahl;
+    tile.ObPos.x = Bmp[FEUERSTELLE].rcDes.left;
+    tile.ObPos.y = Bmp[FEUERSTELLE].rcDes.top;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 4,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 16);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 4,
+        y: tile.ObPos.y + 16
+      });
       break;
     case 2:
       gameData.guy.active = true;
-      Guy.PosScreen.x += 4;
+      gameData.guy.position.x += 4;
       Guy.Zustand = GUYHINLEGEN;
       AddResource(WASSER, -1);
       AddResource(NAHRUNG, -1);
@@ -6441,16 +6427,18 @@ const AkFeuerstelle = () => {
       break;
     case 3:
       gameData.guy.active = true;
-      Guy.PosScreen.x -= 4;
+      gameData.guy.position.x -= 4;
       Guy.Zustand = GUYAUFSTEHEN;
       AddResource(WASSER, -1);
       AddResource(NAHRUNG, -1);
       AddTime(0, 1);
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[FEUERSTELLE].Anzahl + 1);
+      tile.Phase = (Bmp[FEUERSTELLE].Anzahl + 1);
       break;
     case 4:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 15);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x,
+        y: tile.ObPos.y + 15
+      });
       break;
     case 5:
     case 6:
@@ -6460,15 +6448,14 @@ const AkFeuerstelle = () => {
       AddResource(WASSER, -1);
       AddResource(NAHRUNG, -1);
       AddTime(0, 1);
-      if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer !== 5)
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase =
-          (Bmp[FEUERSTELLE].Anzahl + gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer - 4);
+      if (tile.AkNummer !== 5)
+      tile.Phase = (Bmp[FEUERSTELLE].Anzahl + tile.AkNummer - 4);
       break;
     case 8:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 9:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      tile.Phase = 0;
       Bmp[BUTTSTOP].Phase = -1;
       if (Bmp[FEUERSTELLE].First) {
         PapierText = DrawText(texts.FEUERSTELLEHILFE, TXTPAPIER, 1);
@@ -6481,12 +6468,12 @@ const AkFeuerstelle = () => {
 
 const AkHaus1 = () => {
   let i;
-  const tile = gameData.terrain[Guy.Pos.x][Guy.Pos.y];
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   if (tile.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     for (i = 0; i < BILDANZ; i++)
-    tile.Rohstoff[i] = Bmp[HAUS1].Rohstoff[i];
+      tile.Rohstoff[i] = Bmp[HAUS1].Rohstoff[i];
     tile.Phase = Bmp[HAUS1].Anzahl;
     tile.originalObject = tile.object;
     tile.object = null;
@@ -6501,13 +6488,10 @@ const AkHaus1 = () => {
   }
   switch (tile.AkNummer) {
     case 1:
-      ShortRoute(Math.floor(
-        tile.position.x + tile.ObPos.x +
-        sprites[spriteTypes.BIG_TREE].width / 2 - 3
-      ), Math.floor(
-        tile.position.y + tile.ObPos.y +
-        sprites[spriteTypes.BIG_TREE].height + 1
-      ));
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2 - 3,
+        y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+      });
       break;
     case 2:
     case 3:
@@ -6553,7 +6537,7 @@ const AkHaus1 = () => {
       AddTime(0, 1);
       break;
     case 18:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 19:
       tile.Phase = 0;
@@ -6566,27 +6550,25 @@ const AkHaus1 = () => {
 const AkHaus2 = () => {
   let i;
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[HAUS2].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[HAUS2].Anzahl;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = HAUS2;
+      tile.Rohstoff[i] = Bmp[HAUS2].Rohstoff[i];
+    tile.Phase = Bmp[HAUS2].Anzahl;
+    tile.Objekt = HAUS2;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-        sprites[spriteTypes.BIG_TREE].width / 2
-      ), Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-        sprites[spriteTypes.BIG_TREE].height + 1
-      ));
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2,
+        y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+      });
       break;
     case 2:
       gameData.guy.active = true;
@@ -6611,7 +6593,7 @@ const AkHaus2 = () => {
     case 10:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS2].Anzahl + 1);
+      tile.Phase = (Bmp[HAUS2].Anzahl + 1);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6622,7 +6604,7 @@ const AkHaus2 = () => {
     case 14:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS2].Anzahl + 2);
+      tile.Phase = (Bmp[HAUS2].Anzahl + 2);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6633,7 +6615,7 @@ const AkHaus2 = () => {
     case 18:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS2].Anzahl + 3);
+      tile.Phase = (Bmp[HAUS2].Anzahl + 3);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6641,16 +6623,16 @@ const AkHaus2 = () => {
     case 19:
       gameData.guy.active = true;
       Guy.Zustand = GUYKLETTERN2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS2].Anzahl + 4);
+      tile.Phase = (Bmp[HAUS2].Anzahl + 4);
       AddResource(NAHRUNG, -1);
       AddResource(WASSER, -1);
       AddTime(0, 1);
       break;
     case 20:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 21:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      tile.Phase = 0;
       Bmp[BUTTSTOP].Phase = -1;
       Guy.Aktion = AKNICHTS;
       break;
@@ -6660,27 +6642,25 @@ const AkHaus2 = () => {
 const AkHaus3 = () => {
   let i;
 
-  if (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  if (tile.AkNummer === 0) {
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     for (i = 0; i < BILDANZ; i++)
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Rohstoff[i] = Bmp[HAUS3].Rohstoff[i];
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = Bmp[HAUS3].Anzahl;
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = HAUS3;
+      tile.Rohstoff[i] = Bmp[HAUS3].Rohstoff[i];
+    tile.Phase = Bmp[HAUS3].Anzahl;
+    tile.Objekt = HAUS3;
   }
-  gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer++;
+  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer--;
+    tile.AkNummer--;
     return;
   }
-  switch (gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer) {
+  switch (tile.AkNummer) {
     case 1:
-      ShortRoute(Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-        sprites[spriteTypes.BIG_TREE].width / 2
-      ), Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-        sprites[spriteTypes.BIG_TREE].height + 1
-      ));
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2,
+        y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+      });
       break;
     case 2:
       gameData.guy.active = true;
@@ -6705,7 +6685,7 @@ const AkHaus3 = () => {
     case 10:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS3].Anzahl + 1);
+      tile.Phase = (Bmp[HAUS3].Anzahl + 1);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6716,7 +6696,7 @@ const AkHaus3 = () => {
     case 14:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS3].Anzahl + 2);
+      tile.Phase = (Bmp[HAUS3].Anzahl + 2);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6727,7 +6707,7 @@ const AkHaus3 = () => {
     case 18:
       gameData.guy.active = true;
       Guy.Zustand = GUYHAMMER2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS3].Anzahl + 3);
+      tile.Phase = (Bmp[HAUS3].Anzahl + 3);
       AddResource(NAHRUNG, -0.5);
       AddResource(WASSER, -0.5);
       AddTime(0, 1);
@@ -6735,16 +6715,16 @@ const AkHaus3 = () => {
     case 19:
       gameData.guy.active = true;
       Guy.Zustand = GUYKLETTERN2;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = (Bmp[HAUS3].Anzahl + 4);
+      tile.Phase = (Bmp[HAUS3].Anzahl + 4);
       AddResource(NAHRUNG, -1);
       AddResource(WASSER, -1);
       AddTime(0, 1);
       break;
     case 20:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       break;
     case 21:
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
+      tile.Phase = 0;
       Bmp[BUTTSTOP].Phase = -1;
       if (Bmp[HAUS3].First) {
         PapierText = DrawText(texts.HAUS3HILFE, TXTPAPIER, 1);
@@ -6756,32 +6736,26 @@ const AkHaus3 = () => {
 }
 
 const AkSchlafen = () => {
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (Guy.AkNummer === 0) {
-    Guy.PosAlt = { ...Guy.PosScreen };  //Die Originalposition merken
+    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
-        ShortRoute(Math.floor(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 3
-        ), Math.floor(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 20
-        ));
-      else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl))
-        ShortRoute(Math.floor(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-          sprites[spriteTypes.BIG_TREE].width / 2 + 1
-        ), Math.floor(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-          sprites[spriteTypes.BIG_TREE].height + 1
-        ));
+      if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+        goToOnTile(gameData, {
+          x: tile.ObPos.x + 3,
+          y: tile.ObPos.y + 20
+        });
+      else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+        goToOnTile(gameData, {
+          x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2 + 1,
+          y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+        });
       break;
     case 2:
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      if ((tile.Objekt === HAUS3) &&(tile.Phase < Bmp[tile.Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYKLETTERN1;
         AddResource(NAHRUNG, -1);
@@ -6789,16 +6763,14 @@ const AkSchlafen = () => {
       }
       break;
     case 3:
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYGEHINZELT;
-      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      } else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYGEHINHAUS;
       } else {
-        Guy.PosScreen.x += 3;
+        gameData.guy.position.x += 3;
         gameData.guy.active = true;
         Guy.Zustand = GUYHINLEGEN;
       }
@@ -6806,13 +6778,11 @@ const AkSchlafen = () => {
     case 4:
     case 5:
       gameData.guy.active = true;
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === ZELT) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
-        if (Guy.AkNummer === 4) Guy.PosScreen.x += 4;
+      if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
+        if (Guy.AkNummer === 4) gameData.guy.position.x += 4;
         Guy.Zustand = GUYSCHLAFZELT;
-      } else if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
-        if (Guy.AkNummer === 4) Guy.PosScreen.x += 14;
+      } else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
+        if (Guy.AkNummer === 4) gameData.guy.position.x += 14;
         Guy.Zustand = GUYSCHLAFHAUS;
       } else Guy.Zustand = GUYSCHLAFEN;
       AddResource(GESUNDHEIT, 5);
@@ -6821,61 +6791,53 @@ const AkSchlafen = () => {
     case 6:
       gameData.guy.active = true;
       StopSound(WAVSCHNARCHEN);
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
-        Guy.PosScreen.x -= 14;
+      if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
+        gameData.guy.position.x -= 14;
         Guy.Zustand = GUYGEHAUSHAUS;
       } else Guy.Zustand = GUYAUFSTEHEN;
       break;
     case 7:
-      if ((gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt === HAUS3) &&
-        (gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase < Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Anzahl)) {
+      if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
         gameData.guy.active = true;
         Guy.Zustand = GUYKLETTERN2;
         AddResource(NAHRUNG, -1);
         AddResource(WASSER, -1);
+      } else {
+        Guy.Zustand = GUYOBEN;
       }
       break;
     case 8:
-      ShortRoute(Guy.PosAlt.x, Guy.PosAlt.y);
+      goToStoredPosition(gameData);
       Guy.Aktion = AKNICHTS;
       break;
   }
 }
 
 const AkAblegen = () => {
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      ShortRoute(gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x + 14,
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y + 11);
+      goToOnTile(gameData, {
+        x: tile.ObPos.x + 14,
+        y: tile.ObPos.y + 11
+      });
       break;
     case 2:
       ChangeBootsFahrt();
-      Guy.PosScreen.x = Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x +
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x +
-        Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2
-      );
-      Guy.PosScreen.y = Math.floor(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y +
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y +
-        Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe / 2
-      );
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = -1;
-      if (gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].ground === grounds.SEA) Guy.Pos.x--;
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].ground === grounds.SEA) Guy.Pos.y--;
-      else if (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].ground === grounds.SEA) Guy.Pos.x++;
-      else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].ground === grounds.SEA) Guy.Pos.y++;
-      ShortRoute(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].center.x, 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].center.y
-      );
+      gameData.guy.position.x = tile.position.x + tile.ObPos.x + Bmp[tile.Objekt].Breite / 2;
+      gameData.guy.position.y = tile.position.y + tile.ObPos.y + Bmp[tile.Objekt].Hoehe / 2;
+      tile.Objekt = -1;
+      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x--;
+      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) gameData.guy.tile.y--;
+      else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x++;
+      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA) gameData.guy.tile.y++;
+      goToCenterOfTile(gameData);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      Guy.PosAlt.x = Guy.PosScreen.x;
-      Guy.PosAlt.y = Guy.PosScreen.y;
+      gameData.guy.storedPosition.x = gameData.guy.position.x;
+      gameData.guy.storedPosition.y = gameData.guy.position.y;
       break;
   }
 }
@@ -6884,67 +6846,45 @@ const AkAnlegen = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      if (gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].ground !== grounds.SEA) {
-        ShortRoute(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].west.x, 
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].west.y
-        );
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].ground !== grounds.SEA) {
-        ShortRoute(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].north.x, 
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].north.y
-        );
-      } else if (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].ground !== grounds.SEA) {
-        ShortRoute(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].east.x, 
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].east.y
-        );
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].ground !== grounds.SEA) {
-        ShortRoute(
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].south.x, 
-          gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].south.y
-        );
+      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground !== grounds.SEA) {
+        goToWestOfTile(gameData);
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground !== grounds.SEA) {
+        goToNorthOfTile(gameData);
+      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground !== grounds.SEA) {
+        goToEastOfTile(gameData);
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground !== grounds.SEA) {
+        goToSouthOfTile(gameData);
       }
       break;
     case 2:
-      if (gameData.terrain[Guy.Pos.x - 1][Guy.Pos.y].ground !== grounds.SEA) {
-        Guy.Pos.x--;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y - 1].ground !== grounds.SEA) {
-        Guy.Pos.y--;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 1;
-      } else if (gameData.terrain[Guy.Pos.x + 1][Guy.Pos.y].ground !== grounds.SEA) {
-        Guy.Pos.x++;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 0;
-      } else if (gameData.terrain[Guy.Pos.x][Guy.Pos.y + 1].ground !== grounds.SEA) {
-        Guy.Pos.y++;
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].Phase = 1;
+      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground !== grounds.SEA) {
+        gameData.guy.tile.x--;
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 0;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground !== grounds.SEA) {
+        gameData.guy.tile.y--;
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 1;
+      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground !== grounds.SEA) {
+        gameData.guy.tile.x++;
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 0;
+      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground !== grounds.SEA) {
+        gameData.guy.tile.y++;
+        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 1;
       }
 
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt = BOOT;
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].AkNummer = Bmp[BOOT].AkAnzahl;
+      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+      tile.Objekt = BOOT;
+      tile.AkNummer = Bmp[BOOT].AkAnzahl;
 
       ChangeBootsFahrt();
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.x = Math.floor(
-        Guy.PosScreen.x -
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x -
-        Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Breite / 2
-      );
-      gameData.terrain[Guy.Pos.x][Guy.Pos.y].ObPos.y = Math.floor(
-        Guy.PosScreen.y -
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y -
-        Bmp[gameData.terrain[Guy.Pos.x][Guy.Pos.y].Objekt].Hoehe / 2
-      );
+      tile.ObPos.x = Math.floor(gameData.guy.position.x - tile.position.x - Bmp[tile.Objekt].Breite / 2);
+      tile.ObPos.y = Math.floor(gameData.guy.position.y - tile.position.y - Bmp[tile.Objekt].Hoehe / 2);
 
-      ShortRoute(
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.x + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].center.x, 
-        gameData.terrain[Guy.Pos.x][Guy.Pos.y].position.y + tileEdges[gameData.terrain[Guy.Pos.x][Guy.Pos.y].type].center.y
-      );
+      goToCenterOfTile(gameData);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      Guy.PosAlt.x = Guy.PosScreen.x;
-      Guy.PosAlt.y = Guy.PosScreen.y;
+      gameData.guy.storedPosition.x = gameData.guy.position.x;
+      gameData.guy.storedPosition.y = gameData.guy.position.y;
       break;
   }
 }
@@ -7075,138 +7015,6 @@ const FillRohr = () => {
     }
 }
 
-const RotateRight = (Dir) =>  //Richtungskoordinate rechtsrum umrechnen
-{
-  switch (Dir) {
-    case 2: {
-      NewPos.x++;
-      NewPos.y++;
-      Dir = 4;
-      break;
-    }
-    case 4: {
-      NewPos.x--;
-      NewPos.y++;
-      Dir = 8;
-      break;
-    }
-    case 8: {
-      NewPos.x--;
-      NewPos.y--;
-      Dir = 1;
-      break;
-    }
-    case 1: {
-      NewPos.x++;
-      NewPos.y--;
-      Dir = 2;
-      break;
-    }
-  }
-  return Dir;
-}
-
-const FindTheWay = () => {
-  gameData.guy.route = findRoute(gameData, RouteStart, RouteZiel);
-
-  RouteZiel.x = gameData.guy.route[gameData.guy.route.length - 1].x;
-  RouteZiel.y = gameData.guy.route[gameData.guy.route.length - 1].y;
-
-  SortRoute();
-
-  return true;
-}
-
-const CheckRoute = (x, y, save, Laenge) => //Nachprüfen ob auf aktuellem Teil in der Route ist
-{
-  let i;
-
-  if (!save) {
-    for (i = 0; i < gameData.guy.route.length; i++) {
-      if ((x === gameData.guy.route[i].x) && (y === gameData.guy.route[i].y)) return true;
-    }
-  } else {
-    for (i = 0; i <= Laenge; i++) {
-      if ((x === SaveRoute[i].x) && (y === SaveRoute[i].y)) return true;
-    }
-  }
-  return false;
-}
-
-const SortRoute = () => {
-  let i, j;
-  const Pos = { x: null, y: null };
-  let Dir;
-
-  Pos.x = RouteStart.x;
-  Pos.y = RouteStart.y;
-  for (i = 0; i < gameData.guy.route.length; i++) //Alle Teile vom Start durchgehen
-  {
-    SaveRoute[i].x = Pos.x;
-    SaveRoute[i].y = Pos.y;
-
-    const tile = gameData.terrain[Pos.x][Pos.y];
-    RouteKoor[2 * i].x = tile.position.x + tileEdges[tile.type].center.x;
-    RouteKoor[2 * i].y = tile.position.y + tileEdges[tile.type].center.y;
-
-    NewPos.x = Pos.x;
-    NewPos.y = Pos.y - 1; //oben mit nachschauen anfangen
-    Dir = 2;
-    for (j = 0; j <= 3; j++) {
-      if ((CheckRoute(NewPos.x, NewPos.y, false, gameData.guy.route.length)) &&
-        (!CheckRoute(NewPos.x, NewPos.y, true, i))) {
-        switch (j) {
-          case 0:
-            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].north.x;
-            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].north.y;
-            break;
-          case 1:
-            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].east.x;
-            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].east.y;
-            break;
-          case 2:
-            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].south.x;
-            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].south.y;
-            break;
-          case 3:
-            RouteKoor[2 * i + 1].x = tile.position.x + tileEdges[tile.type].west.x;
-            RouteKoor[2 * i + 1].y = tile.position.y + tileEdges[tile.type].west.y;
-            break;
-        }
-        break;
-      }
-
-      Dir = RotateRight(Dir);
-    }
-    Pos.x = NewPos.x;
-    Pos.y = NewPos.y;
-  }
-  for (i = 0; i < gameData.guy.route.length; i++)  //Wieder in die Originalroute speichern
-  {
-    gameData.guy.route[i].x = SaveRoute[i].x;
-    gameData.guy.route[i].y = SaveRoute[i].y;
-  }
-}
-
-const ShortRoute = (Zielx, Ziely) => {
-  gameData.guy.route = [{
-    x: Guy.Pos.x,
-    y: Guy.Pos.y
-  }];
-  RouteKoor[0].x = Guy.PosScreen.x;
-  RouteKoor[0].y = Guy.PosScreen.y;
-  RouteKoor[1].x = Zielx;
-  RouteKoor[1].y = Ziely;
-
-  //Die Animation gleich anschließend starten
-  gameData.guy.active = true;
-  if ((BootsFahrt) && (Guy.Zustand !== GUYSCHWIMMEN)) Guy.Zustand = GUYBOOTLINKS;
-  else if (Guy.Zustand !== GUYSCHWIMMEN) Guy.Zustand = GUYLINKS;
-  RoutePunkt = -1;
-  Steps = 0;
-  Step = 0;
-}
-
 const CheckBenutze = (Objekt) => {
   if (((Objekt === ROHSTEIN) && (TwoClicks === ROHAST)) ||
     ((Objekt === ROHAST) && (TwoClicks === ROHSTEIN))) {
@@ -7297,14 +7105,16 @@ const Animationen = () => {
   //Spielfigur
 
   //laufen
-  if (((Guy.Zustand >= GUYLINKS) && (Guy.Zustand <= GUYUNTEN)) ||
-    ((Guy.Zustand >= GUYBOOTLINKS) && (Guy.Zustand <= GUYBOOTUNTEN)) ||
-    (Guy.Zustand === GUYSCHIFF) || (Guy.Zustand === GUYSCHWIMMEN)) {
+  if (gameData.guy.active && gameData.guy.route.length) {
     i = Math.floor(framesPerSecond / Bmp[Guy.Zustand].Geschwindigkeit);
     if (i < 1) i = 1;
     if (framesPerSecond - Bmp[Guy.Zustand].Geschwindigkeit < 0) loop = 2; else loop = 1;
     if (BootsFahrt) loop = loop * 2;
-    for (k = 0; k < loop; k++) if ((frame % i === 0) && gameData.guy.active) CalcGuyKoor();
+    for (k = 0; k < loop; k++) {
+      if (frame % i === 0) {
+        CalcGuyKoor();
+      }
+    }
     return;
   }
   //sonstige Aktionen
@@ -7323,86 +7133,75 @@ const Animationen = () => {
 }
 
 const CalcGuyKoor = () => {
-  let Dx, Dy;  //Differenz zwischen Ziel und Start
-
-  if (Step >= Steps) {
-    RoutePunkt++;
-
-    if ((RoutePunkt >= (gameData.guy.route.length > 1 ? 2 * (gameData.guy.route.length - 1) : 1) ||
-      ((Guy.Aktion === AKABBRUCH) && (gameData.guy.route.length > 1)))) {
-      if (gameData.guy.route.length > 1) Bmp[BUTTSTOP].Phase = -1;
+  let routePoint = gameData.guy.route[0];
+  let wayPoint = routePoint?.wayPoints[0];
+  if (!wayPoint) {
+    gameData.guy.route.shift();
+    if (!gameData.guy.route.length) {
+      gameData.guy.active = false;
+      return;
+    }
+    if (Guy.Aktion === AKABBRUCH) {
       Bmp[Guy.Zustand].Phase = 0;
       gameData.guy.active = false;
       gameData.guy.route = [];
-      RouteZiel.x = -1;
-      RouteZiel.y = -1;
       return;
     }
-    const previousRouteElement = gameData.guy.route[Math.floor(RoutePunkt / 2)];
-    const currentRouteElement = gameData.guy.route[Math.floor(RoutePunkt / 2) + 1];
-
-    Guy.Pos.x = currentRouteElement ? currentRouteElement.x : previousRouteElement.x;
-    Guy.Pos.y = currentRouteElement ? currentRouteElement.y : previousRouteElement.y;
+    routePoint = gameData.guy.route[0];
+    wayPoint = routePoint.wayPoints[0];
+    gameData.guy.tile.x = routePoint.x;
+    gameData.guy.tile.y = routePoint.y;
     Entdecken();
 
     if (BootsFahrt)
-      AddTime(0, gameData.terrain[Guy.Pos.x][Guy.Pos.y].LaufZeit * 3);
-    else AddTime(0, gameData.terrain[Guy.Pos.x][Guy.Pos.y].LaufZeit * 5);
+      AddTime(0, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit * 3);
+    else AddTime(0, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit * 5);
     AddResource(NAHRUNG, -1);
     AddResource(WASSER, -1);
-
-    if ((Guy.Zustand === GUYSCHIFF) || (Guy.Zustand === GUYSCHWIMMEN)) Guy.Zustand -= 2; //nichts machen
-    else if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
-    else Guy.Zustand = GUYLINKS;
-
-    if (gameData.guy.route.length > 1)  //Bei normaler Routenabarbeitung die Richtung Kachelmäßig rausfinden
-    {
-      if (previousRouteElement.x > currentRouteElement.x) Guy.Zustand += 0;
-      else if (previousRouteElement.x < currentRouteElement.x) Guy.Zustand += 2;
-      else if (previousRouteElement.y < currentRouteElement.y) Guy.Zustand += 3;
-      else if (previousRouteElement.y > currentRouteElement.y) Guy.Zustand += 1;
-    } else {
-      if ((RouteKoor[RoutePunkt].x > RouteKoor[RoutePunkt + 1].x) &&
-        (RouteKoor[RoutePunkt].y >= RouteKoor[RoutePunkt + 1].y)) Guy.Zustand += 0;
-      else if ((RouteKoor[RoutePunkt].x <= RouteKoor[RoutePunkt + 1].x) &&
-        (RouteKoor[RoutePunkt].y > RouteKoor[RoutePunkt + 1].y)) Guy.Zustand += 1;
-      else if ((RouteKoor[RoutePunkt].x < RouteKoor[RoutePunkt + 1].x) &&
-        (RouteKoor[RoutePunkt].y <= RouteKoor[RoutePunkt + 1].y)) Guy.Zustand += 2;
-      else if ((RouteKoor[RoutePunkt].x >= RouteKoor[RoutePunkt + 1].x) &&
-        (RouteKoor[RoutePunkt].y < RouteKoor[RoutePunkt + 1].y)) Guy.Zustand += 3;
-    }
-
-    Dx = RouteKoor[RoutePunkt + 1].x - RouteKoor[RoutePunkt].x;
-    Dy = RouteKoor[RoutePunkt + 1].y - RouteKoor[RoutePunkt].y;
-    GuyPosScreenStart.x = RouteKoor[RoutePunkt].x;
-    GuyPosScreenStart.y = RouteKoor[RoutePunkt].y;
-    Step = 0;
-
-    if (Math.abs(Dx) > Math.abs(Dy)) {
-      if (Dx > 0) Schrittx = 1; else Schrittx = -1;
-      if (Dx === 0) Schritty = 0; else Schritty = Dy / ((Dx * Schrittx));
-      Steps = Math.abs(Dx);
-
-    } else {
-      if (Dy > 0) Schritty = 1; else Schritty = -1;
-      if (Dy === 0) Schrittx = 0; else Schrittx = Dx / ((Dy * Schritty));
-      Steps = Math.abs(Dy);
-    }
   }
 
-  if (frame % gameData.terrain[Guy.Pos.x][Guy.Pos.y].LaufZeit === 0) {
-    Step++;
+  if (frame % gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit === 0) {
+    const Dx = wayPoint.x - gameData.guy.position.x;
+    const Dy = wayPoint.y - gameData.guy.position.y;
+
+    if (Guy.Zustand !== GUYSCHIFF && Guy.Zustand !== GUYSCHWIMMEN) {
+      if (BootsFahrt) Guy.Zustand = GUYBOOTLINKS;
+      else Guy.Zustand = GUYLINKS;
+
+      const direction = wayPoint.direction;
+      if (wayPoint.direction === directions.WEST || (!direction && Dx < 0 && Dy <= 0)) Guy.Zustand += 0;
+      else if (wayPoint.direction === directions.NORTH || (!direction && Dx >= 0 && Dy < 0)) Guy.Zustand += 1;
+      else if (wayPoint.direction === directions.EAST || (!direction && Dx > 0 && Dy >= 0)) Guy.Zustand += 2;
+      else Guy.Zustand += 3;
+    }
+
+    if (Math.round(Dx) === 0 && Math.round(Dy) === 0) {
+      routePoint.wayPoints.shift();
+      return;
+    }
+
     let i;
     if (BootsFahrt) i = 4; else i = 2;
-    if (Step % i === 0) {
+    if ((frame / gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit) % i === 0) {
       Bmp[Guy.Zustand].Phase++;
       if (Bmp[Guy.Zustand].Phase >= Bmp[Guy.Zustand].Anzahl) Bmp[Guy.Zustand].Phase = 0;
     }
-    Guy.PosScreen.x = Math.floor(GuyPosScreenStart.x + Math.round(Step * Schrittx));
-    Guy.PosScreen.y = Math.floor(GuyPosScreenStart.y + Math.round(Step * Schritty));
+
+    let Schrittx = 0;
+    let Schritty = 0;
+    if (Math.abs(Dx) > Math.abs(Dy)) {
+      if (Dx > 0) Schrittx = 1; else Schrittx = -1;
+      if (Dx !== 0) Schritty = Dy / ((Dx * Schrittx));
+    } else {
+      if (Dy > 0) Schritty = 1; else Schritty = -1;
+      if (Dy !== 0) Schrittx = Dx / ((Dy * Schritty));
+    }
+
+    gameData.guy.position.x += Schrittx;
+    gameData.guy.position.y += Schritty;
     if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) //Beim Intro und Outra fährt die Kamera mit
     {
-      updateCamera(gameData.camera, Guy.PosScreen, primaryCanvasContext, true);
+      updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, true);
     }
   }
 }
@@ -7413,8 +7212,9 @@ const Entdecken = () => {
 
   for (i = -1; i <= 1; i++)
     for (j = -1; j <= 1; j++) {
-      if (!gameData.terrain[Guy.Pos.x + i][Guy.Pos.y + j].discovered) {
-        gameData.terrain[Guy.Pos.x + i][Guy.Pos.y + j].discovered = true;
+      const tile = gameData.terrain[gameData.guy.tile.x + i][gameData.guy.tile.y + j];
+      if (tile && !tile.discovered) {
+        tile.discovered = true;
         Aenderung = true;
       }
     }
@@ -7447,7 +7247,7 @@ const refresh = (timestamp) => {
   } else if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) {
     if (CheckKey() === 0) return false;    //Das Keyboard abfragen
     Animationen();  //Animationen weiterschalten
-    playTerrainSounds(gameData.terrain, { tile: Guy.Pos });
+    playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
 
     if (!gameData.guy.active) Event(Guy.Aktion); //Aktionen starten
 
@@ -7456,7 +7256,7 @@ const refresh = (timestamp) => {
   } else if (Spielzustand === GAME_PLAY) {
     if ((Stunden >= 12) && (Minuten !== 0) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
     {
-      if (Guy.Aktion === AKAUSSCHAU) Chance -= 1 + gameData.terrain[Guy.Pos.x][Guy.Pos.y].height;
+      if (Guy.Aktion === AKAUSSCHAU) Chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       gameData.guy.active = false;
       Guy.AkNummer = 0;
       Guy.Aktion = AKTAGENDE;
@@ -7467,7 +7267,7 @@ const refresh = (timestamp) => {
     if (CheckKey() === 0) return false;    //Das Keyboard abfragen
     restrictCamera(gameData.camera, gameData.terrain);            //Das Scrollen an die Grenzen der Landschaft anpassen
     Animationen();            //Die Animationsphasen weiterschalten
-    playTerrainSounds(gameData.terrain, { tile: Guy.Pos });
+    playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
     if (!gameData.guy.active) Event(Guy.Aktion);  //Die Aktionen starten
     Zeige();//Das Bild zeichnen
     if (Spielbeenden) return false;

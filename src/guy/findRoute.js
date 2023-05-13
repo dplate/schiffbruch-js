@@ -1,21 +1,55 @@
 import directions from '../terrain/directions.js';
+import tileEdges from '../terrain/tiles/tileEdges.js';
 import tileTypes from '../terrain/tiles/tileTypes.js';
 
 const estimateCosts = (start, destination) => {
   return Math.sqrt(Math.pow(destination.x - start.x, 2) + Math.pow(destination.y - start.y, 2));
 };
 
-const createRoute = (lastTile) => {
+const createWaypoint = (terrainTile, tileEdge, direction) => ({
+  x: terrainTile.position.x + tileEdge.x,
+  y: terrainTile.position.y + tileEdge.y,
+  direction
+});
+
+const getDirection = (tile, nextTile) => {
+  if (nextTile.x > tile.x) {
+    return directions.EAST;
+  } else if (nextTile.x < tile.x) {
+    return directions.WEST;
+  } else if (nextTile.y > tile.y) {
+    return directions.SOUTH;
+  }
+  return directions.NORTH;
+}
+
+const createRoute = (gameData, lastTile) => {
   let tile = lastTile;
   const route = [];
   while (tile) {
-    route.unshift(tile);
+    const terrainTile = gameData.terrain[tile.x][tile.y];
+    const currentTileEdges = tileEdges[terrainTile.type];
+    const routeTile = {
+      x: tile.x,
+      y: tile.y,
+      wayPoints: []
+    };
+    const nextTile = route[0];
+    if (nextTile) {
+      const direction = getDirection(tile, nextTile);
+      const nextTerrainTile = gameData.terrain[nextTile.x][nextTile.y];
+      nextTile.wayPoints.unshift(createWaypoint(nextTerrainTile, tileEdges[nextTerrainTile.type].center, direction));
+      routeTile.wayPoints.push(createWaypoint(terrainTile, currentTileEdges[direction], direction));
+    }
+   
+    route.unshift(routeTile);
     tile = tile.previousTile;
   }
   return route;
 };
 
-const findRoute = (gameData, start, destination) => {
+const findRoute = (gameData, destination) => {
+  const start = gameData.guy.tile;
   const startTile = { 
     ...start,
     estimatedCosts: estimateCosts(start, destination),
@@ -34,7 +68,7 @@ const findRoute = (gameData, start, destination) => {
     }
 
     if (nearest.x === destination.x && nearest.y === destination.y) {
-      return createRoute(nearest);
+      return createRoute(gameData, nearest);
     }    
     
     directions.list.forEach(direction => {
@@ -66,7 +100,7 @@ const findRoute = (gameData, start, destination) => {
 
     tilesToCheck.sort((tile1, tile2) => (tile1.costs + tile1.estimatedCosts) - (tile2.costs + tile2.estimatedCosts));
   }
-  return createRoute(bestAlternateDestination);
+  return createRoute(gameData, bestAlternateDestination);
 }
 
 export default findRoute;
