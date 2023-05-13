@@ -7118,8 +7118,8 @@ const Animationen = () => {
     return;
   }
   //sonstige Aktionen
-  if ((Guy.Zustand >= GUYSUCHEN) && (Guy.Zustand <= GUYSCHLEUDER) &&
-    (Bmp[Guy.Zustand].Phase !== Bmp[Guy.Zustand].Anzahl)) {
+  if (gameData.guy.active && Guy.Zustand >= GUYSUCHEN && Guy.Zustand <= GUYSCHLEUDER &&
+    Bmp[Guy.Zustand].Phase !== Bmp[Guy.Zustand].Anzahl) {
     i = Math.floor(framesPerSecond / Bmp[Guy.Zustand].Geschwindigkeit);
     if (i < 1) i = 1;
     if (frame % i === 0) {
@@ -7175,16 +7175,16 @@ const CalcGuyKoor = () => {
       else Guy.Zustand += 3;
     }
 
-    if (Math.round(Dx) === 0 && Math.round(Dy) === 0) {
-      routePoint.wayPoints.shift();
-      return;
-    }
-
     let i;
     if (BootsFahrt) i = 4; else i = 2;
     if ((frame / gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit) % i === 0) {
       Bmp[Guy.Zustand].Phase++;
       if (Bmp[Guy.Zustand].Phase >= Bmp[Guy.Zustand].Anzahl) Bmp[Guy.Zustand].Phase = 0;
+    }
+
+    if (Math.round(Dx) === 0 && Math.round(Dy) === 0) {
+      routePoint.wayPoints.shift();
+      return;
     }
 
     let Schrittx = 0;
