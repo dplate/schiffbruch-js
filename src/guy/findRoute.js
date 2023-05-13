@@ -2,6 +2,7 @@ import directions from '../terrain/directions.js';
 import tileEdges from '../terrain/tiles/tileEdges.js';
 import tileTypes from '../terrain/tiles/tileTypes.js';
 import canGoOnTile from './canGoOnTile.js';
+import getCostsOfTile from './getCostsOfTile.js';
 
 const estimateCosts = (start, destination) => {
   return Math.sqrt(Math.pow(destination.x - start.x, 2) + Math.pow(destination.y - start.y, 2));
@@ -78,7 +79,7 @@ const findRoute = (gameData, destination) => {
       const neighborTile = gameData.terrain[neighborX]?.[neighborY];
       const visitedTile = visitedTiles.find(tile => tile.x === neighborX && tile.y === neighborY);
       if (!visitedTile && neighborTile && canGoOnTile(gameData, neighborTile)) {
-        const tileCosts = neighborTile.type === tileTypes.FLAT ? 1 : 2;
+        const tileCosts = getCostsOfTile(neighborTile);
         const costs = nearest.costs + tileCosts;
         const tileToCheck = tilesToCheck.find(tile => tile.x === neighborX && tile.y === neighborY);
         if (tileToCheck) {

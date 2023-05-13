@@ -42,6 +42,7 @@ import goToSouthOfTile from './guy/goToSouthOfTile.js';
 import directions from './terrain/directions.js';
 import goToOffset from './guy/goToOffset.js';
 import isOnSea from './guy/isOnSea.js';
+import getCostsOfTile from './guy/getCostsOfTile.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -3671,7 +3672,6 @@ const startGame = async (newGame) => {
     for (let x = 0; x < MAXXKACH; x++) {
       for (let y = 0; y < MAXYKACH; y++) {
         const tile = gameData.terrain[x][y];
-        tile.LaufZeit = tile.type === tileTypes.FLAT ? 1 : 2;
         tile.Objekt = -1;
         tile.ObPos = { x: 0, y: 0 };
         tile.Reverse = false;
@@ -7135,14 +7135,16 @@ const CalcGuyKoor = () => {
     gameData.guy.tile.y = routePoint.y;
     Entdecken();
 
+    const tileCosts = getCostsOfTile(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]);
     if (isOnSea(gameData))
-      AddTime(0, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit * 3);
-    else AddTime(0, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit * 5);
+      AddTime(0, tileCosts * 3);
+    else AddTime(0, tileCosts * 5);
     AddResource(NAHRUNG, -1);
     AddResource(WASSER, -1);
   }
 
-  if (frame % gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit === 0) {
+  const tileCosts = getCostsOfTile(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]);
+  if (frame % tileCosts === 0) {
     const Dx = wayPoint.x - gameData.guy.position.x;
     const Dy = wayPoint.y - gameData.guy.position.y;
 
@@ -7159,7 +7161,7 @@ const CalcGuyKoor = () => {
 
     let i;
     if (isOnSea(gameData)) i = 4; else i = 2;
-    if ((frame / gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].LaufZeit) % i === 0) {
+    if ((frame / tileCosts) % i === 0) {
       Bmp[Guy.Zustand].Phase++;
       if (Bmp[Guy.Zustand].Phase >= Bmp[Guy.Zustand].Anzahl) Bmp[Guy.Zustand].Phase = 0;
     }
