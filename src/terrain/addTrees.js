@@ -47,12 +47,11 @@ const addTrees = (terrain) => {
 
       const position = calculatePositionInTile(tile, getRandomFractionWithBounds(), getRandomFractionWithBounds());
       const spriteType = getSpriteType(tile, bigTreePlanted);
-      const sprite = sprites[spriteType];
 
       tile.object = {
         sprite: spriteType,
-        x: Math.round(position.x - sprite.width / 2),
-        y: Math.round(position.y - sprite.height),
+        x: Math.round(position.x),
+        y: Math.round(position.y),
         reverse: Math.random() < 0.5,
         frame: getStartFrame(spriteType)
       };

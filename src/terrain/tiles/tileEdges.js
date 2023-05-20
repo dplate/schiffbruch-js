@@ -83,8 +83,8 @@ const tileEdges = {
 };
 
 const calculateCenter = (coordinate1, coordinate2) => ({
-  x: Math.floor((coordinate1.x + coordinate2.x) / 2), 
-  y: Math.floor((coordinate1.y + coordinate2.y) / 2), 
+  x: (coordinate1.x + coordinate2.x) / 2, 
+  y: (coordinate1.y + coordinate2.y) / 2, 
 });
 
 const topBottomTiles = [ tileTypes.RIDGE_NORTH_WEST, tileTypes.RIDGE_SOUTH_EAST, tileTypes.CANYON_SOUTH_EAST, tileTypes.CANYON_NORTH_WEST ];

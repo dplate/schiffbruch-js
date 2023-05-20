@@ -56,6 +56,9 @@ const setupAudio = () => {
       sounds.push(sound);
       return sound;
     },
+    stopAll: () => {
+      sounds.forEach(sound => sound.stop());
+    }
   };
 };
 

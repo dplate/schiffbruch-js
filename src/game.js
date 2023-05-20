@@ -39,10 +39,8 @@ import goToObject from './guy/routing/goToObject.js';
 import goToEastOfTile from './guy/routing/goToEastOfTile.js';
 import goToNorthOfTile from './guy/routing/goToNorthOfTile.js';
 import goToSouthOfTile from './guy/routing/goToSouthOfTile.js';
-import directions from './terrain/directions.js';
 import goToOffset from './guy/routing/goToOffset.js';
 import isOnSea from './guy/isOnSea.js';
-import getCostsOfTile from './guy/routing/getCostsOfTile.js';
 import changeWaterAndFood from './guy/changeWaterAndFood.js';
 import changeHealth from './guy/changeHealth.js';
 import createInventory from './guy/inventory/createInventory.js';
@@ -53,6 +51,12 @@ import itemTextIds from './guy/inventory/itemTextIds.js';
 import drawItems from './guy/inventory/drawItems.js';
 import itemSprites from './guy/inventory/itemSprites.js';
 import drawItem from './guy/inventory/drawItem.js';
+import updateMinimap from './terrain/updateMinimap.js';
+import discoverTerrain from './guy/discoverTerrain.js';
+import animateGuy from './guy/animateGuy.js';
+import drawGuy from './guy/drawGuy.js';
+import sounds from './sounds/sounds.js';
+import startGuyAnimation from './guy/startGuyAnimation.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -90,66 +94,8 @@ const FEUERSTELLE = FELD + 8;
 const CUPFEIL = 47;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
-const GUYLINKS = 50;
-// noinspection JSUnusedLocalSymbols
-const GUYOBEN = GUYLINKS + 1;
-// noinspection JSUnusedLocalSymbols
-const GUYRECHTS = GUYLINKS + 2;
-const GUYUNTEN = GUYLINKS + 3;
-const GUYSUCHEN = GUYLINKS + 4;
-const GUYESSEN = GUYLINKS + 5;
-const GUYTRINKEN = GUYLINKS + 6;
-const GUYFAELLEN = GUYLINKS + 7;
-const GUYWARTEN = GUYLINKS + 8;
-const GUYFELD = GUYLINKS + 9;
-const GUYBINDENOBEN = GUYLINKS + 10;
-const GUYBINDENUNTEN = GUYLINKS + 11;
-const GUYSCHLAFEN = GUYLINKS + 12;
-const GUYSCHLAFZELT = GUYLINKS + 13;
-const GUYGEHINZELT = GUYLINKS + 14;
-const GUYHINLEGEN = GUYLINKS + 15;
-const GUYAUFSTEHEN = GUYLINKS + 16;
-const GUYANGELN1LINKS = GUYLINKS + 17;
-const GUYANGELN1OBEN = GUYLINKS + 18;
-const GUYANGELN1RECHTS = GUYLINKS + 19;
-const GUYANGELN1UNTEN = GUYLINKS + 20;
-const GUYANGELN2LINKS = GUYLINKS + 21;
-const GUYANGELN2OBEN = GUYLINKS + 22;
-const GUYANGELN2RECHTS = GUYLINKS + 23;
-const GUYANGELN2UNTEN = GUYLINKS + 24;
-const GUYANGELN3LINKS = GUYLINKS + 25;
-const GUYANGELN3OBEN = GUYLINKS + 26;
-const GUYANGELN3RECHTS = GUYLINKS + 27;
-const GUYANGELN3UNTEN = GUYLINKS + 28;
-const GUYSCHLAGEN = GUYLINKS + 29;
-const GUYBOOTLINKS = GUYLINKS + 30;
-const GUYBOOTOBEN = GUYLINKS + 31;
-const GUYBOOTRECHTS = GUYLINKS + 32;
-const GUYBOOTUNTEN = GUYLINKS + 33;
-const GUYBOOTANGELN1 = GUYLINKS + 34;
-const GUYBOOTANGELN2 = GUYLINKS + 35;
-const GUYBOOTANGELN3 = GUYLINKS + 36;
-const GUYTAUCHEN1 = GUYLINKS + 37;
-const GUYTAUCHEN2 = GUYLINKS + 38;
-const GUYTAUCHEN3 = GUYLINKS + 39;
-const GUYHAMMER = GUYLINKS + 40;
-const GUYKLETTERN1 = GUYLINKS + 41;
-const GUYKLETTERN2 = GUYLINKS + 42;
-const GUYHAMMER2 = GUYLINKS + 43;
-const GUYGEHINHAUS = GUYLINKS + 44;
-const GUYSCHLAFHAUS = GUYLINKS + 45;
-const GUYGEHAUSHAUS = GUYLINKS + 46;
-const GUYANZUENDEN = GUYLINKS + 47;
-const GUYAUSSCHAU = GUYLINKS + 48;
-const GUYSCHAUFELN = GUYLINKS + 49;
-const GUYSCHIFF = GUYLINKS + 50;
-const GUYSCHIFFDOWN = GUYLINKS + 51;
-const GUYSCHWIMMEN = GUYLINKS + 52;
-const GUYTOD = GUYLINKS + 53;
-const GUYBOOTTOD = GUYLINKS + 54;
-const GUYBOOTWARTEN = GUYLINKS + 55;
-const GUYSCHLEUDER = GUYLINKS + 56;
-const BUTTGITTER = 107;
+const GUYSCHIFF = 50;
+const BUTTGITTER = 51;
 const BUTTBEENDEN = BUTTGITTER + 1;
 const BUTTNEU = BUTTGITTER + 2;
 const BUTTTAGNEU = BUTTGITTER + 3;
@@ -207,31 +153,10 @@ const DPSOFTWARE = PROGRAMMIERUNG + 14;
 const BILDANZ = DPSOFTWARE + 1; //Wieviele Bilder
 
 //Sounds
-const WAVSTURM = 1;
-const WAVSCHWIMMEN = WAVSTURM + 1;
-const WAVPLATSCH = WAVSTURM + 2;
-const WAVFAELLEN = WAVSTURM + 3;
-const WAVSCHLAGEN = WAVSTURM + 4;
-const WAVSCHLEUDER = WAVSTURM + 5;
-const WAVSCHAUFELN = WAVSTURM + 6;
-const WAVHAMMER = WAVSTURM + 7;
-const WAVCRASH = WAVSTURM + 8;
-const WAVSCHNARCHEN = WAVSTURM + 9;
-const WAVTRINKEN = WAVSTURM + 10;
-const WAVKNISTERN = WAVSTURM + 11;
-const WAVANGEL = WAVSTURM + 12;
-const WAVWALD = 14;
-const WAVFEUER = WAVWALD + 1;
-const WAVBRANDUNG = WAVWALD + 2;
-const WAVBAUMFAELLT = WAVWALD + 3;
-const WAVFLUSS = WAVWALD + 4;
-const WAVKLICK = 19;
-const WAVKLICK2 = WAVKLICK + 1;
-const WAVLOGO = WAVKLICK + 2;
-const WAVABSPANN = WAVKLICK + 3;
-const WAVWOLF = WAVKLICK + 4;
-const WAVERFINDUNG = WAVKLICK + 5;
-const WAVANZ = WAVERFINDUNG + 1    //Anzahl; der Sounds
+const WAVWALD = 1;
+const WAVFEUER = 2;
+const WAVFLUSS = 2;
+const WAVANZ = WAVFLUSS + 1    //Anzahl; der Sounds
 
 //Aktionen
 const AKNICHTS = 0;
@@ -294,7 +219,6 @@ let minimapCanvasContext = null;
 let textCanvasContext = null;
 
 let panelImage = null;
-let guyImage = null;
 let waterImage = null;
 let font1Image = null;
 let font2Image = null;
@@ -358,7 +282,6 @@ const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
 
 let Guy = {
   Aktion: null,              //Welche Aktion (Suchen, fischen ...) (Übergeordnet über Zustand)
-  Zustand: null,             //Was macht er gerade? (Animation)(linkslaufen,rechtslaufen...,angeln..)
   AkNummer: null,            //Bei welcher Aktion (für die Aktionsprozeduren)
 };
 
@@ -404,6 +327,8 @@ const gameData = {
   guy: {
     active: false,
     route: [],
+    sprite: null,
+    frame: null,
     position: {
       x: null,
       y: null
@@ -431,7 +356,6 @@ const loadImage = async (file) => {
 
 const initCanvases = async (window) => {
   panelImage = await loadImage('panel.png');
-  guyImage = await loadImage('guy.png');
   waterImage = await loadImage('water.png');
   font1Image = await loadImage('font1.png');
   font2Image = await loadImage('font2.png');
@@ -510,11 +434,6 @@ const PlaySound = (Sound, Volume) => {
   lpdsbWav[Sound].play(Wav[Sound].Loop);
 }
 
-const StopSound = (Sound) => {
-  if (Sound === 0) return;
-  lpdsbWav[Sound].stop();
-}
-
 const SaveGame = () => {
   let i;
 
@@ -527,7 +446,7 @@ const SaveGame = () => {
     });
   }
 
-  window.localStorage.setItem('gameDataV6', JSON.stringify({
+  window.localStorage.setItem('gameDataV7', JSON.stringify({
     ...gameData,
     Guy,
     Chance,
@@ -544,7 +463,7 @@ const SaveGame = () => {
 const LoadGame = () => {
   let i;
 
-  const rawGameData = window.localStorage.getItem('gameDataV6');
+  const rawGameData = window.localStorage.getItem('gameDataV7');
   if (!rawGameData) {
     return false;
   }
@@ -604,451 +523,8 @@ const InitStructs = async () => {
     Bmp[i].First = true;
   }
 
-  //Guy
-  for (i = GUYLINKS; i <= GUYUNTEN; i++) {
-    Bmp[i].Animation = false;
-    Bmp[i].Anzahl = 4;
-    Bmp[i].Geschwindigkeit = 20;
-    Bmp[i].Phase = 0;
-    Bmp[i].Surface = guyImage;
-    Bmp[i].rcSrc.left = 7 * (i - GUYLINKS);
-    Bmp[i].rcSrc.right = 7 + 7 * (i - GUYLINKS);
-    Bmp[i].rcSrc.top = 0;
-    Bmp[i].rcSrc.bottom = 18;
-    Bmp[i].Breite = 7;
-    Bmp[i].Hoehe = 18;
-  }
-
-  for (i = GUYSUCHEN; i <= GUYSCHLEUDER; i++) {
-    Bmp[i].Animation = false;
-    Bmp[i].Phase = 0;
-    Bmp[i].Surface = guyImage;
-  }
-  Bmp[GUYSUCHEN].Anzahl = 4;
-  Bmp[GUYSUCHEN].Geschwindigkeit = 4;
-  Bmp[GUYSUCHEN].rcSrc.left = 28;
-  Bmp[GUYSUCHEN].rcSrc.right = 39;
-  Bmp[GUYSUCHEN].rcSrc.top = 0;
-  Bmp[GUYSUCHEN].rcSrc.bottom = 14;
-  Bmp[GUYSUCHEN].Breite = 11;
-  Bmp[GUYSUCHEN].Hoehe = 14;
-  Bmp[GUYSUCHEN].Sound = WAVKNISTERN;
-
-  Bmp[GUYESSEN].Anzahl = 4;
-  Bmp[GUYESSEN].Geschwindigkeit = 4;
-  Bmp[GUYESSEN].rcSrc.left = 39;
-  Bmp[GUYESSEN].rcSrc.right = 39 + 7;
-  Bmp[GUYESSEN].rcSrc.top = 0;
-  Bmp[GUYESSEN].rcSrc.bottom = 17;
-  Bmp[GUYESSEN].Breite = 7;
-  Bmp[GUYESSEN].Hoehe = 17;
-  Bmp[GUYESSEN].Sound = WAVKNISTERN;
-
-  Bmp[GUYTRINKEN].Anzahl = 5;
-  Bmp[GUYTRINKEN].Geschwindigkeit = 4;
-  Bmp[GUYTRINKEN].rcSrc.left = 46;
-  Bmp[GUYTRINKEN].rcSrc.right = 46 + 9;
-  Bmp[GUYTRINKEN].rcSrc.top = 0;
-  Bmp[GUYTRINKEN].rcSrc.bottom = 13;
-  Bmp[GUYTRINKEN].Breite = 9;
-  Bmp[GUYTRINKEN].Hoehe = 13;
-  Bmp[GUYTRINKEN].Sound = WAVTRINKEN;
-
-  Bmp[GUYFAELLEN].Anzahl = 4;
-  Bmp[GUYFAELLEN].Geschwindigkeit = 6;
-  Bmp[GUYFAELLEN].rcSrc.left = 55;
-  Bmp[GUYFAELLEN].rcSrc.right = 55 + 15;
-  Bmp[GUYFAELLEN].rcSrc.top = 0;
-  Bmp[GUYFAELLEN].rcSrc.bottom = 19;
-  Bmp[GUYFAELLEN].Breite = 15;
-  Bmp[GUYFAELLEN].Hoehe = 19;
-  Bmp[GUYFAELLEN].Sound = WAVFAELLEN;
-
-  Bmp[GUYWARTEN].Anzahl = 4;
-  Bmp[GUYWARTEN].Geschwindigkeit = 2;
-  Bmp[GUYWARTEN].rcSrc.left = 70;
-  Bmp[GUYWARTEN].rcSrc.right = 70 + 7;
-  Bmp[GUYWARTEN].rcSrc.top = 0;
-  Bmp[GUYWARTEN].rcSrc.bottom = 18;
-  Bmp[GUYWARTEN].Breite = 7;
-  Bmp[GUYWARTEN].Hoehe = 18;
-
-  Bmp[GUYFELD].Anzahl = 4;
-  Bmp[GUYFELD].Geschwindigkeit = 4;
-  Bmp[GUYFELD].rcSrc.left = 78;
-  Bmp[GUYFELD].rcSrc.right = 78 + 19;
-  Bmp[GUYFELD].rcSrc.top = 0;
-  Bmp[GUYFELD].rcSrc.bottom = 18;
-  Bmp[GUYFELD].Breite = 19;
-  Bmp[GUYFELD].Hoehe = 18;
-
-  Bmp[GUYBINDENOBEN].Anzahl = 2;
-  Bmp[GUYBINDENOBEN].Geschwindigkeit = 1;
-  Bmp[GUYBINDENOBEN].rcSrc.left = 97;
-  Bmp[GUYBINDENOBEN].rcSrc.right = 97 + 8;
-  Bmp[GUYBINDENOBEN].rcSrc.top = 0;
-  Bmp[GUYBINDENOBEN].rcSrc.bottom = 18;
-  Bmp[GUYBINDENOBEN].Breite = 8;
-  Bmp[GUYBINDENOBEN].Hoehe = 18;
-
-  Bmp[GUYBINDENUNTEN].Anzahl = 2;
-  Bmp[GUYBINDENUNTEN].Geschwindigkeit = 1;
-  Bmp[GUYBINDENUNTEN].rcSrc.left = 98;
-  Bmp[GUYBINDENUNTEN].rcSrc.right = 98 + 7;
-  Bmp[GUYBINDENUNTEN].rcSrc.top = 36;
-  Bmp[GUYBINDENUNTEN].rcSrc.bottom = 36 + 18;
-  Bmp[GUYBINDENUNTEN].Breite = 7;
-  Bmp[GUYBINDENUNTEN].Hoehe = 18;
-
-  Bmp[GUYSCHLAFZELT].Anzahl = 2;
-  Bmp[GUYSCHLAFZELT].Geschwindigkeit = 1;
-  Bmp[GUYSCHLAFZELT].rcSrc.left = 105;
-  Bmp[GUYSCHLAFZELT].rcSrc.right = 105 + 20;
-  Bmp[GUYSCHLAFZELT].rcSrc.top = 54;
-  Bmp[GUYSCHLAFZELT].rcSrc.bottom = 54 + 10;
-  Bmp[GUYSCHLAFZELT].Breite = 20;
-  Bmp[GUYSCHLAFZELT].Hoehe = 10;
-  Bmp[GUYSCHLAFZELT].Sound = WAVSCHNARCHEN;
-
-  Bmp[GUYSCHLAFEN].Anzahl = 2;
-  Bmp[GUYSCHLAFEN].Geschwindigkeit = 1;
-  Bmp[GUYSCHLAFEN].rcSrc.left = 125;
-  Bmp[GUYSCHLAFEN].rcSrc.right = 125 + 17;
-  Bmp[GUYSCHLAFEN].rcSrc.top = 36;
-  Bmp[GUYSCHLAFEN].rcSrc.bottom = 36 + 18;
-  Bmp[GUYSCHLAFEN].Breite = 17;
-  Bmp[GUYSCHLAFEN].Hoehe = 18;
-  Bmp[GUYSCHLAFEN].Sound = WAVSCHNARCHEN;
-
-  Bmp[GUYGEHINZELT].Anzahl = 3;
-  Bmp[GUYGEHINZELT].Geschwindigkeit = 4;
-  Bmp[GUYGEHINZELT].rcSrc.left = 105;
-  Bmp[GUYGEHINZELT].rcSrc.right = 105 + 7;
-  Bmp[GUYGEHINZELT].rcSrc.top = 0;
-  Bmp[GUYGEHINZELT].rcSrc.bottom = 18;
-  Bmp[GUYGEHINZELT].Breite = 7;
-  Bmp[GUYGEHINZELT].Hoehe = 18;
-
-  Bmp[GUYHINLEGEN].Anzahl = 2;
-  Bmp[GUYHINLEGEN].Geschwindigkeit = 2;
-  Bmp[GUYHINLEGEN].rcSrc.left = 125;
-  Bmp[GUYHINLEGEN].rcSrc.right = 125 + 17;
-  Bmp[GUYHINLEGEN].rcSrc.top = 0;
-  Bmp[GUYHINLEGEN].rcSrc.bottom = 18;
-  Bmp[GUYHINLEGEN].Breite = 17;
-  Bmp[GUYHINLEGEN].Hoehe = 18;
-
-  Bmp[GUYAUFSTEHEN].Anzahl = 2;
-  Bmp[GUYAUFSTEHEN].Geschwindigkeit = 2;
-  Bmp[GUYAUFSTEHEN].rcSrc.left = 142;
-  Bmp[GUYAUFSTEHEN].rcSrc.right = 142 + 9;
-  Bmp[GUYAUFSTEHEN].rcSrc.top = 0;
-  Bmp[GUYAUFSTEHEN].rcSrc.bottom = 18;
-  Bmp[GUYAUFSTEHEN].Breite = 9;
-  Bmp[GUYAUFSTEHEN].Hoehe = 18;
-
-  Bmp[GUYANGELN1LINKS].Anzahl = 6;
-  Bmp[GUYANGELN1LINKS].Geschwindigkeit = 6;
-  Bmp[GUYANGELN1LINKS].rcSrc.left = 151;
-  Bmp[GUYANGELN1LINKS].rcSrc.right = 151 + 16;
-  Bmp[GUYANGELN1LINKS].rcSrc.top = 0;
-  Bmp[GUYANGELN1LINKS].rcSrc.bottom = 17;
-  Bmp[GUYANGELN1LINKS].Breite = 16;
-  Bmp[GUYANGELN1LINKS].Hoehe = 17;
-
-  Bmp[GUYANGELN1OBEN].Anzahl = 6;
-  Bmp[GUYANGELN1OBEN].Geschwindigkeit = 6;
-  Bmp[GUYANGELN1OBEN].rcSrc.left = 167;
-  Bmp[GUYANGELN1OBEN].rcSrc.right = 167 + 16;
-  Bmp[GUYANGELN1OBEN].rcSrc.top = 0;
-  Bmp[GUYANGELN1OBEN].rcSrc.bottom = 17;
-  Bmp[GUYANGELN1OBEN].Breite = 16;
-  Bmp[GUYANGELN1OBEN].Hoehe = 17;
-
-  Bmp[GUYANGELN1RECHTS].Anzahl = 6;
-  Bmp[GUYANGELN1RECHTS].Geschwindigkeit = 6;
-  Bmp[GUYANGELN1RECHTS].rcSrc.left = 183;
-  Bmp[GUYANGELN1RECHTS].rcSrc.right = 183 + 14;
-  Bmp[GUYANGELN1RECHTS].rcSrc.top = 0;
-  Bmp[GUYANGELN1RECHTS].rcSrc.bottom = 17;
-  Bmp[GUYANGELN1RECHTS].Breite = 14;
-  Bmp[GUYANGELN1RECHTS].Hoehe = 17;
-
-  Bmp[GUYANGELN1UNTEN].Anzahl = 6;
-  Bmp[GUYANGELN1UNTEN].Geschwindigkeit = 6;
-  Bmp[GUYANGELN1UNTEN].rcSrc.left = 197;
-  Bmp[GUYANGELN1UNTEN].rcSrc.right = 197 + 14;
-  Bmp[GUYANGELN1UNTEN].rcSrc.top = 0;
-  Bmp[GUYANGELN1UNTEN].rcSrc.bottom = 17;
-  Bmp[GUYANGELN1UNTEN].Breite = 14;
-  Bmp[GUYANGELN1UNTEN].Hoehe = 17;
-
-  Bmp[GUYANGELN2LINKS].Anzahl = 4;
-  Bmp[GUYANGELN2LINKS].Geschwindigkeit = 3;
-  Bmp[GUYANGELN2LINKS].rcSrc.left = 211;
-  Bmp[GUYANGELN2LINKS].rcSrc.right = 211 + 16;
-  Bmp[GUYANGELN2LINKS].rcSrc.top = 0;
-  Bmp[GUYANGELN2LINKS].rcSrc.bottom = 16;
-  Bmp[GUYANGELN2LINKS].Breite = 16;
-  Bmp[GUYANGELN2LINKS].Hoehe = 16;
-
-  Bmp[GUYANGELN2OBEN].Anzahl = 4;
-  Bmp[GUYANGELN2OBEN].Geschwindigkeit = 3;
-  Bmp[GUYANGELN2OBEN].rcSrc.left = 227;
-  Bmp[GUYANGELN2OBEN].rcSrc.right = 227 + 16;
-  Bmp[GUYANGELN2OBEN].rcSrc.top = 0;
-  Bmp[GUYANGELN2OBEN].rcSrc.bottom = 16;
-  Bmp[GUYANGELN2OBEN].Breite = 16;
-  Bmp[GUYANGELN2OBEN].Hoehe = 16;
-
-  Bmp[GUYANGELN2RECHTS].Anzahl = 4;
-  Bmp[GUYANGELN2RECHTS].Geschwindigkeit = 3;
-  Bmp[GUYANGELN2RECHTS].rcSrc.left = 243;
-  Bmp[GUYANGELN2RECHTS].rcSrc.right = 243 + 14;
-  Bmp[GUYANGELN2RECHTS].rcSrc.top = 0;
-  Bmp[GUYANGELN2RECHTS].rcSrc.bottom = 15;
-  Bmp[GUYANGELN2RECHTS].Breite = 14;
-  Bmp[GUYANGELN2RECHTS].Hoehe = 15;
-
-  Bmp[GUYANGELN2UNTEN].Anzahl = 4;
-  Bmp[GUYANGELN2UNTEN].Geschwindigkeit = 3;
-  Bmp[GUYANGELN2UNTEN].rcSrc.left = 257;
-  Bmp[GUYANGELN2UNTEN].rcSrc.right = 257 + 14;
-  Bmp[GUYANGELN2UNTEN].rcSrc.top = 0;
-  Bmp[GUYANGELN2UNTEN].rcSrc.bottom = 15;
-  Bmp[GUYANGELN2UNTEN].Breite = 14;
-  Bmp[GUYANGELN2UNTEN].Hoehe = 15;
-
-  Bmp[GUYANGELN3LINKS].Anzahl = 3;
-  Bmp[GUYANGELN3LINKS].Geschwindigkeit = 2;
-  Bmp[GUYANGELN3LINKS].rcSrc.left = 271;
-  Bmp[GUYANGELN3LINKS].rcSrc.right = 271 + 16;
-  Bmp[GUYANGELN3LINKS].rcSrc.top = 0;
-  Bmp[GUYANGELN3LINKS].rcSrc.bottom = 16;
-  Bmp[GUYANGELN3LINKS].Breite = 16;
-  Bmp[GUYANGELN3LINKS].Hoehe = 16;
-
-  Bmp[GUYANGELN3OBEN].Anzahl = 3;
-  Bmp[GUYANGELN3OBEN].Geschwindigkeit = 2;
-  Bmp[GUYANGELN3OBEN].rcSrc.left = 285;
-  Bmp[GUYANGELN3OBEN].rcSrc.right = 285 + 16;
-  Bmp[GUYANGELN3OBEN].rcSrc.top = 0;
-  Bmp[GUYANGELN3OBEN].rcSrc.bottom = 16;
-  Bmp[GUYANGELN3OBEN].Breite = 16;
-  Bmp[GUYANGELN3OBEN].Hoehe = 16;
-
-  Bmp[GUYANGELN3RECHTS].Anzahl = 3;
-  Bmp[GUYANGELN3RECHTS].Geschwindigkeit = 2;
-  Bmp[GUYANGELN3RECHTS].rcSrc.left = 299;
-  Bmp[GUYANGELN3RECHTS].rcSrc.right = 299 + 14;
-  Bmp[GUYANGELN3RECHTS].rcSrc.top = 0;
-  Bmp[GUYANGELN3RECHTS].rcSrc.bottom = 15;
-  Bmp[GUYANGELN3RECHTS].Breite = 14;
-  Bmp[GUYANGELN3RECHTS].Hoehe = 15;
-
-  Bmp[GUYANGELN3UNTEN].Anzahl = 3;
-  Bmp[GUYANGELN3UNTEN].Geschwindigkeit = 2;
-  Bmp[GUYANGELN3UNTEN].rcSrc.left = 313;
-  Bmp[GUYANGELN3UNTEN].rcSrc.right = 313 + 14;
-  Bmp[GUYANGELN3UNTEN].rcSrc.top = 0;
-  Bmp[GUYANGELN3UNTEN].rcSrc.bottom = 15;
-  Bmp[GUYANGELN3UNTEN].Breite = 14;
-  Bmp[GUYANGELN3UNTEN].Hoehe = 15;
-
-  Bmp[GUYSCHLAGEN].Anzahl = 4;
-  Bmp[GUYSCHLAGEN].Geschwindigkeit = 7;
-  Bmp[GUYSCHLAGEN].rcSrc.left = 327;
-  Bmp[GUYSCHLAGEN].rcSrc.right = 327 + 12;
-  Bmp[GUYSCHLAGEN].rcSrc.top = 0;
-  Bmp[GUYSCHLAGEN].rcSrc.bottom = 24;
-  Bmp[GUYSCHLAGEN].Breite = 12;
-  Bmp[GUYSCHLAGEN].Hoehe = 24;
-  Bmp[GUYSCHLAGEN].Sound = WAVSCHLAGEN;
-
-  Bmp[GUYBOOTLINKS].Anzahl = 6;
-  Bmp[GUYBOOTLINKS].Geschwindigkeit = 10;
-  Bmp[GUYBOOTLINKS].rcSrc.left = 339;
-  Bmp[GUYBOOTLINKS].rcSrc.right = 339 + 26;
-  Bmp[GUYBOOTLINKS].rcSrc.top = 0;
-  Bmp[GUYBOOTLINKS].rcSrc.bottom = 21;
-  Bmp[GUYBOOTLINKS].Breite = 26;
-  Bmp[GUYBOOTLINKS].Hoehe = 21;
-
-  Bmp[GUYBOOTOBEN].Anzahl = 6;
-  Bmp[GUYBOOTOBEN].Geschwindigkeit = 10;
-  Bmp[GUYBOOTOBEN].rcSrc.left = 365;
-  Bmp[GUYBOOTOBEN].rcSrc.right = 365 + 26;
-  Bmp[GUYBOOTOBEN].rcSrc.top = 0;
-  Bmp[GUYBOOTOBEN].rcSrc.bottom = 21;
-  Bmp[GUYBOOTOBEN].Breite = 26;
-  Bmp[GUYBOOTOBEN].Hoehe = 21;
-
-  Bmp[GUYBOOTRECHTS].Anzahl = 6;
-  Bmp[GUYBOOTRECHTS].Geschwindigkeit = 10;
-  Bmp[GUYBOOTRECHTS].rcSrc.left = 391;
-  Bmp[GUYBOOTRECHTS].rcSrc.right = 391 + 26;
-  Bmp[GUYBOOTRECHTS].rcSrc.top = 0;
-  Bmp[GUYBOOTRECHTS].rcSrc.bottom = 21;
-  Bmp[GUYBOOTRECHTS].Breite = 26;
-  Bmp[GUYBOOTRECHTS].Hoehe = 21;
-
-  Bmp[GUYBOOTUNTEN].Anzahl = 6;
-  Bmp[GUYBOOTUNTEN].Geschwindigkeit = 10;
-  Bmp[GUYBOOTUNTEN].rcSrc.left = 417;
-  Bmp[GUYBOOTUNTEN].rcSrc.right = 417 + 26;
-  Bmp[GUYBOOTUNTEN].rcSrc.top = 0;
-  Bmp[GUYBOOTUNTEN].rcSrc.bottom = 21;
-  Bmp[GUYBOOTUNTEN].Breite = 26;
-  Bmp[GUYBOOTUNTEN].Hoehe = 21;
-
-  Bmp[GUYBOOTANGELN1].Anzahl = 6;
-  Bmp[GUYBOOTANGELN1].Geschwindigkeit = 6;
-  Bmp[GUYBOOTANGELN1].rcSrc.left = 443;
-  Bmp[GUYBOOTANGELN1].rcSrc.right = 443 + 26;
-  Bmp[GUYBOOTANGELN1].rcSrc.top = 0;
-  Bmp[GUYBOOTANGELN1].rcSrc.bottom = 25;
-  Bmp[GUYBOOTANGELN1].Breite = 26;
-  Bmp[GUYBOOTANGELN1].Hoehe = 25;
-
-  Bmp[GUYBOOTANGELN2].Anzahl = 4;
-  Bmp[GUYBOOTANGELN2].Geschwindigkeit = 3;
-  Bmp[GUYBOOTANGELN2].rcSrc.left = 469;
-  Bmp[GUYBOOTANGELN2].rcSrc.right = 469 + 26;
-  Bmp[GUYBOOTANGELN2].rcSrc.top = 0;
-  Bmp[GUYBOOTANGELN2].rcSrc.bottom = 25;
-  Bmp[GUYBOOTANGELN2].Breite = 26;
-  Bmp[GUYBOOTANGELN2].Hoehe = 25;
-
-  Bmp[GUYBOOTANGELN3].Anzahl = 3;
-  Bmp[GUYBOOTANGELN3].Geschwindigkeit = 2;
-  Bmp[GUYBOOTANGELN3].rcSrc.left = 495;
-  Bmp[GUYBOOTANGELN3].rcSrc.right = 495 + 26;
-  Bmp[GUYBOOTANGELN3].rcSrc.top = 0;
-  Bmp[GUYBOOTANGELN3].rcSrc.bottom = 25;
-  Bmp[GUYBOOTANGELN3].Breite = 26;
-  Bmp[GUYBOOTANGELN3].Hoehe = 25;
-
-  Bmp[GUYTAUCHEN1].Anzahl = 5;
-  Bmp[GUYTAUCHEN1].Geschwindigkeit = 5;
-  Bmp[GUYTAUCHEN1].rcSrc.left = 521;
-  Bmp[GUYTAUCHEN1].rcSrc.right = 521 + 26;
-  Bmp[GUYTAUCHEN1].rcSrc.top = 0;
-  Bmp[GUYTAUCHEN1].rcSrc.bottom = 27;
-  Bmp[GUYTAUCHEN1].Breite = 26;
-  Bmp[GUYTAUCHEN1].Hoehe = 27;
-
-  Bmp[GUYTAUCHEN2].Anzahl = 4;
-  Bmp[GUYTAUCHEN2].Geschwindigkeit = 3;
-  Bmp[GUYTAUCHEN2].rcSrc.left = 547;
-  Bmp[GUYTAUCHEN2].rcSrc.right = 547 + 26;
-  Bmp[GUYTAUCHEN2].rcSrc.top = 0;
-  Bmp[GUYTAUCHEN2].rcSrc.bottom = 17;
-  Bmp[GUYTAUCHEN2].Breite = 26;
-  Bmp[GUYTAUCHEN2].Hoehe = 17;
-
-  Bmp[GUYTAUCHEN3].Anzahl = 2;
-  Bmp[GUYTAUCHEN3].Geschwindigkeit = 2;
-  Bmp[GUYTAUCHEN3].rcSrc.left = 573;
-  Bmp[GUYTAUCHEN3].rcSrc.right = 573 + 26;
-  Bmp[GUYTAUCHEN3].rcSrc.top = 0;
-  Bmp[GUYTAUCHEN3].rcSrc.bottom = 17;
-  Bmp[GUYTAUCHEN3].Breite = 26;
-  Bmp[GUYTAUCHEN3].Hoehe = 17;
-
-  Bmp[GUYHAMMER].Anzahl = 2;
-  Bmp[GUYHAMMER].Geschwindigkeit = 4;
-  Bmp[GUYHAMMER].rcSrc.left = 599;
-  Bmp[GUYHAMMER].rcSrc.right = 599 + 9;
-  Bmp[GUYHAMMER].rcSrc.top = 0;
-  Bmp[GUYHAMMER].rcSrc.bottom = 18;
-  Bmp[GUYHAMMER].Breite = 9;
-  Bmp[GUYHAMMER].Hoehe = 18;
-  Bmp[GUYHAMMER].Sound = WAVHAMMER;
-
-  Bmp[GUYKLETTERN1].Anzahl = 6;
-  Bmp[GUYKLETTERN1].Geschwindigkeit = 2;
-  Bmp[GUYKLETTERN1].rcSrc.left = 608;
-  Bmp[GUYKLETTERN1].rcSrc.right = 608 + 7;
-  Bmp[GUYKLETTERN1].rcSrc.top = 0;
-  Bmp[GUYKLETTERN1].rcSrc.bottom = 34;
-  Bmp[GUYKLETTERN1].Breite = 7;
-  Bmp[GUYKLETTERN1].Hoehe = 34;
-
-  Bmp[GUYKLETTERN2].Anzahl = 6;
-  Bmp[GUYKLETTERN2].Geschwindigkeit = 2;
-  Bmp[GUYKLETTERN2].rcSrc.left = 615;
-  Bmp[GUYKLETTERN2].rcSrc.right = 615 + 7;
-  Bmp[GUYKLETTERN2].rcSrc.top = 0;
-  Bmp[GUYKLETTERN2].rcSrc.bottom = 34;
-  Bmp[GUYKLETTERN2].Breite = 7;
-  Bmp[GUYKLETTERN2].Hoehe = 34;
-
-  Bmp[GUYHAMMER2].Anzahl = 2;
-  Bmp[GUYHAMMER2].Geschwindigkeit = 4;
-  Bmp[GUYHAMMER2].rcSrc.left = 622;
-  Bmp[GUYHAMMER2].rcSrc.right = 622 + 7;
-  Bmp[GUYHAMMER2].rcSrc.top = 0;
-  Bmp[GUYHAMMER2].rcSrc.bottom = 34;
-  Bmp[GUYHAMMER2].Breite = 7;
-  Bmp[GUYHAMMER2].Hoehe = 34;
-  Bmp[GUYHAMMER2].Sound = WAVHAMMER;
-
-  Bmp[GUYGEHINHAUS].Anzahl = 3;
-  Bmp[GUYGEHINHAUS].Geschwindigkeit = 2;
-  Bmp[GUYGEHINHAUS].rcSrc.left = 631;
-  Bmp[GUYGEHINHAUS].rcSrc.right = 631 + 9;
-  Bmp[GUYGEHINHAUS].rcSrc.top = 0;
-  Bmp[GUYGEHINHAUS].rcSrc.bottom = 34;
-  Bmp[GUYGEHINHAUS].Breite = 9;
-  Bmp[GUYGEHINHAUS].Hoehe = 34;
-
-  Bmp[GUYSCHLAFHAUS].Anzahl = 2;
-  Bmp[GUYSCHLAFHAUS].Geschwindigkeit = 1;
-  Bmp[GUYSCHLAFHAUS].rcSrc.left = 640;
-  Bmp[GUYSCHLAFHAUS].rcSrc.right = 640 + 10;
-  Bmp[GUYSCHLAFHAUS].rcSrc.top = 0;
-  Bmp[GUYSCHLAFHAUS].rcSrc.bottom = 34;
-  Bmp[GUYSCHLAFHAUS].Breite = 10;
-  Bmp[GUYSCHLAFHAUS].Hoehe = 34;
-  Bmp[GUYSCHLAFHAUS].Sound = WAVSCHNARCHEN;
-
-  Bmp[GUYGEHAUSHAUS].Anzahl = 3;
-  Bmp[GUYGEHAUSHAUS].Geschwindigkeit = 2;
-  Bmp[GUYGEHAUSHAUS].rcSrc.left = 650;
-  Bmp[GUYGEHAUSHAUS].rcSrc.right = 650 + 9;
-  Bmp[GUYGEHAUSHAUS].rcSrc.top = 0;
-  Bmp[GUYGEHAUSHAUS].rcSrc.bottom = 34;
-  Bmp[GUYGEHAUSHAUS].Breite = 9;
-  Bmp[GUYGEHAUSHAUS].Hoehe = 34;
-
-  Bmp[GUYANZUENDEN].Anzahl = 6;
-  Bmp[GUYANZUENDEN].Geschwindigkeit = 5;
-  Bmp[GUYANZUENDEN].rcSrc.left = 659;
-  Bmp[GUYANZUENDEN].rcSrc.right = 659 + 19;
-  Bmp[GUYANZUENDEN].rcSrc.top = 0;
-  Bmp[GUYANZUENDEN].rcSrc.bottom = 18;
-  Bmp[GUYANZUENDEN].Breite = 19;
-  Bmp[GUYANZUENDEN].Hoehe = 18;
-
-  Bmp[GUYAUSSCHAU].Anzahl = 4;
-  Bmp[GUYAUSSCHAU].Geschwindigkeit = 1;
-  Bmp[GUYAUSSCHAU].rcSrc.left = 678;
-  Bmp[GUYAUSSCHAU].rcSrc.right = 678 + 10;
-  Bmp[GUYAUSSCHAU].rcSrc.top = 0;
-  Bmp[GUYAUSSCHAU].rcSrc.bottom = 18;
-  Bmp[GUYAUSSCHAU].Breite = 10;
-  Bmp[GUYAUSSCHAU].Hoehe = 18;
-
-  Bmp[GUYSCHAUFELN].Anzahl = 10;
-  Bmp[GUYSCHAUFELN].Geschwindigkeit = 3;
-  Bmp[GUYSCHAUFELN].rcSrc.left = 688;
-  Bmp[GUYSCHAUFELN].rcSrc.right = 688 + 17;
-  Bmp[GUYSCHAUFELN].rcSrc.top = 0;
-  Bmp[GUYSCHAUFELN].rcSrc.bottom = 19;
-  Bmp[GUYSCHAUFELN].Breite = 17;
-  Bmp[GUYSCHAUFELN].Hoehe = 19;
-  Bmp[GUYSCHAUFELN].Sound = WAVSCHAUFELN;
-
+  Bmp[GUYSCHIFF].Animation = false;
+  Bmp[GUYSCHIFF].Phase = 0;
   Bmp[GUYSCHIFF].Anzahl = 4;
   Bmp[GUYSCHIFF].Geschwindigkeit = 10;
   Bmp[GUYSCHIFF].rcSrc.left = 297;
@@ -1058,64 +534,6 @@ const InitStructs = async () => {
   Bmp[GUYSCHIFF].Breite = 48;
   Bmp[GUYSCHIFF].Hoehe = 38;
   Bmp[GUYSCHIFF].Surface = buildingsImage;
-  Bmp[GUYSCHIFF].Sound = WAVSTURM;
-
-  Bmp[GUYSCHIFFDOWN].Anzahl = 6;
-  Bmp[GUYSCHIFFDOWN].Geschwindigkeit = 3;
-  Bmp[GUYSCHIFFDOWN].rcSrc.left = 345;
-  Bmp[GUYSCHIFFDOWN].rcSrc.right = 345 + 46;
-  Bmp[GUYSCHIFFDOWN].rcSrc.top = 0;
-  Bmp[GUYSCHIFFDOWN].rcSrc.bottom = 40;
-  Bmp[GUYSCHIFFDOWN].Breite = 46;
-  Bmp[GUYSCHIFFDOWN].Hoehe = 40;
-  Bmp[GUYSCHIFFDOWN].Surface = buildingsImage;
-  Bmp[GUYSCHIFFDOWN].Sound = WAVPLATSCH;
-
-  Bmp[GUYSCHWIMMEN].Anzahl = 4;
-  Bmp[GUYSCHWIMMEN].Geschwindigkeit = 10;
-  Bmp[GUYSCHWIMMEN].rcSrc.left = 705;
-  Bmp[GUYSCHWIMMEN].rcSrc.right = 705 + 15;
-  Bmp[GUYSCHWIMMEN].rcSrc.top = 0;
-  Bmp[GUYSCHWIMMEN].rcSrc.bottom = 9;
-  Bmp[GUYSCHWIMMEN].Breite = 15;
-  Bmp[GUYSCHWIMMEN].Hoehe = 9;
-  Bmp[GUYSCHWIMMEN].Sound = WAVSCHWIMMEN;
-
-  Bmp[GUYTOD].Anzahl = 6;
-  Bmp[GUYTOD].Geschwindigkeit = 1;
-  Bmp[GUYTOD].rcSrc.left = 743;
-  Bmp[GUYTOD].rcSrc.right = 743 + 16;
-  Bmp[GUYTOD].rcSrc.top = 0;
-  Bmp[GUYTOD].rcSrc.bottom = 10;
-  Bmp[GUYTOD].Breite = 16;
-  Bmp[GUYTOD].Hoehe = 10;
-
-  Bmp[GUYBOOTTOD].Anzahl = 6;
-  Bmp[GUYBOOTTOD].Geschwindigkeit = 1;
-  Bmp[GUYBOOTTOD].rcSrc.left = 759;
-  Bmp[GUYBOOTTOD].rcSrc.right = 759 + 26;
-  Bmp[GUYBOOTTOD].rcSrc.top = 0;
-  Bmp[GUYBOOTTOD].rcSrc.bottom = 18;
-  Bmp[GUYBOOTTOD].Breite = 26;
-  Bmp[GUYBOOTTOD].Hoehe = 18;
-
-  Bmp[GUYBOOTWARTEN].Anzahl = 4;
-  Bmp[GUYBOOTWARTEN].Geschwindigkeit = 2;
-  Bmp[GUYBOOTWARTEN].rcSrc.left = 0;
-  Bmp[GUYBOOTWARTEN].rcSrc.right = 26;
-  Bmp[GUYBOOTWARTEN].rcSrc.top = 72;
-  Bmp[GUYBOOTWARTEN].rcSrc.bottom = 72 + 18;
-  Bmp[GUYBOOTWARTEN].Breite = 26;
-  Bmp[GUYBOOTWARTEN].Hoehe = 20;
-
-  Bmp[GUYSCHLEUDER].Anzahl = 5;
-  Bmp[GUYSCHLEUDER].Geschwindigkeit = 4;
-  Bmp[GUYSCHLEUDER].rcSrc.left = 720;
-  Bmp[GUYSCHLEUDER].rcSrc.right = 720 + 23;
-  Bmp[GUYSCHLEUDER].rcSrc.top = 0;
-  Bmp[GUYSCHLEUDER].rcSrc.bottom = 20;
-  Bmp[GUYSCHLEUDER].Breite = 23;
-  Bmp[GUYSCHLEUDER].Hoehe = 20;
 
   //Cursor
   for (i = CUPFEIL; i <= CUUHR; i++) {
@@ -1237,9 +655,9 @@ const InitStructs = async () => {
   Bmp[ZELT].rcSrc.right = 42 + Bmp[ZELT].Breite;
   Bmp[ZELT].rcSrc.top = 0;
   Bmp[ZELT].rcSrc.bottom = 0 + Bmp[ZELT].Hoehe;
-  Bmp[ZELT].rcDes.left = 14;
+  Bmp[ZELT].rcDes.left = 14 + 11;
   Bmp[ZELT].rcDes.right = Bmp[ZELT].rcDes.left + Bmp[ZELT].Breite;
-  Bmp[ZELT].rcDes.top = 9;
+  Bmp[ZELT].rcDes.top = 9 + 20;
   Bmp[ZELT].rcDes.bottom = Bmp[ZELT].rcDes.top + Bmp[ZELT].Hoehe;
   Bmp[ZELT].Rohstoffe[items.BRANCH] = 5;
   Bmp[ZELT].Rohstoffe[items.LEAF] = 5;
@@ -2241,79 +1659,14 @@ const InitStructs = async () => {
     Wav[i].Volume = 100;
   }
 
-  Wav[WAVSTURM].Dateiname = 'storm';
-  Wav[WAVSTURM].Volume = 85;
-
-  Wav[WAVSCHWIMMEN].Dateiname = 'swimming';
-  Wav[WAVSCHWIMMEN].Volume = 90;
-
-  Wav[WAVPLATSCH].Dateiname = 'splash';
-  Wav[WAVPLATSCH].Volume = 95;
-
-  Wav[WAVFAELLEN].Dateiname = 'chopping';
-  Wav[WAVFAELLEN].Volume = 100;
-
-  Wav[WAVSCHLAGEN].Dateiname = 'hitting';
-  Wav[WAVSCHLAGEN].Volume = 100;
-
-  Wav[WAVSCHLEUDER].Dateiname = 'slinging';
-  Wav[WAVSCHLEUDER].Volume = 100;
-
-  Wav[WAVSCHAUFELN].Dateiname = 'shoveling';
-  Wav[WAVSCHAUFELN].Volume = 90;
-
-  Wav[WAVHAMMER].Dateiname = 'hammering';
-  Wav[WAVHAMMER].Volume = 100;
-
-  Wav[WAVCRASH].Dateiname = 'crashing';
-  Wav[WAVCRASH].Volume = 100;
-
-  Wav[WAVSCHNARCHEN].Dateiname = 'snoring';
-  Wav[WAVSCHNARCHEN].Volume = 90;
-
-  Wav[WAVTRINKEN].Dateiname = 'drinking';
-  Wav[WAVTRINKEN].Volume = 95;
-
-  Wav[WAVKNISTERN].Dateiname = 'crackling';
-  Wav[WAVKNISTERN].Volume = 90;
-
-  Wav[WAVANGEL].Dateiname = 'fishing';
-  Wav[WAVANGEL].Volume = 100;
-
   Wav[WAVWALD].Dateiname = 'forest';
   Wav[WAVWALD].Volume = 90;
 
   Wav[WAVFEUER].Dateiname = 'fire';
   Wav[WAVFEUER].Volume = 100;
 
-  Wav[WAVBRANDUNG].Dateiname = 'waves';
-  Wav[WAVBRANDUNG].Volume = 100;
-
-  Wav[WAVBAUMFAELLT].Dateiname = 'treefall';
-  Wav[WAVBAUMFAELLT].Volume = 100;
-
   Wav[WAVFLUSS].Dateiname = 'river';
   Wav[WAVFLUSS].Volume = 85;
-
-  Wav[WAVKLICK].Dateiname = 'click';
-  Wav[WAVKLICK].Volume = 95;
-
-  Wav[WAVKLICK2].Dateiname = 'click2';
-  Wav[WAVKLICK2].Volume = 95;
-
-  Wav[WAVABSPANN].Dateiname = 'outro';
-  Wav[WAVABSPANN].Volume = 100;
-  Wav[WAVABSPANN].Loop = true;
-
-  Wav[WAVLOGO].Dateiname = 'logo';
-  Wav[WAVLOGO].Volume = 100;
-  Wav[WAVLOGO].Loop = true;
-
-  Wav[WAVWOLF].Dateiname = 'wolf';
-  Wav[WAVWOLF].Volume = 90;
-
-  Wav[WAVERFINDUNG].Dateiname = 'invention';
-  Wav[WAVERFINDUNG].Volume = 95;
 
   //Testweise alle Sounds gleich in den Speicher laden
   for (i = 1; i < WAVANZ; i++) await LoadSound(i);
@@ -2455,7 +1808,7 @@ const CheckMouse = () => {
           Textloeschen(TXTPAPIER);
           PapierText = -1;
           gameData.guy.active = false;
-          PlaySound(WAVKLICK2, 100);
+          sounds.CLICK2.instance.play();
         }
       } else if (InRect(MousePosition.x, MousePosition.y, Bmp[NEIN].rcDes)) {
         CursorTyp = CUPFEIL;
@@ -2464,9 +1817,9 @@ const CheckMouse = () => {
           Textloeschen(TXTPAPIER);
           PapierText = -1;
           gameData.guy.active = false;
-          PlaySound(WAVKLICK2, 100);
+          sounds.CLICK2.instance.play();
         }
-      } else if ((Button === 0) && (Push === 1)) PlaySound(WAVKLICK, 100);
+      } else if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
     } else if ((Button !== -1) && (Push === 1)) {
       Textloeschen(TXTPAPIER);
       PapierText = -1;
@@ -2510,24 +1863,22 @@ const CheckKey = () => {
   const DIK_I = 'KeyI';
   const DIK_W = 'KeyW';
 
-  let x;
-
   if (Spielzustand === GAME_LOGO) {
     //Logo Abbrechen
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
-      StopSound(WAVLOGO);
+      sounds.LOGO.instance.stop();
       startGame(false);
       return (2);
     }
   } else if (Spielzustand === GAME_INTRO) {
     //Intro Abbrechen
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
-      StopSound(WAVSTURM); //Sound hier sofort stoppen
-      StopSound(WAVSCHWIMMEN); //Sound hier sofort stoppen
+      sounds.STORM.instance.stop();
+      sounds.SWIMMING.instance.stop();
       gameData.guy.active = false;
-      for (x = gameData.guy.tile.x; x < MAXXKACH; x++) {
+      for (let x = gameData.guy.tile.x; x < MAXXKACH; x++) {
         gameData.guy.tile.x = x;
-        Entdecken();
+        discoverTerrain(gameData, minimapCanvasContext);
         if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) break;
       }
       addShipWreck(gameData.terrain[gameData.guy.tile.x - 2][gameData.guy.tile.y]);
@@ -2538,17 +1889,18 @@ const CheckKey = () => {
       gameData.guy.route = [];
       updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, false);
 
-      Guy.Zustand = GUYLINKS;
+      gameData.guy.sprite = spriteTypes.GUY_WAITING;
       Guy.Aktion = AKNICHTS;
       Spielzustand = GAME_PLAY;
       gameData.guy.storedPosition = { ...gameData.guy.position };
       SaveGame();
-      return (1);
+      return (2);
     }
   } else if (Spielzustand === GAME_OUTRO) {
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
+      audio.stopAll();
       Spielzustand = GAME_CREDITS;
-      return (1);
+      return (2);
     }
   } else if (Spielzustand === GAME_PLAY) {
     if (pressedKeyCodes[DIK_RIGHT]) gameData.camera.x += 10;
@@ -2575,7 +1927,7 @@ const CheckKey = () => {
       for (y = 0; y < MAXYKACH; y++)
         for (x = 0; x < MAXXKACH; x++)
           gameData.terrain[x][y].discovered = true;
-      updateMinimap();
+      updateMinimap(gameData.terrain, minimapCanvasContext);
     }
 
     if (pressedKeyCodes[DIK_I])  //Zum testen
@@ -2616,7 +1968,6 @@ const CheckKey = () => {
     }
   } else if (Spielzustand === GAME_CREDITS) {
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
-      StopSound(WAVABSPANN);
       return (0);
     }
   }
@@ -2624,7 +1975,7 @@ const CheckKey = () => {
 }
 
 const AddTime = (h, m) => {
-  let x, y, i;
+  let x, y;
 
   Stunden += h;
   Minuten += m;
@@ -2814,8 +2165,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       (Erg.y > 0) && (Erg.y < MAXYKACH - 1)) {
 
       console.log(gameData.terrain[Erg.x][Erg.y]);
-      //Klicksound abspielen
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (gameData.guy.route.length &&
         (Erg.x === gameData.guy.route[gameData.guy.route.length - 1].x) &&
         (Erg.y === gameData.guy.route[gameData.guy.route.length - 1].y)) {
@@ -2824,7 +2174,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       } else {
         gameData.guy.route = findRoute(gameData, Erg);
       }
-    } else PlaySound(WAVKLICK, 100);
+    } else sounds.CLICK.instance.play();
   }
 }
 
@@ -2850,7 +2200,7 @@ const MouseInPanel = (Button, Push) => {
     else DrawText(texts.GITTERAN, TXTTEXTFELD, 2);
 
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       gameData.options.grid = !gameData.options.grid;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOUND].rcDes)) {
@@ -2862,14 +2212,14 @@ const MouseInPanel = (Button, Push) => {
         audio.suspend();
       } else {
         audio.resume();
-        PlaySound(WAVKLICK2, 100);
+        sounds.CLICK2.instance.play();
       }
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBEENDEN].rcDes)) {
     DrawText(texts.BEENDEN, TXTTEXTFELD, 2);
     Bmp[BUTTBEENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       gameData.guy.active = false;
       Guy.Aktion = AKSPIELVERLASSEN;
@@ -2878,7 +2228,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.NEU, TXTTEXTFELD, 2);
     Bmp[BUTTNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       gameData.guy.active = false;
       Guy.Aktion = AKNEUBEGINNEN;
@@ -2887,7 +2237,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.TAGNEU2, TXTTEXTFELD, 2);
     Bmp[BUTTTAGNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       gameData.guy.active = false;
       Guy.Aktion = AKTAGNEUBEGINNEN;
@@ -2897,7 +2247,7 @@ const MouseInPanel = (Button, Push) => {
     else DrawText(texts.MEAKTIONAUF, TXTTEXTFELD, 2);
     Bmp[BUTTAKTION].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (HauptMenue === MEAKTION) HauptMenue = MEKEINS;
       else HauptMenue = MEAKTION;
     }
@@ -2907,7 +2257,7 @@ const MouseInPanel = (Button, Push) => {
     else DrawText(texts.MEBAUENAUF, TXTTEXTFELD, 2);
     Bmp[BUTTBAUEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (HauptMenue === MEBAUEN) HauptMenue = MEKEINS;
       else HauptMenue = MEBAUEN;
     }
@@ -2916,7 +2266,7 @@ const MouseInPanel = (Button, Push) => {
     else DrawText(texts.MEINVENTARAUF, TXTTEXTFELD, 2);
     Bmp[BUTTINVENTAR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (HauptMenue === MEINVENTAR) HauptMenue = MEKEINS;
       else HauptMenue = MEINVENTAR;
     }
@@ -2926,7 +2276,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTWEITER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Bmp[BUTTSTOP].Phase = 0;
       gameData.guy.storedPosition = { ...gameData.guy.position };
       goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
@@ -2966,7 +2316,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTSTOP].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       Guy.Aktion = AKABBRUCH;
       Bmp[BUTTSTOP].Phase = -1;
@@ -2976,7 +2326,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNABLEGEN, TXTTEXTFELD, 2);
     Bmp[BUTTABLEGEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) Guy.Aktion = AKABLEGEN;
       else Guy.Aktion = AKANLEGEN;
@@ -2987,7 +2337,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNSUCHEN, TXTTEXTFELD, 2);
     Bmp[BUTTSUCHEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       Guy.Aktion = AKSUCHEN;
     }
@@ -2996,7 +2346,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNESSEN, TXTTEXTFELD, 2);
     Bmp[BUTTESSEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (isEatable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FELD &&
@@ -3015,7 +2365,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNSCHLAFEN, TXTTEXTFELD, 2);
     Bmp[BUTTSCHLAFEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLAFEN;
@@ -3026,7 +2376,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNFAELLEN, TXTTEXTFELD, 2);
     Bmp[BUTTFAELLEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (gameData.guy.inventory[items.LOG] <= 10) {
         if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object)) {
@@ -3043,7 +2393,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNANGELN, TXTTEXTFELD, 2);
     Bmp[BUTTANGELN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (isFishable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]) ||
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6)
@@ -3055,7 +2405,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNANZUENDEN, TXTTEXTFELD, 2);
     Bmp[BUTTANZUENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FEUERSTELLE) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
@@ -3067,7 +2417,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNAUSSCHAU, TXTTEXTFELD, 2);
     Bmp[BUTTAUSSCHAU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) {
         Guy.AkNummer = 0;
@@ -3079,7 +2429,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNSCHATZ, TXTTEXTFELD, 2);
     Bmp[BUTTSCHATZ].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA &&
         gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT &&
@@ -3094,7 +2444,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNSCHLEUDER, TXTTEXTFELD, 2);
     Bmp[BUTTSCHLEUDER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object)) {
         Guy.AkNummer = 0;
@@ -3110,7 +2460,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNSCHATZKARTE, TXTTEXTFELD, 2);
     Bmp[BUTTSCHATZKARTE].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       DrawSchatzkarte();
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFELD].rcDes)) &&
@@ -3124,7 +2474,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTFELD].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
         !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
         gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT &&
@@ -3150,7 +2500,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTZELT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
         !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
         gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT) {
@@ -3176,7 +2526,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTBOOT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1) &&
         !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.BEACH) &&
@@ -3206,7 +2556,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTROHR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
         !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
@@ -3232,7 +2582,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTSOS].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
         !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
@@ -3258,7 +2608,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
       else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE) {
@@ -3284,7 +2634,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
       else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE)
@@ -3312,7 +2662,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
       else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE ||
@@ -3341,7 +2691,7 @@ const MouseInPanel = (Button, Push) => {
 
     Bmp[BUTTFEUERST].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
         !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
@@ -3361,7 +2711,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.BEGINNDESTROY, TXTTEXTFELD, 2);
     Bmp[BUTTDESTROY].Animation = true;
     if ((Button === 0) && (Push === 1)) {
-      PlaySound(WAVKLICK2, 100);
+      sounds.CLICK2.instance.play();
       if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= FELD) &&
         (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= FEUERSTELLE)) {
         Guy.AkNummer = 0;
@@ -3385,7 +2735,7 @@ const MouseInPanel = (Button, Push) => {
     DrawText(texts.CHANCETEXT, TXTTEXTFELD, 2);
   else //TwoClicks löschen
   {
-    if ((Button === 0) && (Push === 1)) PlaySound(WAVKLICK, 100);
+    if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
     TwoClicks = -1;
   }
 }
@@ -3475,7 +2825,7 @@ const startGame = async (newGame) => {
 
     Spielzustand = GAME_INTRO;
     gameData.guy.active = false;
-    Guy.Zustand = GUYSCHIFF;
+    gameData.guy.sprite = spriteTypes.GUY_SAILING;
     Guy.AkNummer = 0;
     Guy.Aktion = AKINTRO;
   }
@@ -3488,41 +2838,9 @@ const startGame = async (newGame) => {
   clearCanvas(rcRectdes, textCanvasContext);
 
   drawTreasureMap(gameData);
-  updateMinimap();
 
-  Entdecken();
+  updateMinimap(gameData.terrain, minimapCanvasContext);
   gameData.guy.storedPosition = { ...gameData.guy.position };
-}
-
-const updateMinimap = () => {
-  let x, y;
-
-  //Die Kartehintergrundfarbe
-  rcRectdes.left = 0;
-  rcRectdes.top = 0;
-  rcRectdes.right = 2 * MAXXKACH;
-  rcRectdes.bottom = 2 * MAXYKACH;
-  fillCanvas(rcRectdes, 247, 222, 191, 1, minimapCanvasContext);
-
-  for (y = 0; y < MAXYKACH; y++)
-    for (x = 0; x < MAXXKACH; x++) {
-      if (!gameData.terrain[x][y].discovered) continue; //Nicht entdeckte Felder nicht malen
-      //MiniMap zeichnen
-      rcRectdes.left = 2 * x;
-      rcRectdes.top = 2 * y;
-      rcRectdes.right = rcRectdes.left + 2;
-      rcRectdes.bottom = rcRectdes.top + 2;
-
-      if (gameData.terrain[x][y].ground === grounds.SEA)
-        fillCanvas(rcRectdes, 228, 207, 182, 1, minimapCanvasContext);
-      else {
-        if (gameData.terrain[x][y].ground === grounds.BEACH || gameData.terrain[x][y].ground === grounds.QUICKSAND)
-          fillCanvas(rcRectdes, 112, 103, 93, 1, minimapCanvasContext);
-        else
-          //Land
-          fillCanvas(rcRectdes, 139 + gameData.terrain[x][y].height * 20, 128 + gameData.terrain[x][y].height * 20, 115 + gameData.terrain[x][y].height * 20, 1, minimapCanvasContext);
-      }
-    }
 }
 
 const Zeige = () => {
@@ -3601,7 +2919,7 @@ const ZeigeIntro = () => {
 const ZeigeAbspann = () => {
   let z;
 
-  PlaySound(WAVABSPANN, 100);
+  sounds.OUTRO.instance.play(true);
 
   rcRectdes.left = 0;
   rcRectdes.top = 0;
@@ -3618,17 +2936,9 @@ const ZeigeAbspann = () => {
           (100 * Math.sin(pi / MAXY * (Bmp[AbspannListe[AbspannNr][z].Bild].rcDes.top +
             Bmp[AbspannListe[AbspannNr][z].Bild].Hoehe / 2))));
     }
-  } else if (AbspannZustand === 1) {
-    rcRectsrc = { ...Bmp[AbspannNr].rcSrc };
-    rcRectsrc.top += Bmp[AbspannNr].Phase * Bmp[AbspannNr].Hoehe;
-    rcRectsrc.bottom = rcRectsrc.top + Bmp[AbspannNr].Hoehe;
-
-    rcRectdes.left = Math.floor(MAXX / 2 - Bmp[AbspannNr].Breite * 10 / 2);
-    rcRectdes.top = Math.floor(MAXY / 2 - Bmp[AbspannNr].Hoehe * 10 / 2);
-    rcRectdes.right = rcRectdes.left + Bmp[AbspannNr].Breite * 10;
-    rcRectdes.bottom = rcRectdes.top + Bmp[AbspannNr].Hoehe * 10;
-
-    drawImage(Bmp[AbspannNr].Surface, primaryCanvasContext);
+  } 
+  else if (AbspannZustand === 1) {
+    drawSprite(guySpritesForAbspann[Math.floor(AbspannNr / 10)], AbspannNr % 10, MAXX / 2, MAXY / 2 + 50, primaryCanvasContext, 10)
   }
 }
 
@@ -3646,7 +2956,7 @@ const ZeigeLogo = () => {
 
   drawImage(logoImage, primaryCanvasContext);
 
-  PlaySound(WAVLOGO, 100);
+  sounds.LOGO.instance.play(true);
 }
 
 const AbspannBlt = (Bild, Prozent) => {
@@ -3662,6 +2972,61 @@ const AbspannBlt = (Bild, Prozent) => {
   drawImage(creditsImage, primaryCanvasContext);
   primaryCanvasContext.globalAlpha = 1;
 }
+
+const guySpritesForAbspann = [
+  spriteTypes.GUY_WALKING_WEST,
+  spriteTypes.GUY_WALKING_NORTH,
+  spriteTypes.GUY_WALKING_EAST,
+  spriteTypes.GUY_WALKING_SOUTH,
+  spriteTypes.GUY_SEARCHING,
+  spriteTypes.GUY_EATING,
+  spriteTypes.GUY_DRINKING,
+  spriteTypes.GUY_CHOPPING,
+  spriteTypes.GUY_HARROWING,
+  spriteTypes.GUY_LIGHTNING,
+  spriteTypes.GUY_LOOKING,
+  spriteTypes.GUY_SHOVELING,
+  spriteTypes.GUY_KNOTTING_NORTH,
+  spriteTypes.GUY_KNOTTING_SOUTH,
+  spriteTypes.GUY_SLINGING,
+  spriteTypes.GUY_LAYING_DOWN,
+  spriteTypes.GUY_SLEEPING,
+  spriteTypes.GUY_STANDING_UP,
+  spriteTypes.GUY_FISHING_SWINGING_WEST,
+  spriteTypes.GUY_FISHING_WEST,
+  spriteTypes.GUY_FISHING_CATCHING_WEST,
+  spriteTypes.GUY_FISHING_SWINGING_NORTH,
+  spriteTypes.GUY_FISHING_NORTH,
+  spriteTypes.GUY_FISHING_CATCHING_NORTH,
+  spriteTypes.GUY_FISHING_SWINGING_EAST,
+  spriteTypes.GUY_FISHING_EAST,
+  spriteTypes.GUY_FISHING_CATCHING_EAST,
+  spriteTypes.GUY_FISHING_SWINGING_SOUTH,
+  spriteTypes.GUY_FISHING_SOUTH,
+  spriteTypes.GUY_FISHING_CATCHING_SOUTH,
+  spriteTypes.GUY_HITTING,
+  spriteTypes.GUY_HAMMERING,
+  spriteTypes.GUY_CLIMBING_UP,
+  spriteTypes.GUY_CLIMBING_DOWN,
+  spriteTypes.GUY_WAITING,
+  spriteTypes.GUY_LAYING_DOWN,
+  spriteTypes.GUY_DYING,
+  spriteTypes.GUY_SAILING,
+  spriteTypes.GUY_TANKING,
+  spriteTypes.GUY_SWIMMING,
+  spriteTypes.GUY_PADDLING_WEST,
+  spriteTypes.GUY_PADDLING_NORTH,
+  spriteTypes.GUY_PADDLING_EAST,
+  spriteTypes.GUY_PADDLING_SOUTH,
+  spriteTypes.GUY_FISHING_SWINGING_BOAT,
+  spriteTypes.GUY_FISHING_BOAT,
+  spriteTypes.GUY_FISHING_CATCHING_BOAT,
+  spriteTypes.GUY_DIVING_JUMPING,
+  spriteTypes.GUY_DIVING,
+  spriteTypes.GUY_DIVING_CLIMBING,
+  spriteTypes.GUY_WAITING_BOAT,
+  spriteTypes.GUY_DYING_BOAT,
+];
 
 const AbspannCalc = () => {
   let i, k;
@@ -3688,22 +3053,24 @@ const AbspannCalc = () => {
             AbspannNr++;
             AbspannListe[AbspannNr][1].Aktiv = true;
           } else {
-            AbspannNr = GUYLINKS;
+            AbspannNr = 0;
             AbspannZustand = 1;
             break;
           }
         }
       }
     }
-  } else if (AbspannZustand === 1) {
-    i = Math.floor(framesPerSecond / Bmp[AbspannNr].Geschwindigkeit);
+  }
+  else if (AbspannZustand === 1) {
+    const sprite = sprites[guySpritesForAbspann[Math.floor(AbspannNr / 10)]];
+    i = Math.round(framesPerSecond / sprite.speed);
     if (i < 1) i = 1;
     if (frame % i === 0) {
-      Bmp[AbspannNr].Phase++;
-      if (Bmp[AbspannNr].Phase >= Bmp[AbspannNr].Anzahl) {
-        Bmp[AbspannNr].Phase = 0;
-        AbspannNr++;
-        if (AbspannNr > GUYSCHLEUDER) AbspannNr = GUYLINKS;
+      AbspannNr++;
+      const frame = AbspannNr % 10;
+      if (frame >= sprite.frameCount) {
+        AbspannNr = Math.floor(AbspannNr / 10) * 10 + 10;
+        if (Math.floor(AbspannNr / 10) >= guySpritesForAbspann.length) AbspannNr = 0;
       }
     }
   }
@@ -3720,10 +3087,10 @@ const ZeichneBilder = (x, y, i, Ziel, Reverse, Frucht) => {
     rcRectsrc.top = Math.floor(Bmp[i].rcSrc.top + (Bmp[i].Anzahl - 1) * Bmp[i].Hoehe - Phase * Bmp[i].Hoehe);
   }
   rcRectsrc.bottom = rcRectsrc.top + Bmp[i].Hoehe;
-  rcRectdes.left = x;
-  rcRectdes.top = y;
-  rcRectdes.right = x + Bmp[i].Breite;
-  rcRectdes.bottom = y + Bmp[i].Hoehe;
+  rcRectdes.left = Math.round(x);
+  rcRectdes.top = Math.round(y);
+  rcRectdes.right = Math.round(x) + Bmp[i].Breite;
+  rcRectdes.bottom = Math.round(y) + Bmp[i].Hoehe;
   CalcRect(Ziel);
   drawImage(Bmp[i].Surface, primaryCanvasContext);
 }
@@ -3736,6 +3103,7 @@ const ZeichneObjekte = () => {
     for (x = 0; x < MAXXKACH; x++) {
 
       Guyzeichnen = (gameData.guy.tile.x === x) && (gameData.guy.tile.y === y);
+      const Objekt = gameData.terrain[x][y].Objekt;
 
       //Die nichtsichbaren Kacheln (oder nicht betroffenen) ausfiltern
       if ((gameData.terrain[x][y].position.x <= gameData.camera.x - KXPIXEL ||
@@ -3750,35 +3118,32 @@ const ZeichneObjekte = () => {
       //Der Guy ist immer vor diesen Objekten
       if (isOnGround(gameData.terrain[x][y].object)) {
         //this happens in drawObject now
-      } else if (gameData.terrain[x][y].Objekt > -1 &&
-        (gameData.terrain[x][y].Objekt <= SCHLEUSE6
-          || gameData.terrain[x][y].Objekt === FELD
-          || gameData.terrain[x][y].Objekt === ROHR
-          || gameData.terrain[x][y].Objekt === SOS)) {
+      } else if (Objekt > -1 &&
+        (Objekt <= SCHLEUSE6 || Objekt === FELD || Objekt === ROHR || Objekt === SOS)) {
         //Sound abspielen
         if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
           ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
           if ((x === gameData.guy.tile.x) && (y === gameData.guy.tile.y))
-            PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 100);
+            PlaySound(Bmp[Objekt].Sound, 100);
           else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 || (
-            Bmp[gameData.terrain[x][y].Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
+            Bmp[Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
           ))
-            PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 50);
+            PlaySound(Bmp[Objekt].Sound, 50);
         }
 
         ZeichneBilder(
           gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x,
           gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y,
-          gameData.terrain[x][y].Objekt,
+          Objekt,
           { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
           gameData.terrain[x][y].Reverse,
           gameData.terrain[x][y].Phase);
       } else {
-        if (gameData.terrain[x][y].Objekt === -1 && gameData.terrain[x][y].object) {
+        if (Objekt === -1 && gameData.terrain[x][y].object) {
           const object = gameData.terrain[x][y].object;
           if (Guyzeichnen) {
-            if ((gameData.guy.position.y) < (gameData.terrain[x][y].position.y + object.y + sprites[object.sprite].height)) {
-              ZeichneGuy();
+            if (gameData.guy.position.y < gameData.terrain[x][y].position.y + object.y) {
+              drawGuy(gameData, primaryCanvasContext);
               Guyzeichnen = false;
             }
           }
@@ -3790,34 +3155,29 @@ const ZeichneObjekte = () => {
             gameData.terrain[x][y].position.y + object.y - gameData.camera.y,
             primaryCanvasContext
           );
-        } else if (gameData.terrain[x][y].Objekt === FEUER ||
-          gameData.terrain[x][y].Objekt === BAUM1DOWN ||
-          gameData.terrain[x][y].Objekt === BAUM2DOWN ||
-          gameData.terrain[x][y].Objekt === BAUM3DOWN ||
-          gameData.terrain[x][y].Objekt === BAUM4DOWN ||
-          gameData.terrain[x][y].Objekt >= ZELT) {
+        } else if (Objekt === FEUER || Objekt === BAUM1DOWN || Objekt === BAUM2DOWN || Objekt === BAUM3DOWN || Objekt === BAUM4DOWN || Objekt >= ZELT) {
+
           //Sound abspielen
           if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
             ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
             if ((x === gameData.guy.tile.x) && (y === gameData.guy.tile.y))
-              PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 100);
+              PlaySound(Bmp[Objekt].Sound, 100);
             else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 || (
-              Bmp[gameData.terrain[x][y].Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
+              Bmp[Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
             ))
-              PlaySound(Bmp[gameData.terrain[x][y].Objekt].Sound, 50);
+              PlaySound(Bmp[Objekt].Sound, 50);
           }
           if (Guyzeichnen) {
-            if ((gameData.guy.position.y) < (gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y
-              + Bmp[gameData.terrain[x][y].Objekt].Hoehe)) {
-              ZeichneGuy();
+            if (gameData.guy.position.y < gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y) {
+              drawGuy(gameData, primaryCanvasContext);
               Guyzeichnen = false;
             }
           }
 
           ZeichneBilder(
-            gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x,
-            gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y,
-            gameData.terrain[x][y].Objekt,
+            gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x - Bmp[Objekt].Breite / 2,
+            gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y - Bmp[Objekt].Hoehe,
+            Objekt,
             { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
             false,
             gameData.terrain[x][y].Phase
@@ -3825,42 +3185,9 @@ const ZeichneObjekte = () => {
         }
       }
       if (Guyzeichnen) {
-        ZeichneGuy();
+        drawGuy(gameData, primaryCanvasContext);
       }
     }
-}
-
-const ZeichneGuy = () => {
-  if (isOnSea(gameData)) {
-    if (Guy.Zustand === GUYSCHIFF) {
-      ZeichneBilder(
-        Math.floor(gameData.guy.position.x - 30 - gameData.camera.x),
-        Math.floor(gameData.guy.position.y - 28 - gameData.camera.y),
-        Guy.Zustand,
-        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
-        false,
-        -1
-      );
-    } else {
-      ZeichneBilder(
-        Math.floor(gameData.guy.position.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
-        Math.floor(gameData.guy.position.y - (Bmp[Guy.Zustand].Hoehe) / 2 - gameData.camera.y),
-        Guy.Zustand,
-        { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
-        false,
-        -1
-      );
-    }
-  } else ZeichneBilder(
-    Math.floor(gameData.guy.position.x - (Bmp[Guy.Zustand].Breite) / 2 - gameData.camera.x),
-    Math.floor(gameData.guy.position.y - (Bmp[Guy.Zustand].Hoehe) - gameData.camera.y),
-    Guy.Zustand,
-    { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
-    false,
-    -1
-  );
-  //Sound abspielen
-  if (gameData.guy.active) PlaySound(Bmp[Guy.Zustand].Sound, 100);
 }
 
 const ZeichnePapier = () => {
@@ -4242,6 +3569,11 @@ const DrawText = (TEXT, Bereich, Art) => {
     Posx += BBreite * (Posnext - Pos);
     Pos++;
   }
+
+  if (Bereich === TXTPAPIER) {
+    startGuyAnimation(gameData, isOnSea(gameData) ? spriteTypes.GUY_WAITING_BOAT : spriteTypes.GUY_WAITING);
+  }
+
   Erg = (Posy + BHoehe - TextBereich[Bereich].rcText.top);
   if (Erg < 100) Erg = 100;
   return Erg;
@@ -4471,25 +3803,25 @@ const AkIntro = () => {
         if (gameData.terrain[x][gameData.guy.tile.y].ground !== grounds.SEA) break;
       }
       gameData.guy.route = findRoute(gameData, { x: x - 2, y: gameData.guy.tile.y });
+      sounds.STORM.instance.play(true);
       break;
     case 2:
-      gameData.guy.position.y -= 10;
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHIFFDOWN;
-      PlaySound(WAVPLATSCH, 100);
-      PlaySound(WAVCRASH, 100);
+      startGuyAnimation(gameData, spriteTypes.GUY_TANKING);
+      sounds.STORM.instance.stop();
+      sounds.SPLASH.instance.play();
+      sounds.CRASHING.instance.play();
       break;
     case 3:
       addShipWreck(tile);
-      gameData.guy.tile.x += 2;
-      gameData.guy.position.y += 10;
-      goToWestOfTile(gameData);
-      Entdecken();
-      Guy.Zustand = GUYSCHWIMMEN;
+      gameData.guy.tile.x += 1;
+      goToEastOfTile(gameData);
+      discoverTerrain(gameData, minimapCanvasContext);
+      gameData.guy.sprite = spriteTypes.GUY_SWIMMING;
+      sounds.SWIMMING.instance.play(true);
       break;
     case 4:
-      StopSound(WAVSCHWIMMEN); //Sound hier sofort stoppen
-      Guy.Zustand = GUYLINKS;
+      gameData.guy.tile.x += 1;
+      sounds.SWIMMING.instance.stop();
       goToCenterOfTile(gameData);
       break;
     case 5:
@@ -4504,7 +3836,6 @@ const AkIntro = () => {
 }
 
 const AkNeubeginnen = () => {
-  let Erg;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
@@ -4512,15 +3843,10 @@ const AkNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      gameData.guy.active = true;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
-      else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.NEUBEGINNEN, TXTPAPIER, 1);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
-      else Guy.Zustand = GUYLINKS;
       if (Frage === 1) {
         startGame(true);
         return;
@@ -4531,7 +3857,6 @@ const AkNeubeginnen = () => {
 }
 
 const AkTagNeubeginnen = () => {
-  let Erg;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
@@ -4539,15 +3864,10 @@ const AkTagNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      gameData.guy.active = true;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
-      else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.TAGNEU, TXTPAPIER, 1);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
-      else Guy.Zustand = GUYLINKS;
       if (Frage === 1) {
         startGame(false);
         return;
@@ -4558,7 +3878,6 @@ const AkTagNeubeginnen = () => {
 }
 
 const AkSpielverlassen = () => {
-  let Erg;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
@@ -4566,17 +3885,13 @@ const AkSpielverlassen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      gameData.guy.active = true;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
-      else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.SPIELVERLASSEN, TXTPAPIER, 1);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
-      else Guy.Zustand = GUYLINKS;
       if (Frage === 1) {
         if (gameData.guy.health > 10) SaveGame();
+        audio.stopAll();
         Spielzustand = GAME_CREDITS;
       }
       Frage = -1;
@@ -4588,36 +3903,27 @@ const AkTod = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      gameData.guy.active = true;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTWARTEN;
-      else Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.TOD, TXTPAPIER, 1);
       break;
     case 2:
       if (!isOnSea(gameData)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYHINLEGEN;
+        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
       }
       break;
     case 3:
-      gameData.guy.active = true;
       Nacht = false;
       Fade(100, 1);
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTTOD;
-      else Guy.Zustand = GUYTOD;
+      startGuyAnimation(gameData, isOnSea(gameData) ? spriteTypes.GUY_DYING_BOAT : spriteTypes.GUY_DYING);
       break;
     case 4:
-      gameData.guy.active = true;
       Nacht = true;
-      Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.TAGNEU, TXTPAPIER, 1);
       break;
     case 5:
       Nacht = false;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
-      else Guy.Zustand = GUYLINKS;
       Guy.Aktion = AKNICHTS;
       if (Frage === 2) {
+        audio.stopAll();
         Spielzustand = GAME_CREDITS;
       } else startGame(false);
       Frage = -1;
@@ -4643,6 +3949,7 @@ const AkAbbruch = () => {
 
 const AkDestroy = () => {
   let i; //Um sich kurz das Objekt zu merken
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   if (Guy.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
@@ -4651,36 +3958,34 @@ const AkDestroy = () => {
   switch (Guy.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x
-          + Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Breite + 4,
-        y: gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y
-          + Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Hoehe
+        x: tile.ObPos.x + Bmp[tile.Objekt].Breite / 2 + 4,
+        y: tile.ObPos.y
       });
       break;
     case 2:
     case 4:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYFAELLEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
+      sounds.CHOPPING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
     case 3:
     case 5:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHLAGEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
+      sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
     case 6:
-      i = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt;
+      i = tile.Objekt;
 
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x = 0;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y = 0;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = -1;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].originalObject;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].originalObject = null
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      tile.Objekt = -1;
+      tile.ObPos.x = 0;
+      tile.ObPos.y = 0;
+      tile.Phase = -1;
+      tile.object = tile.originalObject;
+      tile.originalObject = null
+      tile.AkNummer = 0;
       if (i === SOS) Chance -= 0.1;
       else if (i === ROHR) FillRohr();
       goToStoredPosition(gameData);
@@ -4715,10 +4020,8 @@ const AkSuchen = () => {
     case 7:
       if (isOnSea(gameData)) {
         if (Guy.AkNummer === 1) {
-          gameData.guy.active = true;
-          gameData.guy.position.y -= 2;
-          Guy.Zustand = GUYTAUCHEN1;
-          PlaySound(WAVPLATSCH, 100);
+          startGuyAnimation(gameData, spriteTypes.GUY_DIVING_JUMPING);
+          sounds.SPLASH.instance.play();
         }
       } else {
         goTo(gameData, Ziel);
@@ -4728,28 +4031,24 @@ const AkSuchen = () => {
     case 4:
     case 6:
     case 8:
-      gameData.guy.active = true;
       if (isOnSea(gameData)) {
-        if (Guy.AkNummer === 2) {
-          gameData.guy.position.y += 5;
-        }
-        Guy.Zustand = GUYTAUCHEN2;
-      } else Guy.Zustand = GUYSUCHEN;
+        startGuyAnimation(gameData, spriteTypes.GUY_DIVING);
+      } else {
+        startGuyAnimation(gameData, spriteTypes.GUY_SEARCHING);
+        sounds.CRACKLING.instance.play();
+      }
       AddTime(0, 4);
       break;
     case 9:
       if (isOnSea(gameData)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYTAUCHEN3;
-        PlaySound(WAVPLATSCH, 100);
+        startGuyAnimation(gameData, spriteTypes.GUY_DIVING_CLIMBING);
+        sounds.SPLASH.instance.play();
       }
       break;
     case 10:
       goToStoredPosition(gameData);
       break;
     case 11:
-      gameData.guy.active = true;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
       //Auf Strand und Fluss
       if (tile.ground === grounds.BEACH || isRiver(tile.object) || (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6)
       ) {
@@ -4838,15 +4137,15 @@ const AkEssen = () => {
         goToObject(gameData, 0, 2);
       } else {
         goToOnTile(gameData, {
-          x: tile.ObPos.x + Bmp[tile.Objekt].Breite / 2,
-          y: tile.ObPos.y + Bmp[tile.Objekt].Hoehe + 2
+          x: tile.ObPos.x,
+          y: tile.ObPos.y + 2
         });
       }
       break;
     case 2:
     case 3:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYESSEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_EATING);
+      sounds.CRACKLING.instance.play();
       changeWaterAndFood(gameData, 0, 15);
       AddTime(0, 2);
       break;
@@ -4874,19 +4173,16 @@ const AkSchleuder = () => {
       goToObject(gameData, -14, 9);
       break;
     case 2:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHLEUDER;
-      gameData.guy.position.x += 5;
+      startGuyAnimation(gameData, spriteTypes.GUY_SLINGING);
       AddTime(0, 2);
-      PlaySound(WAVSCHLEUDER, 100);
+      sounds.SLINGING.instance.play();
       break;
     case 3:
-      gameData.guy.position.x -= 5;
       goToObject(gameData, 6, 2);
       break;
     case 4:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSUCHEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_SEARCHING);
+      sounds.CRACKLING.instance.play();
       changeWaterAndFood(gameData, 0, 5);
       AddTime(0, 20);
       break;
@@ -4910,8 +4206,8 @@ const AkTrinken = () => {
       break;
     case 2:
     case 3:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYTRINKEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_DRINKING);
+      sounds.DRINKING.instance.play();
       changeWaterAndFood(gameData, 30, 0);
       AddTime(0, 3);
       break;
@@ -4942,14 +4238,13 @@ const AkFaellen = () => {
     case 4:
     case 5:
     case 6:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYFAELLEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
+      sounds.CHOPPING.instance.play();
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 10);
       break;
     case 7:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYWARTEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
       if (tree.sprite === spriteTypes.TREE_HARDWOOD) {
         i = BAUM1DOWN;
       } else if (tree.sprite === spriteTypes.TREE_PALM) {
@@ -4964,7 +4259,7 @@ const AkFaellen = () => {
       tile.Phase = 0;
       tile.ObPos.x = tree.x - 17;
       tile.ObPos.y = tree.y;
-      PlaySound(WAVBAUMFAELLT, 100);
+      sounds.TREEFALL.instance.play();
       break;
     case 8:
       goToStoredPosition(gameData);
@@ -5045,11 +4340,9 @@ const AkAngeln = () => {
       }
       break;
     case 2:
-      gameData.guy.active = true;
-      PlaySound(WAVANGEL, 100);
+      sounds.FISHING.instance.play();
       if (isOnSea(gameData)) {
-        gameData.guy.position.y -= 2;
-        Guy.Zustand = GUYBOOTANGELN1;
+        startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_BOAT);
       }
       if (tile.object) {
         switch (tile.object.sprite) {
@@ -5058,43 +4351,43 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
-            Guy.Zustand = GUYANGELN1LINKS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
           case spriteTypes.RIVER_WEST_EAST:
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
-            Guy.Zustand = GUYANGELN1OBEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
-            Guy.Zustand = GUYANGELN1RECHTS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            Guy.Zustand = GUYANGELN1UNTEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_SOUTH);
             break;
         }
       } else {
         switch (tile.Objekt) {
           case SCHLEUSE2:
           case SCHLEUSE3:
-            Guy.Zustand = GUYANGELN1LINKS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_WEST);
             break;
           case SCHLEUSE1:
           case SCHLEUSE5:
-            Guy.Zustand = GUYANGELN1OBEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_NORTH);
             break;
           case SCHLEUSE4:
-            Guy.Zustand = GUYANGELN1RECHTS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_EAST);
             break;
           case SCHLEUSE6:
-            Guy.Zustand = GUYANGELN1UNTEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_SOUTH);
             break;
         }
       }
@@ -5103,8 +4396,9 @@ const AkAngeln = () => {
     case 4:
     case 5:
     case 6:
-      gameData.guy.active = true;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTANGELN2;
+      if (isOnSea(gameData)) {
+        startGuyAnimation(gameData, spriteTypes.GUY_FISHING_BOAT);
+      }
 
       if (tile.object) {
         switch (tile.object.sprite) {
@@ -5113,43 +4407,43 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
-            Guy.Zustand = GUYANGELN2LINKS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
           case spriteTypes.RIVER_WEST_EAST:
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
-            Guy.Zustand = GUYANGELN2OBEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
-            Guy.Zustand = GUYANGELN2RECHTS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            Guy.Zustand = GUYANGELN2UNTEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SOUTH);
             break;
         }
       } else {
         switch (tile.Objekt) {
           case SCHLEUSE2:
           case SCHLEUSE3:
-            Guy.Zustand = GUYANGELN2LINKS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_WEST);
             break;
           case SCHLEUSE1:
           case SCHLEUSE5:
-            Guy.Zustand = GUYANGELN2OBEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_NORTH);
             break;
           case SCHLEUSE4:
-            Guy.Zustand = GUYANGELN2RECHTS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_EAST);
             break;
           case SCHLEUSE6:
-            Guy.Zustand = GUYANGELN2UNTEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SOUTH);
             break;
         }
       }
@@ -5157,8 +4451,9 @@ const AkAngeln = () => {
       AddTime(0, 20);
       break;
     case 7:
-      gameData.guy.active = true;
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTANGELN3;
+      if (isOnSea(gameData)) {
+        startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_BOAT);
+      }
 
       if (tile.object) {
         switch (tile.object.sprite) {
@@ -5167,43 +4462,43 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
-            Guy.Zustand = GUYANGELN3LINKS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
           case spriteTypes.RIVER_WEST_EAST:
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
-            Guy.Zustand = GUYANGELN3OBEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
-            Guy.Zustand = GUYANGELN3RECHTS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            Guy.Zustand = GUYANGELN3UNTEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_SOUTH);
             break;
         }
       } else {
         switch (tile.Objekt) {
           case SCHLEUSE2:
           case SCHLEUSE3:
-            Guy.Zustand = GUYANGELN3LINKS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_WEST);
             break;
           case SCHLEUSE1:
           case SCHLEUSE5:
-            Guy.Zustand = GUYANGELN3OBEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_NORTH);
             break;
           case SCHLEUSE4:
-            Guy.Zustand = GUYANGELN3RECHTS;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_EAST);
             break;
           case SCHLEUSE6:
-            Guy.Zustand = GUYANGELN3UNTEN;
+            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_SOUTH);
             break;
         }
       }
@@ -5227,25 +4522,21 @@ const AkAnzuenden = () => {
     case 1:
       const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
       goToOnTile(gameData, {
-        x: tile.ObPos.x + Bmp[tile.Objekt].Breite / 2 - 10,
-        y: tile.ObPos.y + Bmp[tile.Objekt].Hoehe + 1
+        x: tile.ObPos.x - 10,
+        y: tile.ObPos.y + 1
       });
       break;
     case 2:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYANZUENDEN;
-      gameData.guy.position.x += 5;
+      startGuyAnimation(gameData, spriteTypes.GUY_LIGHTNING);
       AddTime(0, 1);
       break;
     case 3:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYWARTEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = FEUER;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x = Bmp[FEUER].rcDes.left;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y = Bmp[FEUER].rcDes.top;
       Chance += 2 + 2 * gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       AddTime(0, 2);
-      gameData.guy.position.x -= 5;
       break;
     case 4:
       goToStoredPosition(gameData);
@@ -5263,19 +4554,16 @@ const AkAusschau = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYAUSSCHAU;
+      startGuyAnimation(gameData, spriteTypes.GUY_LOOKING);
       AddTime(0, 40);
       Chance += 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       break;
     case 2:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYWARTEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
       AddTime(0, 40);
       break;
     case 3:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYAUSSCHAU;
+      startGuyAnimation(gameData, spriteTypes.GUY_LOOKING);
       AddTime(0, 40);
       break;
     case 4:
@@ -5296,16 +4584,12 @@ const AkSchatz = () => {
 
   switch (Guy.AkNummer) {
     case 1:
-      gameData.guy.position.x -= 5;
-      gameData.guy.position.y += 1;
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHAUFELN;
+      startGuyAnimation(gameData, spriteTypes.GUY_SHOVELING);
+      sounds.SHOVELING.instance.play();
       break;
     case 2:
       AddTime(0, 20);
       changeWaterAndFood(gameData, -10, -10);
-      gameData.guy.position.x += 5;
-      gameData.guy.position.y -= 1;
       goToStoredPosition(gameData);
       if (gameData.guy.tile.x === gameData.treasure.x && gameData.guy.tile.y === gameData.treasure.y && !gameData.treasure.found) {
         PapierText = DrawText(texts.SCHATZGEFUNDEN, TXTPAPIER, 1);
@@ -5401,8 +4685,7 @@ const AkFeld = () => {
     case 15:
     case 17:
     case 18:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYFELD;
+      startGuyAnimation(gameData, spriteTypes.GUY_HARROWING);
       break;
     case 19:
       goToStoredPosition(gameData);
@@ -5423,6 +4706,14 @@ const AkFeld = () => {
 }
 
 const AkTagEnde = () => {
+  const alreadyAtSleepPosition = gameData.guy.sprite === spriteTypes.GUY_SLEEPING_TENT || 
+    gameData.guy.sprite === spriteTypes.GUY_SLEEPING ||
+    gameData.guy.sprite === spriteTypes.GUY_SLEEPING_HOUSE || 
+    isOnSea(gameData);
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];  
+  const tent = tile.Objekt === ZELT && tile.Phase < Bmp[tile.Objekt].Anzahl;
+  const house = tile.Objekt === HAUS3 && tile.Phase < Bmp[tile.Objekt].Anzahl;
+
   let Erg;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
@@ -5432,23 +4723,21 @@ const AkTagEnde = () => {
       Minuten = 0;
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       Bmp[BUTTSTOP].Phase = -1;
-      if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt.x = gameData.guy.position.x;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt.y = gameData.guy.position.y;
+      if (alreadyAtSleepPosition) break;
+      tile.GPosAlt.x = gameData.guy.position.x;
+      tile.GPosAlt.y = gameData.guy.position.y;
       goToInitialPosition();
       break;
     case 2:
       Stunden = 12;
       Minuten = 0;
-      if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
+      if (alreadyAtSleepPosition) break;
       //Wohnbare Objekte in der Umgebung suchen
       Erg = {
         x: -1,
         y: -1
       };
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) || (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3)) {
+      if (tile.Objekt === ZELT || tile.Objekt === HAUS3) {
         Erg.x = gameData.guy.tile.x;
         Erg.y = gameData.guy.tile.y;
       } else if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].Objekt === HAUS3) {
@@ -5487,104 +4776,80 @@ const AkTagEnde = () => {
           });
         else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
           goToOnTile(gameData, {
-            x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2,
-            y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+            x: tile.ObPos.x,
+            y: tile.ObPos.y + 1
           });
       }
       break;
     case 3:
       Stunden = 12;
       Minuten = 0;
-      if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYKLETTERN1;
+      if (alreadyAtSleepPosition) break;
+      if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
       }
       break;
     case 4:
       Stunden = 12;
       Minuten = 0;
-      if ((Guy.Zustand === GUYSCHLAFZELT) || (Guy.Zustand === GUYSCHLAFEN) ||
-        (Guy.Zustand === GUYSCHLAFHAUS) || isOnSea(gameData)) break;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYGEHINZELT;
-      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYGEHINHAUS;
+      if (alreadyAtSleepPosition) break;
+      if (tent) {
+        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_TENT);
+      } else if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_HOUSE);
       } else {
-        gameData.guy.position.x += 3;
-        gameData.guy.active = true;
-        Guy.Zustand = GUYHINLEGEN;
+        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
       }
       break;
     case 5:
       Stunden = 12;
       Minuten = 0;
       if (isOnSea(gameData)) break;
-      gameData.guy.active = true;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        if (Guy.Zustand !== GUYSCHLAFZELT) gameData.guy.position.x += 4;
-        Guy.Zustand = GUYSCHLAFZELT;
-      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        if (Guy.Zustand !== GUYSCHLAFHAUS) gameData.guy.position.x += 14;
-        Guy.Zustand = GUYSCHLAFHAUS;
-      } else Guy.Zustand = GUYSCHLAFEN;
+      if (tent) {
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+      } else if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
+      } else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+      sounds.SNORING.instance.play();
       break;
     case 6:
       Stunden = 12;
       Minuten = 0;
       if (isOnSea(gameData)) break;
-      gameData.guy.active = true;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
-        Guy.Zustand = GUYSCHLAFZELT;
-      else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
-        Guy.Zustand = GUYSCHLAFHAUS;
-      else Guy.Zustand = GUYSCHLAFEN;
+      if (tent)
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+      else if (house)
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
+      else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+      sounds.SNORING.instance.play();
       break;
     case 7:
       Nacht = true;
       Stunden = 12;
       Minuten = 0;
-      PlaySound(WAVWOLF, 100);
+      sounds.WOLF.instance.play();
       //Falsche Objekte Löschen
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= BAUM1DOWN) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= BAUM4DOWN)) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
+      if (tile.Objekt >= BAUM1DOWN && tile.Objekt <= BAUM4DOWN) {
+        tile.Objekt = -1;
         changeItem(gameData, items.LOG, 1);
       }
 
       //Je nach Schlafort Zustand verändern
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
+      if (tent) {
         changeHealth(gameData, -5);
         if (gameData.guy.health <= 0) {
-          gameData.guy.active = true;
           PapierText = DrawText(texts.TAGENDE5, TXTPAPIER, 1);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
           Stunden = 0;
           Minuten = 0;
         } else {
-          gameData.guy.active = true;
           PapierText = DrawText(texts.TAGENDE2, TXTPAPIER, 1);
         }
-      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
+      } else if (house) {
         changeHealth(gameData, 20);
-        gameData.guy.active = true;
         PapierText = DrawText(texts.TAGENDE4, TXTPAPIER, 1);
       } else if (isOnSea(gameData)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYBOOTWARTEN;
         PapierText = DrawText(texts.TAGENDE3, TXTPAPIER, 1);
         Guy.AkNummer = 2;
         Guy.Aktion = AKTOD;
@@ -5593,14 +4858,12 @@ const AkTagEnde = () => {
       } else {
         changeHealth(gameData, -20);
         if (gameData.guy.health <= 0) {
-          gameData.guy.active = true;
           PapierText = DrawText(texts.TAGENDE5, TXTPAPIER, 1);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
           Stunden = 0;
           Minuten = 0;
         } else {
-          gameData.guy.active = true;
           PapierText = DrawText(texts.TAGENDE1, TXTPAPIER, 1);
         }
       }
@@ -5611,57 +4874,46 @@ const AkTagEnde = () => {
       Tag++;
       Stunden = 0;
       Minuten = 0;
-      //if (isOnSea(gameData)) NeuesSpiel(true); //Später hier tot!!
-
-      gameData.guy.active = true;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
-        Guy.Zustand = GUYSCHLAFZELT;
-      else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
-        Guy.Zustand = GUYSCHLAFHAUS;
-      else Guy.Zustand = GUYSCHLAFEN;
+      if (tent)
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+      else if (house)
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
+      else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+      sounds.SNORING.instance.play();
       break;
     case 9:
       Fade(100, 2);
       Stunden = 0;
       Minuten = 0;
-
       Stunden = 0;
       Minuten = 0;
-      gameData.guy.active = true;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
-        Guy.Zustand = GUYSCHLAFZELT;
-      else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
-        Guy.Zustand = GUYSCHLAFHAUS;
-      else Guy.Zustand = GUYSCHLAFEN;
+      if (tent)
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+      else if (house)
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
+      else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+      sounds.SNORING.instance.play();
       break;
     case 10:
       Stunden = 0;
       Minuten = 0;
-      StopSound(WAVSCHNARCHEN);
-      gameData.guy.active = true;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        gameData.guy.position.x -= 14;
-        Guy.Zustand = GUYGEHAUSHAUS;
-      } else Guy.Zustand = GUYAUFSTEHEN;
+      sounds.SNORING.instance.stop();
+      if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP_HOUSE);
+      } else startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       break;
     case 11:
       Stunden = 0;
       Minuten = 0;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYKLETTERN2;
+      if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
       }
       break;
     case 12:
       Stunden = 0;
       Minuten = 0;
-      Guy.Zustand = GUYLINKS;
+
+      goToCenterOfTile(gameData);
       Guy.Aktion = AKNICHTS;
       if (gameData.guy.health > 10) SaveGame();
       break;
@@ -5678,8 +4930,6 @@ const AkGerettet = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYWARTEN;
       PapierText = DrawText(texts.GERETTET, TXTPAPIER, 1);
       break;
     case 3:
@@ -5693,8 +4943,6 @@ const AkGerettet = () => {
       break;
     case 4:
       // Route herstellen
-      gameData.guy.active = true;
-      Guy.Zustand = GUYRECHTS;
       for (x = MAXXKACH - 1; x > 1; x--)//Position des Rettungsschiffs festlegen
       {
         if (gameData.terrain[x][gameData.guy.tile.y].ground !== grounds.SEA) break;
@@ -5707,32 +4955,31 @@ const AkGerettet = () => {
       gameData.terrain[x + 2][gameData.guy.tile.y].ObPos.y = 10;
 
       gameData.guy.route = findRoute(gameData, { x, y: gameData.guy.tile.y });
-      Guy.Zustand = GUYRECHTS;
+      gameData.guy.active = true;
       break;
     case 5:
-      Guy.Zustand = GUYRECHTS;
       goToEastOfTile(gameData);
       break;
     case 6:
       gameData.guy.tile.x += 2;
-      Entdecken();
-      Guy.Zustand = GUYSCHWIMMEN;
+      discoverTerrain(gameData, minimapCanvasContext);
+      gameData.guy.sprite = spriteTypes.GUY_SWIMMING;
+      sounds.SWIMMING.instance.play(true);
       goToCenterOfTile(gameData);
       break;
     case 7:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHIFF;
+      gameData.guy.sprite = spriteTypes.GUY_SAILING;
+      sounds.SWIMMING.instance.stop();
+      sounds.STORM.instance.play(true);
       gameData.guy.route = findRoute(gameData, { x: gameData.terrain.length - 1, y: gameData.guy.tile.y });
+      gameData.guy.active = true;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object = createWaves();
       break;
     case 8:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHIFF;
-      break;
-    case 9:
+      sounds.STORM.instance.stop();
+      audio.stopAll();
       Guy.Aktion = AKNICHTS;
-      Guy.Zustand = GUYLINKS;
       Spielzustand = GAME_CREDITS;
       break;
   }
@@ -5756,24 +5003,23 @@ const AkZelt = () => {
   switch (tile.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 22,
-        y: tile.ObPos.y + 12
+        x: tile.ObPos.x + 11,
+        y: tile.ObPos.y - 8
       });
       break;
     case 2:
     case 3:
     case 12:
     case 13:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYBINDENUNTEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_SOUTH);
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 15);
       break;
     case 4:
       tile.Phase = 2;
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 31,
-        y: tile.ObPos.y + 20
+        x: tile.ObPos.x + 20,
+        y: tile.ObPos.y
       });
       break;
     case 5:
@@ -5781,14 +5027,13 @@ const AkZelt = () => {
       break;
     case 6:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 3,
-        y: tile.ObPos.y + 20
+        x: tile.ObPos.x - 8,
+        y: tile.ObPos.y
       });
       break;
     case 7:
     case 8:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYBINDENOBEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_NORTH);
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 15);
       break;
@@ -5798,20 +5043,20 @@ const AkZelt = () => {
       break;
     case 10:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 31,
-        y: tile.ObPos.y + 20
+        x: tile.ObPos.x + 20,
+        y: tile.ObPos.y
       });
       break;
     case 11:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 22,
-        y: tile.ObPos.y + 12
+        x: tile.ObPos.x + 11,
+        y: tile.ObPos.y - 8
       });
       break;
     case 14:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 31,
-        y: tile.ObPos.y + 20
+        x: tile.ObPos.x + 20,
+        y: tile.ObPos.y
       });
       break;
     case 15:
@@ -5872,8 +5117,8 @@ const AkBoot = () => {
     case 12:
     case 13:
     case 14:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHLAGEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
+      sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 15);
       break;
@@ -5963,8 +5208,8 @@ const AkRohr = () => {
     case 11:
     case 12:
     case 13:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYSCHLAGEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
+      sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
@@ -5974,8 +5219,8 @@ const AkRohr = () => {
     case 14:
     case 15:
     case 16:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYFAELLEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
+      sounds.CHOPPING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
@@ -6065,9 +5310,7 @@ const AkSOS = () => {
     case 11:
     case 14:
     case 17:
-      gameData.guy.active = true;
-      gameData.guy.position.x += 4;
-      Guy.Zustand = GUYHINLEGEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
@@ -6077,9 +5320,7 @@ const AkSOS = () => {
     case 12:
     case 15:
     case 18:
-      gameData.guy.active = true;
-      gameData.guy.position.x -= 4;
-      Guy.Zustand = GUYAUFSTEHEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
@@ -6124,16 +5365,12 @@ const AkFeuerstelle = () => {
       });
       break;
     case 2:
-      gameData.guy.active = true;
-      gameData.guy.position.x += 4;
-      Guy.Zustand = GUYHINLEGEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
     case 3:
-      gameData.guy.active = true;
-      gameData.guy.position.x -= 4;
-      Guy.Zustand = GUYAUFSTEHEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       tile.Phase = (Bmp[FEUERSTELLE].Anzahl + 1);
@@ -6147,8 +5384,7 @@ const AkFeuerstelle = () => {
     case 5:
     case 6:
     case 7:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYBINDENOBEN;
+      startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_NORTH);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       if (tile.AkNummer !== 5)
@@ -6190,16 +5426,16 @@ const AkHaus1 = () => {
   switch (tile.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2 - 3,
-        y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+        x: tile.ObPos.x - 3,
+        y: tile.ObPos.y + 1
       });
       break;
     case 2:
     case 3:
     case 4:
     case 5:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      sounds.HAMMERING.instance.play();
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -6207,8 +5443,8 @@ const AkHaus1 = () => {
     case 7:
     case 8:
     case 9:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS1].Anzahl + 1);
       changeWaterAndFood(gameData, -0.5, 0.5);
       AddTime(0, 1);
@@ -6217,8 +5453,8 @@ const AkHaus1 = () => {
     case 11:
     case 12:
     case 13:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS1].Anzahl + 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
@@ -6227,8 +5463,8 @@ const AkHaus1 = () => {
     case 15:
     case 16:
     case 17:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS1].Anzahl + 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
@@ -6260,13 +5496,12 @@ const AkHaus2 = () => {
   switch (tile.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2,
-        y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+        x: tile.ObPos.x,
+        y: tile.ObPos.y + 1
       });
       break;
     case 2:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYKLETTERN1;
+      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
@@ -6274,8 +5509,8 @@ const AkHaus2 = () => {
     case 4:
     case 5:
     case 6:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -6283,8 +5518,8 @@ const AkHaus2 = () => {
     case 8:
     case 9:
     case 10:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS2].Anzahl + 1);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
@@ -6293,8 +5528,8 @@ const AkHaus2 = () => {
     case 12:
     case 13:
     case 14:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS2].Anzahl + 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
@@ -6303,15 +5538,14 @@ const AkHaus2 = () => {
     case 16:
     case 17:
     case 18:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS2].Anzahl + 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 19:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYKLETTERN2;
+      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
       tile.Phase = (Bmp[HAUS2].Anzahl + 4);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
@@ -6343,13 +5577,12 @@ const AkHaus3 = () => {
   switch (tile.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2,
-        y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+        x: tile.ObPos.x,
+        y: tile.ObPos.y + 1
       });
       break;
     case 2:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYKLETTERN1;
+      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
@@ -6357,8 +5590,8 @@ const AkHaus3 = () => {
     case 4:
     case 5:
     case 6:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -6366,8 +5599,8 @@ const AkHaus3 = () => {
     case 8:
     case 9:
     case 10:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS3].Anzahl + 1);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
@@ -6376,8 +5609,8 @@ const AkHaus3 = () => {
     case 12:
     case 13:
     case 14:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS3].Anzahl + 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
@@ -6386,15 +5619,14 @@ const AkHaus3 = () => {
     case 16:
     case 17:
     case 18:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYHAMMER2;
+      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      sounds.HAMMERING.instance.play();
       tile.Phase = (Bmp[HAUS3].Anzahl + 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 19:
-      gameData.guy.active = true;
-      Guy.Zustand = GUYKLETTERN2;
+      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
       tile.Phase = (Bmp[HAUS3].Anzahl + 4);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
@@ -6416,71 +5648,61 @@ const AkHaus3 = () => {
 
 const AkSchlafen = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tent = (tile.Objekt === ZELT && tile.Phase < Bmp[tile.Objekt].Anzahl);
+  const house = (tile.Objekt === HAUS3 && tile.Phase < Bmp[tile.Objekt].Anzahl);
   if (Guy.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+      if (tent)
         goToOnTile(gameData, {
-          x: tile.ObPos.x + 3,
-          y: tile.ObPos.y + 20
+          x: tile.ObPos.x - 7,
+          y: tile.ObPos.y
         });
-      else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+      else if (house)
         goToOnTile(gameData, {
-          x: tile.ObPos.x + sprites[spriteTypes.BIG_TREE].width / 2 + 1,
-          y: tile.ObPos.y + sprites[spriteTypes.BIG_TREE].height + 1
+          x: tile.ObPos.x + 1,
+          y: tile.ObPos.y + 1
         });
       break;
     case 2:
-      if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYKLETTERN1;
+      if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
         changeWaterAndFood(gameData, -1, -1);
       }
       break;
     case 3:
-      if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYGEHINZELT;
-      } else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYGEHINHAUS;
+      if (tent) {
+        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_TENT);
+      } else if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_HOUSE);
       } else {
-        gameData.guy.position.x += 3;
-        gameData.guy.active = true;
-        Guy.Zustand = GUYHINLEGEN;
+        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
       }
       break;
     case 4:
     case 5:
-      gameData.guy.active = true;
-      if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
-        if (Guy.AkNummer === 4) gameData.guy.position.x += 4;
-        Guy.Zustand = GUYSCHLAFZELT;
-      } else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
-        if (Guy.AkNummer === 4) gameData.guy.position.x += 14;
-        Guy.Zustand = GUYSCHLAFHAUS;
-      } else Guy.Zustand = GUYSCHLAFEN;
+      if (tent) {
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+      } else if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
+      } else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+      sounds.SNORING.instance.play();
       changeHealth(gameData, 5);
       AddTime(0, 30);
       break;
     case 6:
-      gameData.guy.active = true;
-      StopSound(WAVSCHNARCHEN);
-      if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
-        gameData.guy.position.x -= 14;
-        Guy.Zustand = GUYGEHAUSHAUS;
-      } else Guy.Zustand = GUYAUFSTEHEN;
+      sounds.SNORING.instance.stop();
+      if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP_HOUSE);
+      } else startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       break;
     case 7:
-      if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl)) {
-        gameData.guy.active = true;
-        Guy.Zustand = GUYKLETTERN2;
+      if (house) {
+        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
         changeWaterAndFood(gameData, -1, -1);
-      } else {
-        Guy.Zustand = GUYOBEN;
       }
       break;
     case 8:
@@ -6501,8 +5723,8 @@ const AkAblegen = () => {
       });
       break;
     case 2:
-      gameData.guy.position.x = tile.position.x + tile.ObPos.x + Bmp[tile.Objekt].Breite / 2;
-      gameData.guy.position.y = tile.position.y + tile.ObPos.y + Bmp[tile.Objekt].Hoehe / 2;
+      gameData.guy.position.x = tile.position.x + tile.ObPos.x;
+      gameData.guy.position.y = tile.position.y + tile.ObPos.y;
       tile.Objekt = -1;
       if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x--;
       else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) gameData.guy.tile.y--;
@@ -6551,8 +5773,8 @@ const AkAnlegen = () => {
       tile.Objekt = BOOT;
       tile.AkNummer = Bmp[BOOT].AkAnzahl;
 
-      tile.ObPos.x = Math.floor(gameData.guy.position.x - tile.position.x - Bmp[tile.Objekt].Breite / 2);
-      tile.ObPos.y = Math.floor(gameData.guy.position.y - tile.position.y - Bmp[tile.Objekt].Hoehe / 2);
+      tile.ObPos.x = Math.floor(gameData.guy.position.x - tile.position.x);
+      tile.ObPos.y = Math.floor(gameData.guy.position.y - tile.position.y);
 
       goToCenterOfTile(gameData);
       break;
@@ -6692,14 +5914,14 @@ const CheckBenutze = (item) => {
       Bmp[BUTTBOOT].Phase = 0;
       Bmp[BUTTROHR].Phase = 0;
       PapierText = DrawText(texts.BAUEAXT, TXTPAPIER, 1);
-      PlaySound(WAVERFINDUNG, 100);
+      sounds.INVENTION.instance.play();
     } else if (!gameData.guy.inventory[items.HARROW]) {
       changeItem(gameData, items.STONE, -1);
       changeItem(gameData, items.BRANCH, -1);
       changeItem(gameData, items.HARROW, 1);
       Bmp[BUTTFELD].Phase = 0;
       PapierText = DrawText(texts.BAUEEGGE, TXTPAPIER, 1);
-      PlaySound(WAVERFINDUNG, 100);
+      sounds.INVENTION.instance.play();
     } else {
       PapierText = DrawText(texts.STEINPLUSASTNICHTS, TXTPAPIER, 1);
     }
@@ -6711,7 +5933,7 @@ const CheckBenutze = (item) => {
       changeItem(gameData, items.FISHING_ROD, 1);
       Bmp[BUTTANGELN].Phase = 0;
       PapierText = DrawText(texts.BAUEANGEL, TXTPAPIER, 1);
-      PlaySound(WAVERFINDUNG, 100);
+      sounds.INVENTION.instance.play();
     } else {
       PapierText = DrawText(texts.ASTPLUSLIANENICHTS, TXTPAPIER, 1);
     }
@@ -6723,7 +5945,7 @@ const CheckBenutze = (item) => {
       changeItem(gameData, items.SLING, 1);
       Bmp[BUTTSCHLEUDER].Phase = 0;
       PapierText = DrawText(texts.BAUESCHLEUDER, TXTPAPIER, 1);
-      PlaySound(WAVERFINDUNG, 100);
+      sounds.INVENTION.instance.play();
     } else {
       PapierText = DrawText(texts.STEINPLUSLIANENICHTS, TXTPAPIER, 1);
     }
@@ -6768,125 +5990,9 @@ const Animationen = () => {
     }
   }
 
-  //Spielfigur
-
-  //laufen
-  if (gameData.guy.active && gameData.guy.route.length) {
-    i = Math.floor(framesPerSecond / Bmp[Guy.Zustand].Geschwindigkeit);
-    if (i < 1) i = 1;
-    if (framesPerSecond - Bmp[Guy.Zustand].Geschwindigkeit < 0) loop = 2; else loop = 1;
-    if (isOnSea(gameData)) loop = loop * 2;
-    for (k = 0; k < loop; k++) {
-      if (frame % i === 0) {
-        CalcGuyKoor();
-      }
-    }
-    return;
+  if (PapierText === -1) {
+    animateGuy(gameData, frame, framesPerSecond, AddTime.bind(this));
   }
-  //sonstige Aktionen
-  if (gameData.guy.active && Guy.Zustand >= GUYSUCHEN && Guy.Zustand <= GUYSCHLEUDER &&
-    Bmp[Guy.Zustand].Phase !== Bmp[Guy.Zustand].Anzahl) {
-    i = Math.floor(framesPerSecond / Bmp[Guy.Zustand].Geschwindigkeit);
-    if (i < 1) i = 1;
-    if (frame % i === 0) {
-      Bmp[Guy.Zustand].Phase++;
-      if (Bmp[Guy.Zustand].Phase >= Bmp[Guy.Zustand].Anzahl) {
-        Bmp[Guy.Zustand].Phase = 0;
-        if (PapierText === -1) gameData.guy.active = false;
-      }
-    }
-  }
-}
-
-const CalcGuyKoor = () => {
-  let routePoint = gameData.guy.route[0];
-  let wayPoint = routePoint?.wayPoints[0];
-  if (!wayPoint) {
-    gameData.guy.route.shift();
-    if (!gameData.guy.route.length) {
-      gameData.guy.active = false;
-      return;
-    }
-    if (Guy.Aktion === AKABBRUCH) {
-      Bmp[Guy.Zustand].Phase = 0;
-      gameData.guy.active = false;
-      gameData.guy.route = [];
-      return;
-    }
-    routePoint = gameData.guy.route[0];
-    wayPoint = routePoint.wayPoints[0];
-    gameData.guy.tile.x = routePoint.x;
-    gameData.guy.tile.y = routePoint.y;
-    Entdecken();
-
-    const tileCosts = getCostsOfTile(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]);
-    if (isOnSea(gameData))
-      AddTime(0, tileCosts * 3);
-    else AddTime(0, tileCosts * 5);
-    changeWaterAndFood(gameData, -1, -1);
-  }
-
-  const tileCosts = getCostsOfTile(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]);
-  if (frame % tileCosts === 0) {
-    const Dx = wayPoint.x - gameData.guy.position.x;
-    const Dy = wayPoint.y - gameData.guy.position.y;
-
-    if (Guy.Zustand !== GUYSCHIFF && Guy.Zustand !== GUYSCHWIMMEN) {
-      if (isOnSea(gameData)) Guy.Zustand = GUYBOOTLINKS;
-      else Guy.Zustand = GUYLINKS;
-
-      const direction = wayPoint.direction;
-      if (wayPoint.direction === directions.WEST || (!direction && Dx < 0 && Dy <= 0)) Guy.Zustand += 0;
-      else if (wayPoint.direction === directions.NORTH || (!direction && Dx >= 0 && Dy < 0)) Guy.Zustand += 1;
-      else if (wayPoint.direction === directions.EAST || (!direction && Dx > 0 && Dy >= 0)) Guy.Zustand += 2;
-      else Guy.Zustand += 3;
-    }
-
-    let i;
-    if (isOnSea(gameData)) i = 4; else i = 2;
-    if ((frame / tileCosts) % i === 0) {
-      Bmp[Guy.Zustand].Phase++;
-      if (Bmp[Guy.Zustand].Phase >= Bmp[Guy.Zustand].Anzahl) Bmp[Guy.Zustand].Phase = 0;
-    }
-
-    if (Math.round(Dx) === 0 && Math.round(Dy) === 0) {
-      routePoint.wayPoints.shift();
-      return;
-    }
-
-    let Schrittx = 0;
-    let Schritty = 0;
-    if (Math.abs(Dx) > Math.abs(Dy)) {
-      if (Dx > 0) Schrittx = 1; else Schrittx = -1;
-      if (Dx !== 0) Schritty = Dy / ((Dx * Schrittx));
-    } else {
-      if (Dy > 0) Schritty = 1; else Schritty = -1;
-      if (Dy !== 0) Schrittx = Dx / ((Dy * Schritty));
-    }
-
-    gameData.guy.position.x += Schrittx;
-    gameData.guy.position.y += Schritty;
-    if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) //Beim Intro und Outra fährt die Kamera mit
-    {
-      updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, true);
-    }
-  }
-}
-
-const Entdecken = () => {
-  let Aenderung = false;
-  let i, j;
-
-  for (i = -1; i <= 1; i++)
-    for (j = -1; j <= 1; j++) {
-      const tile = gameData.terrain[gameData.guy.tile.x + i][gameData.guy.tile.y + j];
-      if (tile && !tile.discovered) {
-        tile.discovered = true;
-        Aenderung = true;
-      }
-    }
-
-  if (Aenderung) updateMinimap();
 }
 
 const refresh = (timestamp) => {
@@ -6912,9 +6018,11 @@ const refresh = (timestamp) => {
     ZeigeLogo(); //Bild auffrischen
 
   } else if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) {
-    if (CheckKey() === 0) return false;    //Das Keyboard abfragen
+    if (CheckKey() === 2) return true;    //Das Keyboard abfragen
     Animationen();  //Animationen weiterschalten
+    discoverTerrain(gameData, minimapCanvasContext);
     playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
+    updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, true);
 
     if (!gameData.guy.active) Event(Guy.Aktion); //Aktionen starten
 
@@ -6931,9 +6039,10 @@ const refresh = (timestamp) => {
 
     CheckSpzButton();          //Die Spezialknöpfe umschalten
     if (MouseAktiv) CheckMouse();    //Den MouseZustand abchecken
-    if (CheckKey() === 0) return false;    //Das Keyboard abfragen
+    CheckKey();
     restrictCamera(gameData.camera, gameData.terrain);            //Das Scrollen an die Grenzen der Landschaft anpassen
     Animationen();            //Die Animationsphasen weiterschalten
+    discoverTerrain(gameData, minimapCanvasContext);
     playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
     if (!gameData.guy.active) Event(Guy.Aktion);  //Die Aktionen starten
     Zeige();//Das Bild zeichnen

@@ -4,7 +4,7 @@ const animateObject = (object, frame, framesPerSecond) => {
   const sprite = sprites[object.sprite];
   const speed = sprite.speed;
   if (speed) {
-    const animateEveryThisFrame = Math.floor(framesPerSecond / speed) || 1;
+    const animateEveryThisFrame = Math.round(framesPerSecond / speed) || 1;
     if (frame % animateEveryThisFrame === 0) {
       if (object.reverse) {
         if (object.frame > 0) {

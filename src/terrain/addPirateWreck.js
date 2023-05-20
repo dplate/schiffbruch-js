@@ -1,5 +1,6 @@
 import spriteTypes from '../images/spriteTypes.js';
 import grounds from './tiles/grounds.js';
+import tileEdges from './tiles/tileEdges.js';
 
 const isGoodPosition = (terrain, x, y) => {
   if (terrain[x][y].ground !== grounds.SEA) {
@@ -30,10 +31,11 @@ const addPirateWreck = (terrain) => {
     const y = Math.floor(Math.random() * terrain[0].length);
     if (isGoodPosition(terrain, x, y)) {
       const tile = terrain[x][y];
+      const center = tileEdges[tile.type].center;
       tile.object = {
         sprite: spriteTypes.PIRATE_WRECK,
-        x: 15,
-        y: 16,
+        x: center.x + 7,
+        y: center.y + 5,
         frame: 0
       };
       return;
