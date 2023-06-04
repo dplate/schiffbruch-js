@@ -57,6 +57,9 @@ import animateGuy from './guy/animateGuy.js';
 import drawGuy from './guy/drawGuy.js';
 import sounds from './sounds/sounds.js';
 import startGuyAnimation from './guy/startGuyAnimation.js';
+import constructionItems from './construction/constructionItems.js';
+import constructionTypes from './construction/constructionTypes.js';
+import startConstruction from './construction/startConstruction.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -297,7 +300,6 @@ const Bmp = Array.from(Array(BILDANZ), () => ({
   Geschwindigkeit: null, //Wieviel Bilder/sec
   Sound: null,    //Welcher Sound gehört dazu
   //zum bauen
-  Rohstoffe: {},
   AkAnzahl: null,    //Anzahl der Aktionsfaellen, die zum Bau benötigt werden
   First: null        //Ist es das erstemal gebaut, dann Hilfetext
 }));
@@ -659,8 +661,6 @@ const InitStructs = async () => {
   Bmp[ZELT].rcDes.right = Bmp[ZELT].rcDes.left + Bmp[ZELT].Breite;
   Bmp[ZELT].rcDes.top = 9 + 20;
   Bmp[ZELT].rcDes.bottom = Bmp[ZELT].rcDes.top + Bmp[ZELT].Hoehe;
-  Bmp[ZELT].Rohstoffe[items.BRANCH] = 5;
-  Bmp[ZELT].Rohstoffe[items.LEAF] = 5;
   Bmp[ZELT].AkAnzahl = 16;
 
   Bmp[BOOT].Anzahl = 2;
@@ -675,8 +675,6 @@ const InitStructs = async () => {
   Bmp[BOOT].rcDes.right = Bmp[BOOT].rcDes.left + Bmp[BOOT].Breite;
   Bmp[BOOT].rcDes.top = 20;
   Bmp[BOOT].rcDes.bottom = Bmp[BOOT].rcDes.top + Bmp[BOOT].Hoehe;
-  Bmp[BOOT].Rohstoffe[items.BRANCH] = 2;
-  Bmp[BOOT].Rohstoffe[items.LOG] = 1;
   Bmp[BOOT].AkAnzahl = 16;
 
   Bmp[ROHR].Anzahl = 2;
@@ -691,7 +689,6 @@ const InitStructs = async () => {
   Bmp[ROHR].rcDes.right = Bmp[ROHR].rcDes.left + Bmp[ROHR].Breite;
   Bmp[ROHR].rcDes.top = 16;
   Bmp[ROHR].rcDes.bottom = Bmp[ROHR].rcDes.top + Bmp[ROHR].Hoehe;
-  Bmp[ROHR].Rohstoffe[items.LOG] = 1;
   Bmp[ROHR].AkAnzahl = 18;
 
   Bmp[SOS].Anzahl = 1;
@@ -706,7 +703,6 @@ const InitStructs = async () => {
   Bmp[SOS].rcDes.right = Bmp[SOS].rcDes.left + Bmp[SOS].Breite;
   Bmp[SOS].rcDes.top = 20;
   Bmp[SOS].rcDes.bottom = Bmp[SOS].rcDes.top + Bmp[SOS].Hoehe;
-  Bmp[SOS].Rohstoffe[items.STONE] = 10;
   Bmp[SOS].AkAnzahl = 20;
 
   Bmp[HAUS1].Anzahl = 1;
@@ -721,7 +717,6 @@ const InitStructs = async () => {
   Bmp[HAUS1].rcDes.right = Bmp[HAUS1].rcDes.left + Bmp[HAUS1].Breite;
   Bmp[HAUS1].rcDes.top = 0;
   Bmp[HAUS1].rcDes.bottom = Bmp[HAUS1].rcDes.top + Bmp[HAUS1].Hoehe;
-  Bmp[HAUS1].Rohstoffe[items.BRANCH] = 4;
   Bmp[HAUS1].AkAnzahl = 19;
   Bmp[HAUS1].Sound = WAVWALD;
 
@@ -737,8 +732,6 @@ const InitStructs = async () => {
   Bmp[HAUS2].rcDes.right = Bmp[HAUS2].rcDes.left + Bmp[HAUS2].Breite;
   Bmp[HAUS2].rcDes.top = 0;
   Bmp[HAUS2].rcDes.bottom = Bmp[HAUS2].rcDes.top + Bmp[HAUS2].Hoehe;
-  Bmp[HAUS2].Rohstoffe[items.BRANCH] = 3;
-  Bmp[HAUS2].Rohstoffe[items.LOG] = 3;
   Bmp[HAUS2].AkAnzahl = 21;
   Bmp[HAUS2].Sound = WAVWALD;
 
@@ -754,9 +747,6 @@ const InitStructs = async () => {
   Bmp[HAUS3].rcDes.right = Bmp[HAUS3].rcDes.left + Bmp[HAUS3].Breite;
   Bmp[HAUS3].rcDes.top = 0;
   Bmp[HAUS3].rcDes.bottom = Bmp[HAUS3].rcDes.top + Bmp[HAUS3].Hoehe;
-  Bmp[HAUS3].Rohstoffe[items.BRANCH] = 4;
-  Bmp[HAUS3].Rohstoffe[items.LOG] = 4;
-  Bmp[HAUS3].Rohstoffe[items.LEAF] = 5;
   Bmp[HAUS3].AkAnzahl = 21;
   Bmp[HAUS3].Sound = WAVWALD;
 
@@ -772,8 +762,6 @@ const InitStructs = async () => {
   Bmp[FEUERSTELLE].rcDes.right = Bmp[FEUERSTELLE].rcDes.left + Bmp[FEUERSTELLE].Breite;
   Bmp[FEUERSTELLE].rcDes.top = 10;
   Bmp[FEUERSTELLE].rcDes.bottom = Bmp[FEUERSTELLE].rcDes.top + Bmp[FEUERSTELLE].Hoehe;
-  Bmp[FEUERSTELLE].Rohstoffe[items.BRANCH] = 5;
-  Bmp[FEUERSTELLE].Rohstoffe[items.LOG] = 4;
   Bmp[FEUERSTELLE].AkAnzahl = 9;
 
   //Feuer
@@ -2055,9 +2043,13 @@ const GetKachel = (PosX, PosY) => {
   return null;
 }
 
-const MakeRohString = (x, y, Objekt) => {
+const MakeRohString = (x, y, constructionType = null) => {
   RohString = '';
-  const neededItems = Object.entries((Objekt === -1) ? gameData.terrain[x][y].Rohstoffe : Bmp[Objekt].Rohstoffe).filter(([, amount]) => amount);
+  const neededItems = Object.entries(
+    (constructionType) ? 
+      constructionItems[constructionType] :
+      gameData.terrain[x][y].construction.neededItems
+  ).filter(([, amount]) => amount);
   if (neededItems.length) {
     RohString += ': ';
     neededItems.forEach(([item, amount]) => {
@@ -2139,7 +2131,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = Math.floor((tile.AkNummer * 100) / Bmp[tile.Objekt].AkAnzahl);
         Text += TextTmp + '%)';
         //benötigte Rohstoffe anzeigen
-        MakeRohString(Erg.x, Erg.y, -1);
+        MakeRohString(Erg.x, Erg.y);
         Text += RohString;
       }
 
@@ -2466,7 +2458,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFELD].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTFELD].Phase !== -1)) {
     StdString = texts.BEGINNFELD;
-    MakeRohString(-1, -1, FELD);
+    MakeRohString(-1, -1, constructionTypes.FIELD);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2492,7 +2484,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTZELT].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTZELT].Phase !== -1)) {
     StdString = texts.BEGINNZELT;
-    MakeRohString(-1, -1, ZELT);
+    MakeRohString(-1, -1, constructionTypes.TENT);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2518,7 +2510,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBOOT].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTBOOT].Phase !== -1)) {
     StdString = texts.BEGINNBOOT;
-    MakeRohString(-1, -1, BOOT);
+    MakeRohString(-1, -1, constructionTypes.BOAT);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2548,7 +2540,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTROHR].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTROHR].Phase !== -1)) {
     StdString = texts.BEGINNROHR;
-    MakeRohString(-1, -1, ROHR);
+    MakeRohString(-1, -1, constructionTypes.PIPE);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2574,7 +2566,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOS].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTSOS].Phase !== -1)) {
     StdString = texts.BEGINNSOS;
-    MakeRohString(-1, -1, SOS);
+    MakeRohString(-1, -1, constructionTypes.SOS);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2600,7 +2592,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS1].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS1].Phase !== -1)) {
     StdString = texts.BEGINNHAUS1;
-    MakeRohString(-1, -1, HAUS1);
+    MakeRohString(-1, -1, constructionTypes.LADDER);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2626,7 +2618,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS2].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS2].Phase !== -1)) {
     StdString = texts.BEGINNHAUS2;
-    MakeRohString(-1, -1, HAUS2);
+    MakeRohString(-1, -1, constructionTypes.PLATFORM);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2654,7 +2646,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS3].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS3].Phase !== -1)) {
     StdString = texts.BEGINNHAUS3;
-    MakeRohString(-1, -1, HAUS3);
+    MakeRohString(-1, -1, constructionTypes.TREE_HOUSE);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2683,7 +2675,7 @@ const MouseInPanel = (Button, Push) => {
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFEUERST].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTFEUERST].Phase !== -1)) {
     StdString = texts.BEGINNFEUERSTELLE;
-    MakeRohString(-1, -1, FEUERSTELLE);
+    MakeRohString(-1, -1, constructionTypes.FIREPLACE);
     StdString += RohString;
     TextBereich[TXTTEXTFELD].Aktiv = true;
     DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
@@ -2801,7 +2793,6 @@ const startGame = async (newGame) => {
         tile.AkNummer = 0;
         tile.GPosAlt = { x: 0, y: 0 };
         tile.Timer = 0;
-        tile.Rohstoffe = {};
       }
     }
 
@@ -3652,7 +3643,7 @@ const CheckRohstoff = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   Benoetigt = 0;
-  Object.entries(Bmp[tile.Objekt].Rohstoffe).forEach(([, amount]) => Benoetigt += amount);
+  Object.entries(constructionItems[tile.construction.type]).forEach(([, amount]) => Benoetigt += amount);
 
   GebrauchtTmp = Benoetigt / Bmp[tile.Objekt].AkAnzahl;
   Gebraucht = Math.floor(GebrauchtTmp * tile.AkNummer) - Math.floor(GebrauchtTmp * (tile.AkNummer - 1));
@@ -3660,11 +3651,11 @@ const CheckRohstoff = () => {
 
   while (1) {
     Check = false;
-    const neededItems = Object.entries(tile.Rohstoffe).filter(([, amount]) => amount).map(([item]) => item);
+    const neededItems = Object.entries(tile.construction.neededItems).filter(([, amount]) => amount).map(([item]) => item);
     for (const neededItem of neededItems) {
       if (gameData.guy.inventory[neededItem] > 0) {
         changeItem(gameData, neededItem, -1);
-        tile.Rohstoffe[neededItem]--;
+        tile.construction.neededItems[neededItem]--;
         Gebraucht--;
         if (Gebraucht === 0) return true;
         Check = true;
@@ -4609,7 +4600,7 @@ const AkFeld = () => {
 
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Rohstoffe = { ...Bmp[FELD].Rohstoffe };
+    startConstruction(tile, constructionTypes.FIELD);
     tile.Objekt = FELD;
     tile.ObPos.x = Bmp[FELD].rcDes.left;
     tile.ObPos.y = Bmp[FELD].rcDes.top;
@@ -4990,7 +4981,7 @@ const AkZelt = () => {
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = ZELT;
-    tile.Rohstoffe = { ...Bmp[ZELT].Rohstoffe };
+    startConstruction(tile, constructionTypes.TENT);
     tile.Phase = Bmp[tile.Objekt].Anzahl;
     tile.ObPos.x = Bmp[ZELT].rcDes.left;
     tile.ObPos.y = Bmp[ZELT].rcDes.top;
@@ -5079,7 +5070,7 @@ const AkBoot = () => {
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = BOOT;
-    tile.Rohstoffe = { ...Bmp[BOOT].Rohstoffe };
+    startConstruction(tile, constructionTypes.BOAT);
     tile.Phase = Bmp[BOOT].Anzahl;
     tile.ObPos.x = Bmp[BOOT].rcDes.left;
     tile.ObPos.y = Bmp[BOOT].rcDes.top;
@@ -5172,7 +5163,7 @@ const AkRohr = () => {
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = ROHR;
-    tile.Rohstoffe = { ...Bmp[ROHR].Rohstoffe };
+    startConstruction(tile, constructionTypes.PIPE);
     tile.Phase = Bmp[ROHR].Anzahl;
     tile.ObPos.x = Bmp[ROHR].rcDes.left;
     tile.ObPos.y = Bmp[ROHR].rcDes.top;
@@ -5252,7 +5243,7 @@ const AkSOS = () => {
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = SOS;
-    tile.Rohstoffe = { ...Bmp[SOS].Rohstoffe };
+    startConstruction(tile, constructionTypes.SOS);
     tile.Phase = Bmp[SOS].Anzahl;
     tile.ObPos.x = Bmp[SOS].rcDes.left;
     tile.ObPos.y = Bmp[SOS].rcDes.top;
@@ -5347,7 +5338,7 @@ const AkFeuerstelle = () => {
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
     tile.Objekt = FEUERSTELLE;
-    tile.Rohstoffe = { ...Bmp[FEUERSTELLE].Rohstoffe };
+    startConstruction(tile, constructionTypes.FIREPLACE);
     tile.Phase = Bmp[FEUERSTELLE].Anzahl;
     tile.ObPos.x = Bmp[FEUERSTELLE].rcDes.left;
     tile.ObPos.y = Bmp[FEUERSTELLE].rcDes.top;
@@ -5410,7 +5401,7 @@ const AkHaus1 = () => {
 
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Rohstoffe = { ...Bmp[HAUS1].Rohstoffe };
+    startConstruction(tile, constructionTypes.LADDER);
     tile.Phase = Bmp[HAUS1].Anzahl;
     tile.originalObject = tile.object;
     tile.object = null;
@@ -5484,7 +5475,7 @@ const AkHaus2 = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Rohstoffe = { ...Bmp[HAUS2].Rohstoffe };
+    startConstruction(tile, constructionTypes.PLATFORM);
     tile.Phase = Bmp[HAUS2].Anzahl;
     tile.Objekt = HAUS2;
   }
@@ -5565,7 +5556,7 @@ const AkHaus3 = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (tile.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Rohstoffe = { ...Bmp[HAUS3].Rohstoffe };
+    startConstruction(tile, constructionTypes.TREE_HOUSE);
     tile.Phase = Bmp[HAUS3].Anzahl;
     tile.Objekt = HAUS3;
   }
