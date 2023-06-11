@@ -28,4 +28,18 @@ directions.opposite = {
   [directions.WEST]: directions.EAST,
 };
 
+directions.byDiff = {
+  [-1]: {
+    [0]: directions.WEST
+  },
+  [0]: {
+    [-1]: directions.NORTH,
+    [-1]: directions.SOUTH
+  },
+  [1]: {
+    [0]: directions.EAST
+  }
+}
+
+
 export default directions;

@@ -5,6 +5,9 @@ const isEatable = (object) => {
   if (object?.sprite === spriteTypes.BUSH && object.frame === sprites[object.sprite].frameCount - 1) {
     return true;
   }
+  if (object?.sprite === spriteTypes.FIELD && object.frame === 2) {
+    return true;
+  }
   return false;
 }
 

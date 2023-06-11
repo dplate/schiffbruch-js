@@ -16,6 +16,15 @@ const treeDefault = {
   speed: 4
 };
 
+const bigTreeDefault = {
+  ...treeDefault,
+  speed: 0,
+  width: 26,
+  height: 41,
+  offsetX: -13,
+  offsetY: -40,
+};
+
 const sprites = {
   [spriteTypes.WAVES]: {
     image: images.WATER,
@@ -239,15 +248,33 @@ const sprites = {
     offsetY: -13,
   },
   [spriteTypes.BIG_TREE]: {
-    ...treeDefault,
-    frameCount: 0,
-    speed: 0,
+    ...bigTreeDefault,
+    frameCount: 1,
     x: 238,
     y: 0,
-    width: 26,
-    height: 41,
-    offsetX: -13,
-    offsetY: -40,
+  },
+  [spriteTypes.BIG_TREE_WITH_LADDER]: {
+    ...treeDefault,
+    image: images.BUILDINGS,
+    frameCount: 5,
+    x: 161,
+    y: 0,
+  },
+  [spriteTypes.BIG_TREE_WITH_PLATFORM]: {
+    ...treeDefault,
+    image: images.BUILDINGS,
+    frameCount: 6,
+    x: 187,
+    y: 0,
+    width: 34,
+  },
+  [spriteTypes.BIG_TREE_WITH_TREE_HOUSE]: {
+    ...treeDefault,
+    image: images.BUILDINGS,
+    frameCount: 6,
+    x: 221,
+    y: 0,
+    width: 34,
   },
   [spriteTypes.PIRATE_WRECK]: {
     image: images.BUILDINGS,
@@ -272,6 +299,78 @@ const sprites = {
     offsetY: -11,
     frameCount: 3,
     speed: 5
+  },
+  [spriteTypes.FIELD]: {
+    image: images.BUILDINGS,
+    sound: null,
+    x: 0,
+    y: 0,
+    width: 42,
+    height: 27,
+    offsetX: -21,
+    offsetY: -16,
+    frameCount: 9,
+    speed: 0
+  },
+  [spriteTypes.TENT]: {
+    image: images.BUILDINGS,
+    sound: null,
+    x: 42,
+    y: 0,
+    width: 23,
+    height: 20,
+    offsetX: -14,
+    offsetY: -14,
+    frameCount: 4,
+    speed: 0
+  },
+  [spriteTypes.BOAT]: {
+    image: images.BUILDINGS,
+    sound: null,
+    x: 65,
+    y: 0,
+    width: 26,
+    height: 18,
+    offsetX: -13,
+    offsetY: -11,
+    frameCount: 7,
+    speed: 0
+  },
+  [spriteTypes.PIPE]: {
+    image: images.BUILDINGS,
+    sound: null,
+    x: 91,
+    y: 0,
+    width: 34,
+    height: 21,
+    offsetX: -16,
+    offsetY: -14,
+    frameCount: 5,
+    speed: 0
+  },
+  [spriteTypes.SOS]: {
+    image: images.BUILDINGS,
+    sound: null,
+    x: 125,
+    y: 0,
+    width: 36,
+    height: 19,
+    offsetX: -18,
+    offsetY: -11,
+    frameCount: 7,
+    speed: 0
+  },
+  [spriteTypes.FIREPLACE]: {
+    image: images.BUILDINGS,
+    sound: null,
+    x: 255,
+    y: 0,
+    width: 21,
+    height: 19,
+    offsetX: -11,
+    offsetY: -15,
+    frameCount: 5,
+    speed: 0
   },
   [spriteTypes.GUY_WALKING_WEST]: {
     image: images.GUY,

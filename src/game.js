@@ -57,9 +57,25 @@ import animateGuy from './guy/animateGuy.js';
 import drawGuy from './guy/drawGuy.js';
 import sounds from './sounds/sounds.js';
 import startGuyAnimation from './guy/startGuyAnimation.js';
-import constructionItems from './construction/constructionItems.js';
+import constructions from './construction/constructions.js';
 import constructionTypes from './construction/constructionTypes.js';
 import startConstruction from './construction/startConstruction.js';
+import construct from './construction/construct.js';
+import finishConstruction from './construction/finishConstruction.js';
+import isUsableTent from './terrain/objects/isUsableTent.js';
+import isUsableTreeHouse from './terrain/objects/isUsableTreeHouse.js';
+import findNeighbor from './guy/findNeighbor.js';
+import directions from './terrain/directions.js';
+import isDryPipe from './terrain/objects/isDryPipe.js';
+import fillPipeWithWater from './terrain/fillPipeWithWater.js';
+import updateWetlands from './terrain/updateWetlands.js';
+import isWateredPipe from './terrain/objects/isWateredPipe.js';
+import pauseConstruction from './construction/pauseConstruction.js';
+import continueConstruction from './construction/continueConstruction.js';
+import isDestroyable from './terrain/objects/isDestroyable.js';
+import isUsableBoat from './terrain/objects/isUsableBoat.js';
+import isBigTree from './terrain/objects/isBigTree.js';
+import isUsableFireplace from './terrain/objects/isUsableFireplace.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -85,16 +101,7 @@ const BAUM2DOWN = BAUM1DOWN + 1;
 const BAUM3DOWN = BAUM1DOWN + 2;
 const BAUM4DOWN = BAUM1DOWN + 3;
 const FEUER = BAUM1DOWN + 5;
-const FELD = 38;
-const ZELT = FELD + 1;
-const BOOT = FELD + 2;
-const ROHR = FELD + 3;
-const SOS = FELD + 4;
-const HAUS1 = FELD + 5;
-const HAUS2 = FELD + 6;
-const HAUS3 = FELD + 7;
-const FEUERSTELLE = FELD + 8;
-const CUPFEIL = 47;
+const CUPFEIL = 38;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
 const GUYSCHIFF = 50;
@@ -299,9 +306,6 @@ const Bmp = Array.from(Array(BILDANZ), () => ({
   Hoehe: null,    //Die Hoehe des Bildes
   Geschwindigkeit: null, //Wieviel Bilder/sec
   Sound: null,    //Welcher Sound gehört dazu
-  //zum bauen
-  AkAnzahl: null,    //Anzahl der Aktionsfaellen, die zum Bau benötigt werden
-  First: null        //Ist es das erstemal gebaut, dann Hilfetext
 }));
 
 const Wav = Array.from(Array(WAVANZ), () => ({
@@ -316,7 +320,11 @@ const AbspannListe = Array.from(Array(10), () => Array.from(Array(10), () => ({
 })));    //Namenabfolge im Abspann
 
 const gameData = {
-  terrain: Array.from(Array(MAXXKACH), () => Array.from(Array(MAXYKACH), () => ({}))),
+  terrain: Array.from(
+    Array(MAXXKACH), () => Array.from(
+      Array(MAXYKACH), () => ({})
+    )
+  ),
   camera: {
     x: 0,
     y: 0,
@@ -344,7 +352,8 @@ const gameData = {
     food: null,
     health: null,
     inventory: null
-  }
+  },
+  constructionHints: {}
 };
 
 //Bilder
@@ -444,11 +453,10 @@ const SaveGame = () => {
     animations.push({
       Animation: Bmp[i].Animation,
       Phase: Bmp[i].Phase,
-      First: Bmp[i].First
     });
   }
 
-  window.localStorage.setItem('gameDataV7', JSON.stringify({
+  window.localStorage.setItem('gameDataV8', JSON.stringify({
     ...gameData,
     Guy,
     Chance,
@@ -465,7 +473,7 @@ const SaveGame = () => {
 const LoadGame = () => {
   let i;
 
-  const rawGameData = window.localStorage.getItem('gameDataV7');
+  const rawGameData = window.localStorage.getItem('gameDataV8');
   if (!rawGameData) {
     return false;
   }
@@ -493,7 +501,6 @@ const LoadGame = () => {
   for (i = 0; i < BILDANZ; i++) {
     Bmp[i].Animation = gameData.animations[i].Animation;
     Bmp[i].Phase = gameData.animations[i].Phase;
-    Bmp[i].First = gameData.animations[i].First;
   }
 
   return true;
@@ -521,8 +528,6 @@ const InitStructs = async () => {
     Bmp[i].Breite = 0;
     Bmp[i].Hoehe = 0;
     Bmp[i].Sound = 0;
-    Bmp[i].AkAnzahl = 0;
-    Bmp[i].First = true;
   }
 
   Bmp[GUYSCHIFF].Animation = false;
@@ -627,142 +632,6 @@ const InitStructs = async () => {
   Bmp[SCHLEUSE6].rcDes.right = Bmp[SCHLEUSE6].rcDes.left + Bmp[SCHLEUSE6].Breite;
   Bmp[SCHLEUSE6].rcDes.top = 16;
   Bmp[SCHLEUSE6].rcDes.bottom = Bmp[SCHLEUSE6].rcDes.top + Bmp[SCHLEUSE6].Hoehe;
-
-  //Bauwerke
-  for (i = FELD; i <= FEUERSTELLE; i++) {
-    Bmp[i].Animation = false;
-    Bmp[i].Geschwindigkeit = 0;
-    Bmp[i].Phase = 0;
-  }
-
-  Bmp[FELD].Anzahl = 3;
-  Bmp[FELD].Surface = buildingsImage;
-  Bmp[FELD].Breite = 42;
-  Bmp[FELD].Hoehe = 27;
-  Bmp[FELD].rcSrc.left = 0;
-  Bmp[FELD].rcSrc.right = 0 + Bmp[FELD].Breite;
-  Bmp[FELD].rcSrc.top = 0;
-  Bmp[FELD].rcSrc.bottom = 0 + Bmp[FELD].Hoehe;
-  Bmp[FELD].rcDes.left = 5;
-  Bmp[FELD].rcDes.right = Bmp[FELD].rcDes.left + Bmp[FELD].Breite;
-  Bmp[FELD].rcDes.top = 15;
-  Bmp[FELD].rcDes.bottom = Bmp[FELD].rcDes.top + Bmp[FELD].Hoehe;
-  Bmp[FELD].AkAnzahl = 20;
-
-  Bmp[ZELT].Anzahl = 1;
-  Bmp[ZELT].Surface = buildingsImage;
-  Bmp[ZELT].Breite = 23;
-  Bmp[ZELT].Hoehe = 20;
-  Bmp[ZELT].rcSrc.left = 42;
-  Bmp[ZELT].rcSrc.right = 42 + Bmp[ZELT].Breite;
-  Bmp[ZELT].rcSrc.top = 0;
-  Bmp[ZELT].rcSrc.bottom = 0 + Bmp[ZELT].Hoehe;
-  Bmp[ZELT].rcDes.left = 14 + 11;
-  Bmp[ZELT].rcDes.right = Bmp[ZELT].rcDes.left + Bmp[ZELT].Breite;
-  Bmp[ZELT].rcDes.top = 9 + 20;
-  Bmp[ZELT].rcDes.bottom = Bmp[ZELT].rcDes.top + Bmp[ZELT].Hoehe;
-  Bmp[ZELT].AkAnzahl = 16;
-
-  Bmp[BOOT].Anzahl = 2;
-  Bmp[BOOT].Surface = buildingsImage;
-  Bmp[BOOT].Breite = 26;
-  Bmp[BOOT].Hoehe = 18;
-  Bmp[BOOT].rcSrc.left = 65;
-  Bmp[BOOT].rcSrc.right = 65 + Bmp[BOOT].Breite;
-  Bmp[BOOT].rcSrc.top = 0;
-  Bmp[BOOT].rcSrc.bottom = 0 + Bmp[BOOT].Hoehe;
-  Bmp[BOOT].rcDes.left = 14;
-  Bmp[BOOT].rcDes.right = Bmp[BOOT].rcDes.left + Bmp[BOOT].Breite;
-  Bmp[BOOT].rcDes.top = 20;
-  Bmp[BOOT].rcDes.bottom = Bmp[BOOT].rcDes.top + Bmp[BOOT].Hoehe;
-  Bmp[BOOT].AkAnzahl = 16;
-
-  Bmp[ROHR].Anzahl = 2;
-  Bmp[ROHR].Surface = buildingsImage;
-  Bmp[ROHR].Breite = 34;
-  Bmp[ROHR].Hoehe = 21;
-  Bmp[ROHR].rcSrc.left = 91;
-  Bmp[ROHR].rcSrc.right = 91 + Bmp[ROHR].Breite;
-  Bmp[ROHR].rcSrc.top = 0;
-  Bmp[ROHR].rcSrc.bottom = 0 + Bmp[ROHR].Hoehe;
-  Bmp[ROHR].rcDes.left = 11;
-  Bmp[ROHR].rcDes.right = Bmp[ROHR].rcDes.left + Bmp[ROHR].Breite;
-  Bmp[ROHR].rcDes.top = 16;
-  Bmp[ROHR].rcDes.bottom = Bmp[ROHR].rcDes.top + Bmp[ROHR].Hoehe;
-  Bmp[ROHR].AkAnzahl = 18;
-
-  Bmp[SOS].Anzahl = 1;
-  Bmp[SOS].Surface = buildingsImage;
-  Bmp[SOS].Breite = 36;
-  Bmp[SOS].Hoehe = 19;
-  Bmp[SOS].rcSrc.left = 125;
-  Bmp[SOS].rcSrc.right = 125 + Bmp[SOS].Breite;
-  Bmp[SOS].rcSrc.top = 0;
-  Bmp[SOS].rcSrc.bottom = 0 + Bmp[SOS].Hoehe;
-  Bmp[SOS].rcDes.left = 11;
-  Bmp[SOS].rcDes.right = Bmp[SOS].rcDes.left + Bmp[SOS].Breite;
-  Bmp[SOS].rcDes.top = 20;
-  Bmp[SOS].rcDes.bottom = Bmp[SOS].rcDes.top + Bmp[SOS].Hoehe;
-  Bmp[SOS].AkAnzahl = 20;
-
-  Bmp[HAUS1].Anzahl = 1;
-  Bmp[HAUS1].Surface = buildingsImage;
-  Bmp[HAUS1].Breite = 26;
-  Bmp[HAUS1].Hoehe = 41;
-  Bmp[HAUS1].rcSrc.left = 161;
-  Bmp[HAUS1].rcSrc.right = 161 + Bmp[HAUS1].Breite;
-  Bmp[HAUS1].rcSrc.top = 0;
-  Bmp[HAUS1].rcSrc.bottom = 0 + Bmp[HAUS1].Hoehe;
-  Bmp[HAUS1].rcDes.left = 0;
-  Bmp[HAUS1].rcDes.right = Bmp[HAUS1].rcDes.left + Bmp[HAUS1].Breite;
-  Bmp[HAUS1].rcDes.top = 0;
-  Bmp[HAUS1].rcDes.bottom = Bmp[HAUS1].rcDes.top + Bmp[HAUS1].Hoehe;
-  Bmp[HAUS1].AkAnzahl = 19;
-  Bmp[HAUS1].Sound = WAVWALD;
-
-  Bmp[HAUS2].Anzahl = 1;
-  Bmp[HAUS2].Surface = buildingsImage;
-  Bmp[HAUS2].Breite = 34;
-  Bmp[HAUS2].Hoehe = 41;
-  Bmp[HAUS2].rcSrc.left = 187;
-  Bmp[HAUS2].rcSrc.right = 187 + Bmp[HAUS2].Breite;
-  Bmp[HAUS2].rcSrc.top = 0;
-  Bmp[HAUS2].rcSrc.bottom = 0 + Bmp[HAUS2].Hoehe;
-  Bmp[HAUS2].rcDes.left = 0;
-  Bmp[HAUS2].rcDes.right = Bmp[HAUS2].rcDes.left + Bmp[HAUS2].Breite;
-  Bmp[HAUS2].rcDes.top = 0;
-  Bmp[HAUS2].rcDes.bottom = Bmp[HAUS2].rcDes.top + Bmp[HAUS2].Hoehe;
-  Bmp[HAUS2].AkAnzahl = 21;
-  Bmp[HAUS2].Sound = WAVWALD;
-
-  Bmp[HAUS3].Anzahl = 1;
-  Bmp[HAUS3].Surface = buildingsImage;
-  Bmp[HAUS3].Breite = 34;
-  Bmp[HAUS3].Hoehe = 41;
-  Bmp[HAUS3].rcSrc.left = 221;
-  Bmp[HAUS3].rcSrc.right = 221 + Bmp[HAUS3].Breite;
-  Bmp[HAUS3].rcSrc.top = 0;
-  Bmp[HAUS3].rcSrc.bottom = 0 + Bmp[HAUS3].Hoehe;
-  Bmp[HAUS3].rcDes.left = 0;
-  Bmp[HAUS3].rcDes.right = Bmp[HAUS3].rcDes.left + Bmp[HAUS3].Breite;
-  Bmp[HAUS3].rcDes.top = 0;
-  Bmp[HAUS3].rcDes.bottom = Bmp[HAUS3].rcDes.top + Bmp[HAUS3].Hoehe;
-  Bmp[HAUS3].AkAnzahl = 21;
-  Bmp[HAUS3].Sound = WAVWALD;
-
-  Bmp[FEUERSTELLE].Anzahl = 1;
-  Bmp[FEUERSTELLE].Surface = buildingsImage;
-  Bmp[FEUERSTELLE].Breite = 21;
-  Bmp[FEUERSTELLE].Hoehe = 19;
-  Bmp[FEUERSTELLE].rcSrc.left = 255;
-  Bmp[FEUERSTELLE].rcSrc.right = 255 + Bmp[FEUERSTELLE].Breite;
-  Bmp[FEUERSTELLE].rcSrc.top = 0;
-  Bmp[FEUERSTELLE].rcSrc.bottom = 0 + Bmp[FEUERSTELLE].Hoehe;
-  Bmp[FEUERSTELLE].rcDes.left = 15;
-  Bmp[FEUERSTELLE].rcDes.right = Bmp[FEUERSTELLE].rcDes.left + Bmp[FEUERSTELLE].Breite;
-  Bmp[FEUERSTELLE].rcDes.top = 10;
-  Bmp[FEUERSTELLE].rcDes.bottom = Bmp[FEUERSTELLE].rcDes.top + Bmp[FEUERSTELLE].Hoehe;
-  Bmp[FEUERSTELLE].AkAnzahl = 9;
 
   //Feuer
   Bmp[FEUER].Anzahl = 3;
@@ -1987,11 +1856,9 @@ const AddTime = (h, m) => {
         }
       }
       //pro Minute Reifungsprozess fortführen
-      if (tile.Objekt === FELD && tile.Phase < Bmp[tile.Objekt].Anzahl) {
-        tile.Phase += (60 * h + m) * 0.005;
-        if (tile.Phase > Bmp[tile.Objekt].Anzahl - 1) {
-          tile.Phase = Bmp[tile.Objekt].Anzahl - 1;
-        }
+      if (tile.object?.sprite === spriteTypes.FIELD && !tile.construction) {
+        tile.object.frame += (60 * h + m) * 0.005;
+        tile.object.frame = Math.min(tile.object.frame, 2);
       } else if (tile.object?.sprite === spriteTypes.BUSH) {
         tile.object.frame += (60 * h + m) * 0.0005;
         tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
@@ -2046,8 +1913,8 @@ const GetKachel = (PosX, PosY) => {
 const MakeRohString = (x, y, constructionType = null) => {
   RohString = '';
   const neededItems = Object.entries(
-    (constructionType) ? 
-      constructionItems[constructionType] :
+    (constructionType) ?
+      constructions[constructionType].items :
       gameData.terrain[x][y].construction.neededItems
   ).filter(([, amount]) => amount);
   if (neededItems.length) {
@@ -2098,25 +1965,25 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = texts.FLUSSTEXT;
       else if (tile.object?.sprite === spriteTypes.BUSH)
         TextTmp = texts.BUSCHTEXT;
-      else if (tile.Objekt === ZELT)
+      else if (tile.object?.sprite === spriteTypes.TENT)
         TextTmp = texts.ZELTTEXT;
-      else if (tile.Objekt === FELD)
+      else if (tile.object?.sprite === spriteTypes.FIELD)
         TextTmp = texts.FELDTEXT;
-      else if (tile.Objekt === BOOT)
+      else if (tile.object?.sprite === spriteTypes.BOAT)
         TextTmp = texts.BOOTTEXT;
-      else if (tile.Objekt === ROHR)
+      else if (tile.object?.sprite === spriteTypes.PIPE)
         TextTmp = texts.ROHRTEXT;
-      else if (tile.Objekt === SOS)
+      else if (tile.object?.sprite === spriteTypes.SOS)
         TextTmp = texts.SOSTEXT;
-      else if (tile.Objekt === HAUS1)
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER)
         TextTmp = texts.HAUS1TEXT;
-      else if (tile.Objekt === HAUS2)
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM)
         TextTmp = texts.HAUS2TEXT;
-      else if (tile.Objekt === HAUS3)
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_TREE_HOUSE)
         TextTmp = texts.HAUS3TEXT;
       else if (tile.object?.sprite === spriteTypes.BIG_TREE)
         TextTmp = texts.BAUMGROSSTEXT;
-      else if (tile.Objekt === FEUERSTELLE)
+      else if (tile.object?.sprite === spriteTypes.FIREPLACE)
         TextTmp = texts.FEUERSTELLETEXT;
       else if (tile.Objekt === FEUER)
         TextTmp = texts.FEUERTEXT;
@@ -2124,11 +1991,10 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = texts.WRACKTEXT;
       Text += TextTmp;
 
-      if ((tile.Objekt >= FELD) &&
-        (tile.Objekt <= FEUERSTELLE)) {
+      if (tile.construction) {
         //Baufortschrittanzeigen
         Text += ' (';
-        TextTmp = Math.floor((tile.AkNummer * 100) / Bmp[tile.Objekt].AkAnzahl);
+        TextTmp = Math.floor(tile.construction.actionStep * 100 / constructions[tile.construction.type].actionSteps);
         Text += TextTmp + '%)';
         //benötigte Rohstoffe anzeigen
         MakeRohString(Erg.x, Erg.y);
@@ -2180,6 +2046,8 @@ const ButtAniAus = () => {
 
 const MouseInPanel = (Button, Push) => {
   let mx, my, i;  //Mauskoordinaten in Minimap
+
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   //wenn die Maus in der Minimap ist .
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
@@ -2270,34 +2138,33 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Bmp[BUTTSTOP].Phase = 0;
-      gameData.guy.storedPosition = { ...gameData.guy.position };
-      goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
-      switch (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt) {
-        case ZELT:
+      const construction = continueConstruction(gameData);
+      switch (construction.type) {
+        case constructionTypes.TENT:
           Guy.Aktion = AKZELT;
           break;
-        case FELD:
+        case constructionTypes.FIELD:
           Guy.Aktion = AKFELD;
           break;
-        case BOOT:
+        case constructionTypes.BOAT:
           Guy.Aktion = AKBOOT;
           break;
-        case ROHR:
+        case constructionTypes.PIPE:
           Guy.Aktion = AKROHR;
           break;
-        case SOS:
+        case constructionTypes.SOS:
           Guy.Aktion = AKSOS;
           break;
-        case HAUS1:
+        case constructionTypes.LADDER:
           Guy.Aktion = AKHAUS1;
           break;
-        case HAUS2:
+        case constructionTypes.PLATFORM:
           Guy.Aktion = AKHAUS2;
           break;
-        case HAUS3:
+        case constructionTypes.TREE_HOUSE:
           Guy.Aktion = AKHAUS3;
           break;
-        case FEUERSTELLE:
+        case constructionTypes.FIREPLACE:
           Guy.Aktion = AKFEUERSTELLE;
           break;
       }
@@ -2320,7 +2187,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) Guy.Aktion = AKABLEGEN;
+      if (tile.ground !== grounds.SEA) Guy.Aktion = AKABLEGEN;
       else Guy.Aktion = AKANLEGEN;
 
     }
@@ -2340,14 +2207,11 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (isEatable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FELD &&
-          gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase === Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl - 1)) {
+      if (isEatable(tile.object)) {
         Guy.Aktion = AKESSEN;
       } else if (
-        isDrinkable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) ||
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6) ||
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ROHR && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase === 1)
+        isDrinkable(tile.object) ||
+        (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6)
       )
         Guy.Aktion = AKTRINKEN;
       else PapierText = DrawText(texts.KEINESSENTRINKEN, TXTPAPIER, 1);
@@ -2358,7 +2222,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTSCHLAFEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) {
+      if (tile.ground !== grounds.SEA) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLAFEN;
       } else PapierText = DrawText(texts.NICHTAUFWASSERSCHLAFEN, TXTPAPIER, 1);
@@ -2371,11 +2235,9 @@ const MouseInPanel = (Button, Push) => {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (gameData.guy.inventory[items.LOG] <= 10) {
-        if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object)) {
+        if (isNormalTree(tile.object)) {
           Guy.Aktion = AKFAELLEN;
-        } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE ||
-          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= HAUS1 &&
-            gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= HAUS3))
+        } else if (isBigTree(tile.object))
           PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
         else PapierText = DrawText(texts.KEINBAUM, TXTPAPIER, 1);
       } else PapierText = DrawText(texts.ROHSTAMMZUVIEL, TXTPAPIER, 1);
@@ -2387,8 +2249,8 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (isFishable(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y]) ||
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= SCHLEUSE1 && gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= SCHLEUSE6)
+      if (isFishable(tile) ||
+        (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6)
       ) Guy.Aktion = AKANGELN;
       else PapierText = DrawText(texts.KEINWASSER, TXTPAPIER, 1);
     }
@@ -2399,10 +2261,9 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FEUERSTELLE) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase < Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Anzahl))
+      if (isUsableFireplace(tile)) {
         Guy.Aktion = AKANZUENDEN;
-      else PapierText = DrawText(texts.KEINEFEUERST, TXTPAPIER, 1);
+      } else PapierText = DrawText(texts.KEINEFEUERST, TXTPAPIER, 1);
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAUSSCHAU].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTAUSSCHAU].Phase !== -1)) {
@@ -2411,7 +2272,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) {
+      if (tile.ground !== grounds.SEA) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKAUSSCHAU;
       } else PapierText = DrawText(texts.WELLENZUHOCH, TXTPAPIER, 1);
@@ -2423,10 +2284,10 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA &&
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT &&
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
-        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object) {
+      if (tile.ground !== grounds.SEA &&
+        tile.type === tileTypes.FLAT &&
+        tile.Objekt === -1 &&
+        !tile.object) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHATZ;
       } else PapierText = DrawText(texts.GRABENBEDINGUNGEN, TXTPAPIER, 1);
@@ -2438,12 +2299,10 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object)) {
+      if (isNormalTree(tile.object)) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLEUDER;
-      } else if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE) ||
-        ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= HAUS1) &&
-          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= HAUS3)))
+      } else if (isBigTree(tile.object))
         PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
       else PapierText = DrawText(texts.KEINVOGEL, TXTPAPIER, 1);
     }
@@ -2467,17 +2326,15 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTFELD].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
-        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT &&
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.WETLAND) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      if (tile.Objekt === -1 &&
+        !tile.object &&
+        tile.type === tileTypes.FLAT &&
+        tile.ground === grounds.WETLAND) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKFELD;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) && (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FELD)) {
+      } else if (tile.construction?.type === constructionTypes.FIELD) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKFELD;
       } else PapierText = DrawText(texts.FELDBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -2493,17 +2350,14 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTZELT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
-        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      if (tile.Objekt === -1 &&
+        !tile.object &&
+        tile.type === tileTypes.FLAT) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKZELT;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ZELT)) {
+      } else if (tile.construction?.type === constructionTypes.TENT) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKZELT;
       } else PapierText = DrawText(texts.ZELTBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -2519,21 +2373,18 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTBOOT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1) &&
-        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground === grounds.BEACH) &&
+      if ((tile.Objekt === -1) &&
+        !tile.object &&
+        (tile.ground === grounds.BEACH) &&
         ((gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) ||
           (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) ||
           (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) ||
           (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA))) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKBOOT;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === BOOT)) {
+      } else if (tile.construction?.type === constructionTypes.BOAT) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKBOOT;
       } else PapierText = DrawText(texts.BOOTBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -2549,17 +2400,14 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTROHR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
-        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      if (tile.Objekt === -1 &&
+        !tile.object &&
+        (tile.type === tileTypes.FLAT)) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKROHR;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === ROHR)) {
+      } else if (tile.construction?.type === constructionTypes.PIPE) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKROHR;
       } else PapierText = DrawText(texts.ROHRBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -2575,17 +2423,14 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTSOS].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
-        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      if (tile.Objekt === -1 &&
+        !tile.object &&
+        (tile.type === tileTypes.FLAT)) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKSOS;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === SOS)) {
+      } else if (tile.construction?.type === constructionTypes.SOS) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKSOS;
       } else PapierText = DrawText(texts.SOSBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -2601,17 +2446,14 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
+      if (isNormalTree(tile.object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS1;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS1)) {
+      } else if (tile.construction?.type === constructionTypes.LADDER) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKHAUS1;
       } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
     }
@@ -2627,19 +2469,16 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
+      if (isNormalTree(tile.object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE)
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE)
         PapierText = DrawText(texts.NICHTOHNELEITER, TXTPAPIER, 1);
-      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS1) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS2;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS2)) {
+      } else if (tile.construction?.type === constructionTypes.PLATFORM) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKHAUS2;
       } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
     }
@@ -2655,20 +2494,16 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (isNormalTree(gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object))
+      if (isNormalTree(tile.object))
         PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object?.sprite === spriteTypes.BIG_TREE ||
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS1)
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE || tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER)
         PapierText = DrawText(texts.NICHTOHNEPLATTFORM, TXTPAPIER, 1);
-      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS2) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS3;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === HAUS3)) {
+      } else if (tile.construction?.type === constructionTypes.TREE_HOUSE) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKHAUS3;
       } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
     }
@@ -2684,17 +2519,14 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTFEUERST].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 &&
-        !gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].type === tileTypes.FLAT)) {
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].AkNummer = 0;
+      if (tile.Objekt === -1 &&
+        !tile.object &&
+        (tile.type === tileTypes.FLAT)) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKFEUERSTELLE;
-      } else if ((Bmp[BUTTWEITER].Phase !== -1) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === FEUERSTELLE)) {
+      } else if (tile.construction?.type === constructionTypes.FIREPLACE) {
         Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.storedPosition = { ...gameData.guy.position };
-        goTo(gameData, gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].GPosAlt);
+        continueConstruction(gameData)
         Guy.Aktion = AKFEUERSTELLE;
       } else PapierText = DrawText(texts.FEUERSTELLENBEDINGUNGEN, TXTPAPIER, 1);
     }
@@ -2704,8 +2536,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTDESTROY].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if ((gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt >= FELD) &&
-        (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt <= FEUERSTELLE)) {
+      if (isDestroyable(tile.object)) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKDESTROY;
       } else PapierText = DrawText(texts.KEINBAUWERK, TXTPAPIER, 1);
@@ -2790,8 +2621,6 @@ const startGame = async (newGame) => {
         tile.ObPos = { x: 0, y: 0 };
         tile.Reverse = false;
         tile.Phase = -1;
-        tile.AkNummer = 0;
-        tile.GPosAlt = { x: 0, y: 0 };
         tile.Timer = 0;
       }
     }
@@ -2927,7 +2756,7 @@ const ZeigeAbspann = () => {
           (100 * Math.sin(pi / MAXY * (Bmp[AbspannListe[AbspannNr][z].Bild].rcDes.top +
             Bmp[AbspannListe[AbspannNr][z].Bild].Hoehe / 2))));
     }
-  } 
+  }
   else if (AbspannZustand === 1) {
     drawSprite(guySpritesForAbspann[Math.floor(AbspannNr / 10)], AbspannNr % 10, MAXX / 2, MAXY / 2 + 50, primaryCanvasContext, 10)
   }
@@ -3109,8 +2938,7 @@ const ZeichneObjekte = () => {
       //Der Guy ist immer vor diesen Objekten
       if (isOnGround(gameData.terrain[x][y].object)) {
         //this happens in drawObject now
-      } else if (Objekt > -1 &&
-        (Objekt <= SCHLEUSE6 || Objekt === FELD || Objekt === ROHR || Objekt === SOS)) {
+      } else if (Objekt > -1 && Objekt <= SCHLEUSE6) {
         //Sound abspielen
         if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
           ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
@@ -3146,7 +2974,7 @@ const ZeichneObjekte = () => {
             gameData.terrain[x][y].position.y + object.y - gameData.camera.y,
             primaryCanvasContext
           );
-        } else if (Objekt === FEUER || Objekt === BAUM1DOWN || Objekt === BAUM2DOWN || Objekt === BAUM3DOWN || Objekt === BAUM4DOWN || Objekt >= ZELT) {
+        } else if (Objekt === FEUER || Objekt === BAUM1DOWN || Objekt === BAUM2DOWN || Objekt === BAUM3DOWN || Objekt === BAUM4DOWN) {
 
           //Sound abspielen
           if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
@@ -3621,11 +3449,11 @@ const CheckSpzButton = () => {
   const tileNorth = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1];
   const tileEast = gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y];
   const tileSouth = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1];
-  if (tile.Objekt >= FELD && tile.Objekt <= FEUERSTELLE && tile.Phase >= Bmp[tile.Objekt].Anzahl && Bmp[BUTTSTOP].Phase === -1) {
+  if (tile.construction && Bmp[BUTTSTOP].Phase === -1) {
     if (Bmp[BUTTWEITER].Phase === -1) Bmp[BUTTWEITER].Phase = 0;
   } else Bmp[BUTTWEITER].Phase = -1;
 
-  if (Bmp[BUTTSTOP].Phase === -1 && ((tile.Objekt === BOOT && tile.Phase < Bmp[tile.Objekt].Anzahl) ||
+  if (Bmp[BUTTSTOP].Phase === -1 && (isUsableBoat(tile) ||
     (isOnSea(gameData) &&
       ((tileWest.ground !== grounds.SEA && tileWest.Objekt === -1 && !tileWest.object) ||
         (tileNorth.ground !== grounds.SEA && tileNorth.Objekt === -1 && !tileNorth.object) ||
@@ -3643,10 +3471,10 @@ const CheckRohstoff = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   Benoetigt = 0;
-  Object.entries(constructionItems[tile.construction.type]).forEach(([, amount]) => Benoetigt += amount);
+  Object.entries(constructions[tile.construction.type].items).forEach(([, amount]) => Benoetigt += amount);
 
-  GebrauchtTmp = Benoetigt / Bmp[tile.Objekt].AkAnzahl;
-  Gebraucht = Math.floor(GebrauchtTmp * tile.AkNummer) - Math.floor(GebrauchtTmp * (tile.AkNummer - 1));
+  GebrauchtTmp = Benoetigt / constructions[tile.construction.type].actionSteps;
+  Gebraucht = Math.floor(GebrauchtTmp * (tile.construction.actionStep + 1)) - Math.floor(GebrauchtTmp * tile.construction.actionStep);
   if (Gebraucht === 0) return true;
 
   while (1) {
@@ -3926,10 +3754,7 @@ const AkAbbruch = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-      tile.GPosAlt.x = gameData.guy.position.x;
-      tile.GPosAlt.y = gameData.guy.position.y;
-      goToCenterOfTile(gameData);
+      pauseConstruction(gameData);
       break;
     case 2:
       Guy.Aktion = AKNICHTS;
@@ -3949,8 +3774,8 @@ const AkDestroy = () => {
   switch (Guy.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + Bmp[tile.Objekt].Breite / 2 + 4,
-        y: tile.ObPos.y
+        x: tile.object.x + 4,
+        y: tile.object.y + 2
       });
       break;
     case 2:
@@ -3968,17 +3793,18 @@ const AkDestroy = () => {
       AddTime(0, 5);
       break;
     case 6:
-      i = tile.Objekt;
-
-      tile.Objekt = -1;
-      tile.ObPos.x = 0;
-      tile.ObPos.y = 0;
-      tile.Phase = -1;
+      const object = tile.object;
       tile.object = tile.originalObject;
       tile.originalObject = null
-      tile.AkNummer = 0;
-      if (i === SOS) Chance -= 0.1;
-      else if (i === ROHR) FillRohr();
+      if (tile.construction) {
+        tile.construction = null;
+      } else {
+        if (object.sprite === spriteTypes.SOS) {
+          Chance -= 0.1;
+        } else if (object.sprite === spriteTypes.PIPE) {
+          FillRohr();
+        }
+      }
       goToStoredPosition(gameData);
       break;
     case 7:
@@ -4064,7 +3890,7 @@ const AkSuchen = () => {
             } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
             break;
         }
-      } else if (isNormalTree(tile.object) || tile.object?.sprite === spriteTypes.BIG_TREE || (tile.Objekt >= HAUS1 && tile.Objekt <= HAUS3)) {
+      } else if (isNormalTree(tile.object) || isBigTree(tile.object)) {
         i = Math.floor(Math.random() * 3);
         switch (i) {
           case 0:
@@ -4126,11 +3952,6 @@ const AkEssen = () => {
     case 1:
       if (tile.object) {
         goToObject(gameData, 0, 2);
-      } else {
-        goToOnTile(gameData, {
-          x: tile.ObPos.x,
-          y: tile.ObPos.y + 2
-        });
       }
       break;
     case 2:
@@ -4141,11 +3962,7 @@ const AkEssen = () => {
       AddTime(0, 2);
       break;
     case 4:
-      if (tile.object) {
-        tile.object.frame = 0;
-      } else {
-        tile.Phase = 0;
-      }
+      tile.object.frame = 0;
       goToStoredPosition(gameData);
       break;
     case 5:
@@ -4513,8 +4330,8 @@ const AkAnzuenden = () => {
     case 1:
       const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
       goToOnTile(gameData, {
-        x: tile.ObPos.x - 10,
-        y: tile.ObPos.y + 1
+        x: tile.object.x - 10,
+        y: tile.object.y + 1
       });
       break;
     case 2:
@@ -4598,68 +4415,63 @@ const AkSchatz = () => {
 const AkFeld = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    startConstruction(tile, constructionTypes.FIELD);
-    tile.Objekt = FELD;
-    tile.ObPos.x = Bmp[FELD].rcDes.left;
-    tile.ObPos.y = Bmp[FELD].rcDes.top;
-    tile.Phase = Bmp[FELD].Anzahl;
+  if (!tile.construction) {
+    const center = tileEdges[tile.type].center;
+    startConstruction(gameData, constructionTypes.FIELD, center.x, center.y);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
+  tile.construction.actionStep++;
 
-  switch (tile.AkNummer) {
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 22,
-        y: tile.ObPos.y + 23
+        x: tile.object.x + 6,
+        y: tile.object.y + 7
       });
       break;
     case 4:
-      tile.Phase = 4;
+      construct(tile, 1);
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 25,
-        y: tile.ObPos.y + 21
+        x: tile.object.x + 9,
+        y: tile.object.y + 5
       });
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 7:
-      tile.Phase = 5;
+      construct(tile, 2);
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 28,
-        y: tile.ObPos.y + 19
+        x: tile.object.x + 12,
+        y: tile.object.y + 3
       });
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 10:
-      tile.Phase = 6;
+      construct(tile, 3);
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 31,
-        y: tile.ObPos.y + 17
+        x: tile.object.x + 15,
+        y: tile.object.y + 1
       });
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 13:
-      tile.Phase = 7;
+      construct(tile, 4);
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 34,
-        y: tile.ObPos.y + 15
+        x: tile.object.x + 18,
+        y: tile.object.y - 1
       });
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
       break;
     case 16:
-      tile.Phase = 8;
+      construct(tile, 5);
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 36,
-        y: tile.ObPos.y + 13
+        x: tile.object.x + 20,
+        y: tile.object.y - 3
       });
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 30);
@@ -4680,16 +4492,13 @@ const AkFeld = () => {
       break;
     case 19:
       goToStoredPosition(gameData);
-      tile.Objekt = FELD;
-      tile.ObPos.x = Bmp[FELD].rcDes.left;
-      tile.ObPos.y = Bmp[FELD].rcDes.top;
       break;
     case 20:
-      tile.Phase = 0;
+      finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (Bmp[FELD].First) {
+      if (!gameData.constructionHints[constructionTypes.FIELD]) {
         PapierText = DrawText(texts.FELDHILFE, TXTPAPIER, 1);
-        Bmp[FELD].First = false;
+        gameData.constructionHints[constructionTypes.FIELD] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -4697,15 +4506,14 @@ const AkFeld = () => {
 }
 
 const AkTagEnde = () => {
-  const alreadyAtSleepPosition = gameData.guy.sprite === spriteTypes.GUY_SLEEPING_TENT || 
+  const alreadyAtSleepPosition = gameData.guy.sprite === spriteTypes.GUY_SLEEPING_TENT ||
     gameData.guy.sprite === spriteTypes.GUY_SLEEPING ||
-    gameData.guy.sprite === spriteTypes.GUY_SLEEPING_HOUSE || 
+    gameData.guy.sprite === spriteTypes.GUY_SLEEPING_HOUSE ||
     isOnSea(gameData);
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];  
-  const tent = tile.Objekt === ZELT && tile.Phase < Bmp[tile.Objekt].Anzahl;
-  const house = tile.Objekt === HAUS3 && tile.Phase < Bmp[tile.Objekt].Anzahl;
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tent = isUsableTent(tile);
+  const house = isUsableTreeHouse(tile);
 
-  let Erg;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
@@ -4715,61 +4523,30 @@ const AkTagEnde = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       Bmp[BUTTSTOP].Phase = -1;
       if (alreadyAtSleepPosition) break;
-      tile.GPosAlt.x = gameData.guy.position.x;
-      tile.GPosAlt.y = gameData.guy.position.y;
-      goToInitialPosition();
+      pauseConstruction(gameData);
       break;
     case 2:
       Stunden = 12;
       Minuten = 0;
       if (alreadyAtSleepPosition) break;
-      //Wohnbare Objekte in der Umgebung suchen
-      Erg = {
-        x: -1,
-        y: -1
-      };
-      if (tile.Objekt === ZELT || tile.Objekt === HAUS3) {
-        Erg.x = gameData.guy.tile.x;
-        Erg.y = gameData.guy.tile.y;
-      } else if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].Objekt === HAUS3) {
-        Erg.x = gameData.guy.tile.x - 1;
-        Erg.y = gameData.guy.tile.y;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].Objekt === HAUS3) {
-        Erg.x = gameData.guy.tile.x;
-        Erg.y = gameData.guy.tile.y - 1;
-      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].Objekt === HAUS3) {
-        Erg.x = gameData.guy.tile.x + 1;
-        Erg.y = gameData.guy.tile.y;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].Objekt === HAUS3) {
-        Erg.x = gameData.guy.tile.x;
-        Erg.y = gameData.guy.tile.y + 1;
-      } else if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].Objekt === ZELT) {
-        Erg.x = gameData.guy.tile.x - 1;
-        Erg.y = gameData.guy.tile.y;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].Objekt === ZELT) {
-        Erg.x = gameData.guy.tile.x;
-        Erg.y = gameData.guy.tile.y - 1;
-      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].Objekt === ZELT) {
-        Erg.x = gameData.guy.tile.x + 1;
-        Erg.y = gameData.guy.tile.y;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].Objekt === ZELT) {
-        Erg.x = gameData.guy.tile.x;
-        Erg.y = gameData.guy.tile.y + 1;
-      }
-      if ((Erg.x !== -1) && (Erg.y !== -1)) {
-        gameData.guy.tile.x = Erg.x;
-        gameData.guy.tile.y = Erg.y;
-        const tile = gameData.terrain[Erg.x][Erg.y];
-        if ((tile.Objekt === ZELT) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+      const neighborWithHouse = findNeighbor(gameData, isUsableTreeHouse, false);
+      const neighborWithTent = findNeighbor(gameData, isUsableTent, false);
+      const neighbor = neighborWithHouse || neighborWithTent;
+      if (neighbor) {
+        gameData.guy.tile.x = neighbor.x;
+        gameData.guy.tile.y = neighbor.y;
+        const tile = gameData.terrain[neighbor.x][neighbor.y];
+        if (neighborWithHouse) {
           goToOnTile(gameData, {
-            x: tile.ObPos.x + 3,
-            y: tile.ObPos.y + 20
+            x: tile.object.x + 1,
+            y: tile.object.y + 1
           });
-        else if ((tile.Objekt === HAUS3) && (tile.Phase < Bmp[tile.Objekt].Anzahl))
+        } else {
           goToOnTile(gameData, {
-            x: tile.ObPos.x,
-            y: tile.ObPos.y + 1
+            x: tile.object.x + 7,
+            y: tile.object.y
           });
+        }
       }
       break;
     case 3:
@@ -4978,24 +4755,19 @@ const AkGerettet = () => {
 
 const AkZelt = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Objekt = ZELT;
-    startConstruction(tile, constructionTypes.TENT);
-    tile.Phase = Bmp[tile.Objekt].Anzahl;
-    tile.ObPos.x = Bmp[ZELT].rcDes.left;
-    tile.ObPos.y = Bmp[ZELT].rcDes.top;
+  if (!tile.construction) {
+    startConstruction(gameData, constructionTypes.TENT, 28, 22);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 11,
-        y: tile.ObPos.y - 8
+        x: tile.object.x + 9,
+        y: tile.object.y - 4
       });
       break;
     case 2:
@@ -5007,10 +4779,10 @@ const AkZelt = () => {
       AddTime(0, 15);
       break;
     case 4:
-      tile.Phase = 2;
+      construct(tile, 1);
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 20,
-        y: tile.ObPos.y
+        x: tile.object.x + 18,
+        y: tile.object.y + 4
       });
       break;
     case 5:
@@ -5018,8 +4790,8 @@ const AkZelt = () => {
       break;
     case 6:
       goToOnTile(gameData, {
-        x: tile.ObPos.x - 8,
-        y: tile.ObPos.y
+        x: tile.object.x - 10,
+        y: tile.object.y + 4
       });
       break;
     case 7:
@@ -5029,36 +4801,36 @@ const AkZelt = () => {
       AddTime(0, 15);
       break;
     case 9:
-      tile.Phase = 3;
+      construct(tile, 2);
       goToStoredPosition(gameData);
       break;
     case 10:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 20,
-        y: tile.ObPos.y
+        x: tile.object.x + 18,
+        y: tile.object.y + 4
       });
       break;
     case 11:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 11,
-        y: tile.ObPos.y - 8
+        x: tile.object.x + 9,
+        y: tile.object.y - 4
       });
       break;
     case 14:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 20,
-        y: tile.ObPos.y
+        x: tile.object.x + 18,
+        y: tile.object.y + 4
       });
       break;
     case 15:
       goToStoredPosition(gameData);
       break;
     case 16:
-      tile.Phase = 0;
+      finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (Bmp[ZELT].First) {
+      if (!gameData.constructionHints[constructionTypes.TENT]) {
         PapierText = DrawText(texts.ZELTHILFE, TXTPAPIER, 1);
-        Bmp[ZELT].First = false;
+        gameData.constructionHints[constructionTypes.TENT] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -5067,37 +4839,32 @@ const AkZelt = () => {
 
 const AkBoot = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Objekt = BOOT;
-    startConstruction(tile, constructionTypes.BOAT);
-    tile.Phase = Bmp[BOOT].Anzahl;
-    tile.ObPos.x = Bmp[BOOT].rcDes.left;
-    tile.ObPos.y = Bmp[BOOT].rcDes.top;
+  if (!tile.construction) {
+    startConstruction(gameData, constructionTypes.BOAT, 14, 20);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 30,
-        y: tile.ObPos.y + 21
+        x: tile.object.x + 30,
+        y: tile.object.y + 21
       });
       break;
     case 2:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 29,
-        y: tile.ObPos.y + 20
+        x: tile.object.x + 29,
+        y: tile.object.y + 20
       });
     case 3:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 28,
-        y: tile.ObPos.y + 19
+        x: tile.object.x + 28,
+        y: tile.object.y + 19
       });
-      tile.Phase = (Bmp[BOOT].Anzahl + 1);
+      tile.object.frame++
       break;
     case 4:
     case 5:
@@ -5115,43 +4882,46 @@ const AkBoot = () => {
       break;
     case 7:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 22,
-        y: tile.ObPos.y + 16
+        x: tile.object.x + 22,
+        y: tile.object.y + 16
       });
-      tile.Phase = (Bmp[BOOT].Anzahl + 2);
+      tile.object.frame++
       break;
     case 11:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 14,
-        y: tile.ObPos.y + 11
+        x: tile.object.x + 14,
+        y: tile.object.y + 11
       });
-      tile.Phase = (Bmp[BOOT].Anzahl + 3);
+      tile.object.frame++
       break;
     case 15:
       goToStoredPosition(gameData);
       break;
     case 16:
+      finishConstruction(tile);
       if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) {
-        tile.Phase = 0;
-        tile.ObPos.x = 0;
-        tile.ObPos.y = 10;
+        const west = tileEdges[tile.type].west;
+        tile.object.x = west.x;
+        tile.object.y = west.y;
       } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) {
-        tile.Phase = 1;
-        tile.ObPos.x = 25;
-        tile.ObPos.y = 10;
+        tile.object.frame = 1;
+        const north = tileEdges[tile.type].north;
+        tile.object.x = north.x;
+        tile.object.y = north.y;
       } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) {
-        tile.Phase = 0;
-        tile.ObPos.x = 30;
-        tile.ObPos.y = 27;
+        const east = tileEdges[tile.type].east;
+        tile.object.x = east.x;
+        tile.object.y = east.y;
       } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA) {
-        tile.Phase = 1;
-        tile.ObPos.x = 0;
-        tile.ObPos.y = 28;
+        tile.object.frame = 1;
+        const south = tileEdges[tile.type].south;
+        tile.object.x = south.x;
+        tile.object.y = south.y;
       }
       Bmp[BUTTSTOP].Phase = -1;
-      if (Bmp[BOOT].First) {
+      if (!gameData.constructionHints[constructionTypes.BOAT]) {
         PapierText = DrawText(texts.BOOTHILFE, TXTPAPIER, 1);
-        Bmp[BOOT].First = false;
+        gameData.constructionHints[constructionTypes.BOAT] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -5160,38 +4930,34 @@ const AkBoot = () => {
 
 const AkRohr = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Objekt = ROHR;
-    startConstruction(tile, constructionTypes.PIPE);
-    tile.Phase = Bmp[ROHR].Anzahl;
-    tile.ObPos.x = Bmp[ROHR].rcDes.left;
-    tile.ObPos.y = Bmp[ROHR].rcDes.top;
+  if (!tile.construction) {
+    const center = tileEdges[tile.type].center;
+    startConstruction(gameData, constructionTypes.PIPE, center.x, center.y);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 30,
-        y: tile.ObPos.y + 21
+        x: tile.object.x + 30,
+        y: tile.object.y + 21
       });
       break;
     case 2:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 29,
-        y: tile.ObPos.y + 20
+        x: tile.object.x + 29,
+        y: tile.object.y + 20
       });
       break;
     case 3:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 28,
-        y: tile.ObPos.y + 15
+        x: tile.object.x + 28,
+        y: tile.object.y + 15
       });
-      tile.Phase = (Bmp[ROHR].Anzahl + 1);
+      construct(tile, 1);
       break;
     case 4:
     case 5:
@@ -5217,21 +4983,21 @@ const AkRohr = () => {
       break;
     case 10:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 17,
-        y: tile.ObPos.y + 13
+        x: tile.object.x + 17,
+        y: tile.object.y + 13
       });
-      tile.Phase = (Bmp[ROHR].Anzahl + 2);
+      construct(tile, 2);
       break;
     case 17:
       goToStoredPosition(gameData);
       break;
     case 18:
-      tile.Phase = 0;
+      finishConstruction(tile);
       FillRohr();
       Bmp[BUTTSTOP].Phase = -1;
-      if (Bmp[ROHR].First) {
+      if (!gameData.constructionHints[constructionTypes.PIPE]) {
         PapierText = DrawText(texts.ROHRHILFE, TXTPAPIER, 1);
-        Bmp[ROHR].First = false;
+        gameData.constructionHints[constructionTypes.PIPE] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -5240,60 +5006,56 @@ const AkRohr = () => {
 
 const AkSOS = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Objekt = SOS;
-    startConstruction(tile, constructionTypes.SOS);
-    tile.Phase = Bmp[SOS].Anzahl;
-    tile.ObPos.x = Bmp[SOS].rcDes.left;
-    tile.ObPos.y = Bmp[SOS].rcDes.top;
+  if (!tile.construction) {
+    const center = tileEdges[tile.type].center;
+    startConstruction(gameData, constructionTypes.SOS, center.x, center.y);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 4,
-        y: tile.ObPos.y + 13
+        x: tile.object.x + 4,
+        y: tile.object.y + 13
       });
       break;
     case 4:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 12,
-        y: tile.ObPos.y + 17
+        x: tile.object.x + 12,
+        y: tile.object.y + 17
       });
-      tile.Phase = (Bmp[SOS].Anzahl + 1);
+      construct(tile, 1);
       break;
     case 7:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 12,
-        y: tile.ObPos.y + 9
+        x: tile.object.x + 12,
+        y: tile.object.y + 9
       });
-      tile.Phase = (Bmp[SOS].Anzahl + 2);
+      construct(tile, 2);
       break;
     case 10:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 19,
-        y: tile.ObPos.y + 12
+        x: tile.object.x + 19,
+        y: tile.object.y + 12
       });
-      tile.Phase = (Bmp[SOS].Anzahl + 3);
+      construct(tile, 3);
       break;
     case 13:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 21,
-        y: tile.ObPos.y + 5
+        x: tile.object.x + 21,
+        y: tile.object.y + 5
       });
-      tile.Phase = (Bmp[SOS].Anzahl + 4);
+      construct(tile, 4);
       break;
     case 16:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 28,
-        y: tile.ObPos.y + 8
+        x: tile.object.x + 28,
+        y: tile.object.y + 8
       });
-      tile.Phase = (Bmp[SOS].Anzahl + 5);
+      construct(tile, 5);
       break;
     case 2:
     case 5:
@@ -5319,14 +5081,14 @@ const AkSOS = () => {
       goToStoredPosition(gameData);
       break;
     case 20:
-      tile.Phase = 0;
+      finishConstruction(tile);
       if ((tile.ground === grounds.GRASS) || (tile.ground === grounds.WETLAND))
         Chance += 1;
       else Chance += 2; //Dürfte nur noch der Strand übrig sein
       Bmp[BUTTSTOP].Phase = -1;
-      if (Bmp[SOS].First) {
+      if (!gameData.constructionHints[constructionTypes.SOS]) {
         PapierText = DrawText(texts.SOSHILFE, TXTPAPIER, 1);
-        Bmp[SOS].First = false;
+        gameData.constructionHints[constructionTypes.SOS] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -5335,24 +5097,20 @@ const AkSOS = () => {
 
 const AkFeuerstelle = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    tile.Objekt = FEUERSTELLE;
-    startConstruction(tile, constructionTypes.FIREPLACE);
-    tile.Phase = Bmp[FEUERSTELLE].Anzahl;
-    tile.ObPos.x = Bmp[FEUERSTELLE].rcDes.left;
-    tile.ObPos.y = Bmp[FEUERSTELLE].rcDes.top;
+  if (!tile.construction) {
+    const center = tileEdges[tile.type].center;
+    startConstruction(gameData, constructionTypes.FIREPLACE, center.x, center.y);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 4,
-        y: tile.ObPos.y + 16
+        x: tile.object.x + 4,
+        y: tile.object.y + 16
       });
       break;
     case 2:
@@ -5364,12 +5122,12 @@ const AkFeuerstelle = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
-      tile.Phase = (Bmp[FEUERSTELLE].Anzahl + 1);
+      construct(tile, 1);
       break;
     case 4:
       goToOnTile(gameData, {
-        x: tile.ObPos.x,
-        y: tile.ObPos.y + 15
+        x: tile.object.x,
+        y: tile.object.y + 15
       });
       break;
     case 5:
@@ -5378,18 +5136,19 @@ const AkFeuerstelle = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_NORTH);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
-      if (tile.AkNummer !== 5)
-        tile.Phase = (Bmp[FEUERSTELLE].Anzahl + tile.AkNummer - 4);
+      if (tile.construction.actionStep !== 5) {
+        construct(tile, 2);
+      }
       break;
     case 8:
       goToStoredPosition(gameData);
       break;
     case 9:
-      tile.Phase = 0;
+      finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (Bmp[FEUERSTELLE].First) {
+      if (!gameData.constructionHints[constructionTypes.FIREPLACE]) {
         PapierText = DrawText(texts.FEUERSTELLEHILFE, TXTPAPIER, 1);
-        Bmp[FEUERSTELLE].First = false;
+        gameData.constructionHints[constructionTypes.FIREPLACE] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -5399,26 +5158,19 @@ const AkFeuerstelle = () => {
 const AkHaus1 = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    startConstruction(tile, constructionTypes.LADDER);
-    tile.Phase = Bmp[HAUS1].Anzahl;
-    tile.originalObject = tile.object;
-    tile.object = null;
-    tile.Objekt = HAUS1;
-    tile.ObPos.x = tile.originalObject.x;
-    tile.ObPos.y = tile.originalObject.y;
+  if (!tile.construction) {
+    startConstruction(gameData, constructionTypes.LADDER, tile.object.x, tile.object.y);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+  
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x - 3,
-        y: tile.ObPos.y + 1
+        x: tile.object.x - 3,
+        y: tile.object.y + 1
       });
       break;
     case 2:
@@ -5436,7 +5188,7 @@ const AkHaus1 = () => {
     case 9:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS1].Anzahl + 1);
+      construct(tile, 1);
       changeWaterAndFood(gameData, -0.5, 0.5);
       AddTime(0, 1);
       break;
@@ -5446,7 +5198,7 @@ const AkHaus1 = () => {
     case 13:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS1].Anzahl + 2);
+      construct(tile, 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -5456,7 +5208,7 @@ const AkHaus1 = () => {
     case 17:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS1].Anzahl + 3);
+      construct(tile, 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -5464,7 +5216,7 @@ const AkHaus1 = () => {
       goToStoredPosition(gameData);
       break;
     case 19:
-      tile.Phase = 0;
+      finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       Guy.Aktion = AKNICHTS;
       break;
@@ -5473,22 +5225,19 @@ const AkHaus1 = () => {
 
 const AkHaus2 = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    startConstruction(tile, constructionTypes.PLATFORM);
-    tile.Phase = Bmp[HAUS2].Anzahl;
-    tile.Objekt = HAUS2;
+  if (!tile.construction) {
+    startConstruction(gameData, constructionTypes.PLATFORM, tile.object.x, tile.object.y);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+  
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x,
-        y: tile.ObPos.y + 1
+        x: tile.object.x,
+        y: tile.object.y + 1
       });
       break;
     case 2:
@@ -5511,7 +5260,7 @@ const AkHaus2 = () => {
     case 10:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS2].Anzahl + 1);
+      construct(tile, 1);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -5521,7 +5270,7 @@ const AkHaus2 = () => {
     case 14:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS2].Anzahl + 2);
+      construct(tile, 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -5531,13 +5280,13 @@ const AkHaus2 = () => {
     case 18:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS2].Anzahl + 3);
+      construct(tile, 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 19:
       startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
-      tile.Phase = (Bmp[HAUS2].Anzahl + 4);
+      construct(tile, 4);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
@@ -5545,7 +5294,7 @@ const AkHaus2 = () => {
       goToStoredPosition(gameData);
       break;
     case 21:
-      tile.Phase = 0;
+      finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       Guy.Aktion = AKNICHTS;
       break;
@@ -5554,22 +5303,19 @@ const AkHaus2 = () => {
 
 const AkHaus3 = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  if (tile.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-    startConstruction(tile, constructionTypes.TREE_HOUSE);
-    tile.Phase = Bmp[HAUS3].Anzahl;
-    tile.Objekt = HAUS3;
+  if (!tile.construction) {
+    startConstruction(gameData, constructionTypes.TREE_HOUSE, tile.object.x, tile.object.y);
   }
-  tile.AkNummer++;
   if (!CheckRohstoff()) {
-    tile.AkNummer--;
     return;
   }
-  switch (tile.AkNummer) {
+  tile.construction.actionStep++;
+
+  switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x,
-        y: tile.ObPos.y + 1
+        x: tile.object.x,
+        y: tile.object.y + 1
       });
       break;
     case 2:
@@ -5592,7 +5338,7 @@ const AkHaus3 = () => {
     case 10:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS3].Anzahl + 1);
+      construct(tile, 1);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -5602,7 +5348,7 @@ const AkHaus3 = () => {
     case 14:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS3].Anzahl + 2);
+      construct(tile, 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
@@ -5612,13 +5358,13 @@ const AkHaus3 = () => {
     case 18:
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      tile.Phase = (Bmp[HAUS3].Anzahl + 3);
+      construct(tile, 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
       AddTime(0, 1);
       break;
     case 19:
       startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
-      tile.Phase = (Bmp[HAUS3].Anzahl + 4);
+      construct(tile, 4);
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 1);
       break;
@@ -5626,11 +5372,11 @@ const AkHaus3 = () => {
       goToStoredPosition(gameData);
       break;
     case 21:
-      tile.Phase = 0;
+      finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (Bmp[HAUS3].First) {
+      if (!gameData.constructionHints[constructionTypes.TREE_HOUSE]) {
         PapierText = DrawText(texts.HAUS3HILFE, TXTPAPIER, 1);
-        Bmp[HAUS3].First = false;
+        gameData.constructionHints[constructionTypes.TREE_HOUSE] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -5639,8 +5385,8 @@ const AkHaus3 = () => {
 
 const AkSchlafen = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  const tent = (tile.Objekt === ZELT && tile.Phase < Bmp[tile.Objekt].Anzahl);
-  const house = (tile.Objekt === HAUS3 && tile.Phase < Bmp[tile.Objekt].Anzahl);
+  const tent = isUsableTent(tile);
+  const house = isUsableTreeHouse(tile);
   if (Guy.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
@@ -5649,13 +5395,13 @@ const AkSchlafen = () => {
     case 1:
       if (tent)
         goToOnTile(gameData, {
-          x: tile.ObPos.x - 7,
-          y: tile.ObPos.y
+          x: tile.object.x - 7,
+          y: tile.object.y
         });
       else if (house)
         goToOnTile(gameData, {
-          x: tile.ObPos.x + 1,
-          y: tile.ObPos.y + 1
+          x: tile.object.x + 1,
+          y: tile.object.y + 1
         });
       break;
     case 2:
@@ -5709,13 +5455,13 @@ const AkAblegen = () => {
   switch (Guy.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.ObPos.x + 14,
-        y: tile.ObPos.y + 11
+        x: tile.object.x + 14,
+        y: tile.object.y + 11
       });
       break;
     case 2:
-      gameData.guy.position.x = tile.position.x + tile.ObPos.x;
-      gameData.guy.position.y = tile.position.y + tile.ObPos.y;
+      gameData.guy.position.x = tile.position.x + tile.object.x;
+      gameData.guy.position.y = tile.position.y + tile.object.y;
       tile.Objekt = -1;
       if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x--;
       else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) gameData.guy.tile.y--;
@@ -5746,27 +5492,17 @@ const AkAnlegen = () => {
       }
       break;
     case 2:
-      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground !== grounds.SEA) {
-        gameData.guy.tile.x--;
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 0;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground !== grounds.SEA) {
-        gameData.guy.tile.y--;
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 1;
-      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground !== grounds.SEA) {
-        gameData.guy.tile.x++;
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 0;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground !== grounds.SEA) {
-        gameData.guy.tile.y++;
-        gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Phase = 1;
-      }
+      const neighbor = findNeighbor(gameData, (tile) => tile.ground !== grounds.SEA);
 
-      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-      tile.Objekt = BOOT;
-      tile.AkNummer = Bmp[BOOT].AkAnzahl;
+      tile.object = {
+        sprite: spriteTypes.BOAT,
+        x: Math.round(gameData.guy.position.x - tile.position.x),
+        y: Math.round(gameData.guy.position.y - tile.position.y),
+        frame: (neighbor.direction === directions.WEST || neighbor.direction === directions.EAST) ? 0 : 1
+      };
 
-      tile.ObPos.x = Math.floor(gameData.guy.position.x - tile.position.x);
-      tile.ObPos.y = Math.floor(gameData.guy.position.y - tile.position.y);
-
+      gameData.guy.tile.x = neighbor.x;
+      gameData.guy.tile.y = neighbor.y;
       goToCenterOfTile(gameData);
       break;
     case 3:
@@ -5780,24 +5516,6 @@ const AkAnlegen = () => {
 const Fade = (intensity, smooth) => {
   primaryCanvasContext.canvas.style.transition = `${smooth}s filter ease-in-out`;
   primaryCanvasContext.canvas.style.filter = `brightness(${intensity}%) saturate(${intensity}%)`;
-}
-
-const CheckRohr = (x, y) => {
-  gameData.terrain[x][y].Phase = 1;
-  if (gameData.terrain[x][y].ground === grounds.GRASS) gameData.terrain[x][y].ground = grounds.WETLAND;
-  if (gameData.terrain[x - 1][y].ground === grounds.GRASS) gameData.terrain[x - 1][y].ground = grounds.WETLAND;
-  if (gameData.terrain[x - 1][y - 1].ground === grounds.GRASS) gameData.terrain[x - 1][y - 1].ground = grounds.WETLAND;
-  if (gameData.terrain[x][y - 1].ground === grounds.GRASS) gameData.terrain[x][y - 1].ground = grounds.WETLAND;
-  if (gameData.terrain[x + 1][y - 1].ground === grounds.GRASS) gameData.terrain[x + 1][y - 1].ground = grounds.WETLAND;
-  if (gameData.terrain[x + 1][y].ground === grounds.GRASS) gameData.terrain[x + 1][y].ground = grounds.WETLAND;
-  if (gameData.terrain[x + 1][y + 1].ground === grounds.GRASS) gameData.terrain[x + 1][y + 1].ground = grounds.WETLAND;
-  if (gameData.terrain[x][y + 1].ground === grounds.GRASS) gameData.terrain[x][y + 1].ground = grounds.WETLAND;
-  if (gameData.terrain[x - 1][y + 1].ground === grounds.GRASS) gameData.terrain[x - 1][y + 1].ground = grounds.WETLAND;
-
-  if ((gameData.terrain[x - 1][y].Objekt === ROHR) && (gameData.terrain[x - 1][y].Phase === 0)) CheckRohr(x - 1, y);
-  if ((gameData.terrain[x][y - 1].Objekt === ROHR) && (gameData.terrain[x][y - 1].Phase === 0)) CheckRohr(x, y - 1);
-  if ((gameData.terrain[x + 1][y].Objekt === ROHR) && (gameData.terrain[x + 1][y].Phase === 0)) CheckRohr(x + 1, y);
-  if ((gameData.terrain[x][y + 1].Objekt === ROHR) && (gameData.terrain[x][y + 1].Phase === 0)) CheckRohr(x, y + 1);
 }
 
 const isStartRohr = (x, y) => {
@@ -5843,33 +5561,23 @@ const FillRohr = () => {
 
   for (y = 0; y < MAXYKACH; y++) {
     for (x = 0; x < MAXXKACH; x++) {
-      if (gameData.terrain[x][y].Objekt === ROHR && gameData.terrain[x][y].Phase < Bmp[ROHR].Anzahl)
-        gameData.terrain[x][y].Phase = 0;
-      if (gameData.terrain[x][y].ground === grounds.WETLAND) gameData.terrain[x][y].ground = grounds.GRASS;
-      if (gameData.terrain[x][y].Objekt >= SCHLEUSE1 && gameData.terrain[x][y].Objekt <= SCHLEUSE6) {
-        gameData.terrain[x][y].originalObject.frame = gameData.terrain[x][y].Phase;
-        gameData.terrain[x][y].object = gameData.terrain[x][y].originalObject;
-        gameData.terrain[x][y].originalObject = null;
-        gameData.terrain[x][y].Objekt = -1;
+      const tile = gameData.terrain[x][y];
+      if (isWateredPipe(tile.object)) {
+        tile.object.frame = 0;
+      }
+      if (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6) {
+        tile.originalObject.frame = tile.Phase;
+        tile.object = tile.originalObject;
+        tile.originalObject = null;
+        tile.Objekt = -1;
       }
     }
   }
   //StartRohr finden
   for (y = 0; y < MAXYKACH; y++) {
     for (x = 0; x < MAXXKACH; x++) {
-      if (
-        isRiver(gameData.terrain[x][y].object) ||
-        (gameData.terrain[x][y].Objekt >= SCHLEUSE1 && gameData.terrain[x][y].Objekt <= SCHLEUSE6)
-      ) {
-        for (let neighborX = x - 1; neighborX <= x + 1; neighborX++) {
-          for (let neighborY = y - 1; neighborY <= y + 1; neighborY++) {
-            if (gameData.terrain[neighborX][neighborY].ground === grounds.GRASS) {
-              gameData.terrain[neighborX][neighborY].ground = grounds.WETLAND;
-            }
-          }
-        }
-      }
-      if ((gameData.terrain[x][y].Objekt !== ROHR) || (gameData.terrain[x][y].Phase >= Bmp[ROHR].Anzahl))
+      const tile = gameData.terrain[x][y];
+      if (!isWateredPipe(tile.object) && !isDryPipe(tile.object))
         continue;
       if (
         isStartRohr(x - 1, y) ||
@@ -5877,21 +5585,11 @@ const FillRohr = () => {
         isStartRohr(x + 1, y) ||
         isStartRohr(x, y + 1)
       ) {
-        CheckRohr(x, y);
+        fillPipeWithWater(gameData, x, y);
       }
     }
   }
-  //Felder auf trockenen Wiesen löschen
-  for (y = 0; y < MAXYKACH; y++)
-    for (x = 0; x < MAXXKACH; x++) {
-      if ((gameData.terrain[x][y].Objekt === FELD) && (gameData.terrain[x][y].ground === grounds.GRASS)) {
-        gameData.terrain[x][y].Objekt = -1;
-        gameData.terrain[x][y].ObPos.x = 0;
-        gameData.terrain[x][y].ObPos.y = 0;
-        gameData.terrain[x][y].Phase = -1;
-        gameData.terrain[x][y].AkNummer = 0;
-      }
-    }
+  updateWetlands(gameData.terrain);
 }
 
 const CheckBenutze = (item) => {
