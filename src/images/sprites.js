@@ -254,14 +254,14 @@ const sprites = {
     y: 0,
   },
   [spriteTypes.BIG_TREE_WITH_LADDER]: {
-    ...treeDefault,
+    ...bigTreeDefault,
     image: images.BUILDINGS,
     frameCount: 5,
     x: 161,
     y: 0,
   },
   [spriteTypes.BIG_TREE_WITH_PLATFORM]: {
-    ...treeDefault,
+    ...bigTreeDefault,
     image: images.BUILDINGS,
     frameCount: 6,
     x: 187,
@@ -269,7 +269,7 @@ const sprites = {
     width: 34,
   },
   [spriteTypes.BIG_TREE_WITH_TREE_HOUSE]: {
-    ...treeDefault,
+    ...bigTreeDefault,
     image: images.BUILDINGS,
     frameCount: 6,
     x: 221,
@@ -510,8 +510,8 @@ const sprites = {
     y: 54,
     width: 20,
     height: 10,
-    offsetX: -4,
-    offsetY: -9,
+    offsetX: -5,
+    offsetY: -10,
     frameCount: 2,
     speed: 1
   },
@@ -863,7 +863,7 @@ const sprites = {
     width: 9,
     height: 34,
     offsetX: -3,
-    offsetY: -17,
+    offsetY: -34,
     frameCount: 3,
     speed: 2
   },
@@ -873,8 +873,8 @@ const sprites = {
     y: 0,
     width: 10,
     height: 34,
-    offsetX: -3,
-    offsetY: -17,
+    offsetX: 9,
+    offsetY: -32,
     frameCount: 2,
     speed: 1
   },
@@ -885,7 +885,7 @@ const sprites = {
     width: 9,
     height: 34,
     offsetX: -3,
-    offsetY: -17,
+    offsetY: -34,
     frameCount: 3,
     speed: 2
   },

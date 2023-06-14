@@ -25,7 +25,7 @@ const constructions = {
       [items.BRANCH]: 2,
       [items.LOG]: 1
     },
-    actionSteps: 16,
+    actionSteps: 14,
   },
   [constructionTypes.PIPE]: {
     sprite: spriteTypes.PIPE,
@@ -33,7 +33,7 @@ const constructions = {
     items: {
       [items.LOG]: 1
     },
-    actionSteps: 18,
+    actionSteps: 16,
   },
   [constructionTypes.SOS]: {
     sprite: spriteTypes.SOS,

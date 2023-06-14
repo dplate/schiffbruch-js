@@ -4330,8 +4330,8 @@ const AkAnzuenden = () => {
     case 1:
       const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
       goToOnTile(gameData, {
-        x: tile.object.x - 10,
-        y: tile.object.y + 1
+        x: tile.object.x - 12,
+        y: tile.object.y + 5
       });
       break;
     case 2:
@@ -4517,7 +4517,6 @@ const AkTagEnde = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      Fade(0, 3);
       Stunden = 12;
       Minuten = 0;
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
@@ -4543,8 +4542,8 @@ const AkTagEnde = () => {
           });
         } else {
           goToOnTile(gameData, {
-            x: tile.object.x + 7,
-            y: tile.object.y
+            x: tile.object.x - 10,
+            y: tile.object.y + 5
           });
         }
       }
@@ -4558,6 +4557,7 @@ const AkTagEnde = () => {
       }
       break;
     case 4:
+      Fade(0, 3);
       Stunden = 12;
       Minuten = 0;
       if (alreadyAtSleepPosition) break;
@@ -4840,7 +4840,7 @@ const AkZelt = () => {
 const AkBoot = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (!tile.construction) {
-    startConstruction(gameData, constructionTypes.BOAT, 14, 20);
+    startConstruction(gameData, constructionTypes.BOAT, 20, 33);
   }
   if (!CheckRohstoff()) {
     return;
@@ -4850,54 +4850,43 @@ const AkBoot = () => {
   switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.object.x + 30,
-        y: tile.object.y + 21
-      });
-      break;
-    case 2:
-      goToOnTile(gameData, {
-        x: tile.object.x + 29,
-        y: tile.object.y + 20
-      });
-    case 3:
-      goToOnTile(gameData, {
-        x: tile.object.x + 28,
-        y: tile.object.y + 19
+        x: tile.object.x + 17,
+        y: tile.object.y + 5
       });
       tile.object.frame++
       break;
+    case 2:
+    case 3:
     case 4:
-    case 5:
     case 6:
+    case 7:
     case 8:
-    case 9:
     case 10:
+    case 11:
     case 12:
-    case 13:
-    case 14:
       startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -2, -2);
       AddTime(0, 15);
       break;
-    case 7:
+    case 5:
       goToOnTile(gameData, {
-        x: tile.object.x + 22,
-        y: tile.object.y + 16
+        x: tile.object.x + 9,
+        y: tile.object.y
       });
       tile.object.frame++
       break;
-    case 11:
+    case 9:
       goToOnTile(gameData, {
-        x: tile.object.x + 14,
-        y: tile.object.y + 11
+        x: tile.object.x - 3,
+        y: tile.object.y - 5
       });
       tile.object.frame++
       break;
-    case 15:
+    case 13:
       goToStoredPosition(gameData);
       break;
-    case 16:
+    case 14:
       finishConstruction(tile);
       if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) {
         const west = tileEdges[tile.type].west;
@@ -4942,56 +4931,44 @@ const AkRohr = () => {
   switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.object.x + 30,
-        y: tile.object.y + 21
-      });
-      break;
-    case 2:
-      goToOnTile(gameData, {
-        x: tile.object.x + 29,
-        y: tile.object.y + 20
-      });
-      break;
-    case 3:
-      goToOnTile(gameData, {
-        x: tile.object.x + 28,
-        y: tile.object.y + 15
+        x: tile.object.x + 21,
+        y: tile.object.y + 4
       });
       construct(tile, 1);
       break;
+    case 2:
+    case 3:
     case 4:
-    case 5:
-    case 6:
+    case 9:
+    case 10:
     case 11:
-    case 12:
-    case 13:
       startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
+    case 5:
+    case 6:
     case 7:
-    case 8:
-    case 9:
+    case 12:
+    case 13:
     case 14:
-    case 15:
-    case 16:
       startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
       AddTime(0, 5);
       break;
-    case 10:
+    case 8:
       goToOnTile(gameData, {
-        x: tile.object.x + 17,
-        y: tile.object.y + 13
+        x: tile.object.x + 8,
+        y: tile.object.y - 4
       });
       construct(tile, 2);
       break;
-    case 17:
+    case 15:
       goToStoredPosition(gameData);
       break;
-    case 18:
+    case 16:
       finishConstruction(tile);
       FillRohr();
       Bmp[BUTTSTOP].Phase = -1;
@@ -5018,42 +4995,42 @@ const AkSOS = () => {
   switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.object.x + 4,
-        y: tile.object.y + 13
+        x: tile.object.x - 12,
+        y: tile.object.y + 4
       });
       break;
     case 4:
       goToOnTile(gameData, {
-        x: tile.object.x + 12,
-        y: tile.object.y + 17
+        x: tile.object.x - 4,
+        y: tile.object.y + 8
       });
       construct(tile, 1);
       break;
     case 7:
       goToOnTile(gameData, {
-        x: tile.object.x + 12,
-        y: tile.object.y + 9
+        x: tile.object.x - 4,
+        y: tile.object.y
       });
       construct(tile, 2);
       break;
     case 10:
       goToOnTile(gameData, {
-        x: tile.object.x + 19,
-        y: tile.object.y + 12
+        x: tile.object.x + 3,
+        y: tile.object.y + 3
       });
       construct(tile, 3);
       break;
     case 13:
       goToOnTile(gameData, {
-        x: tile.object.x + 21,
-        y: tile.object.y + 5
+        x: tile.object.x + 5,
+        y: tile.object.y - 4
       });
       construct(tile, 4);
       break;
     case 16:
       goToOnTile(gameData, {
-        x: tile.object.x + 28,
-        y: tile.object.y + 8
+        x: tile.object.x + 12,
+        y: tile.object.y - 1
       });
       construct(tile, 5);
       break;
@@ -5099,7 +5076,7 @@ const AkFeuerstelle = () => {
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
   if (!tile.construction) {
     const center = tileEdges[tile.type].center;
-    startConstruction(gameData, constructionTypes.FIREPLACE, center.x, center.y);
+    startConstruction(gameData, constructionTypes.FIREPLACE, center.x, center.y - 5);
   }
   if (!CheckRohstoff()) {
     return;
@@ -5109,8 +5086,8 @@ const AkFeuerstelle = () => {
   switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.object.x + 4,
-        y: tile.object.y + 16
+        x: tile.object.x - 4,
+        y: tile.object.y + 2
       });
       break;
     case 2:
@@ -5126,8 +5103,8 @@ const AkFeuerstelle = () => {
       break;
     case 4:
       goToOnTile(gameData, {
-        x: tile.object.x,
-        y: tile.object.y + 15
+        x: tile.object.x - 6,
+        y: tile.object.y + 3
       });
       break;
     case 5:
@@ -5169,8 +5146,8 @@ const AkHaus1 = () => {
   switch (tile.construction.actionStep) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.object.x - 3,
-        y: tile.object.y + 1
+        x: tile.object.x - 2,
+        y: tile.object.y + 2
       });
       break;
     case 2:
@@ -5395,8 +5372,8 @@ const AkSchlafen = () => {
     case 1:
       if (tent)
         goToOnTile(gameData, {
-          x: tile.object.x - 7,
-          y: tile.object.y
+          x: tile.object.x - 10,
+          y: tile.object.y + 5
         });
       else if (house)
         goToOnTile(gameData, {
@@ -5455,14 +5432,14 @@ const AkAblegen = () => {
   switch (Guy.AkNummer) {
     case 1:
       goToOnTile(gameData, {
-        x: tile.object.x + 14,
-        y: tile.object.y + 11
+        x: tile.object.x,
+        y: tile.object.y
       });
       break;
     case 2:
       gameData.guy.position.x = tile.position.x + tile.object.x;
       gameData.guy.position.y = tile.position.y + tile.object.y;
-      tile.Objekt = -1;
+      tile.object = null;
       if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x--;
       else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) gameData.guy.tile.y--;
       else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x++;
@@ -5494,10 +5471,10 @@ const AkAnlegen = () => {
     case 2:
       const neighbor = findNeighbor(gameData, (tile) => tile.ground !== grounds.SEA);
 
-      tile.object = {
+      neighbor.tile.object = {
         sprite: spriteTypes.BOAT,
-        x: Math.round(gameData.guy.position.x - tile.position.x),
-        y: Math.round(gameData.guy.position.y - tile.position.y),
+        x: Math.round(gameData.guy.position.x - neighbor.tile.position.x),
+        y: Math.round(gameData.guy.position.y - neighbor.tile.position.y),
         frame: (neighbor.direction === directions.WEST || neighbor.direction === directions.EAST) ? 0 : 1
       };
 
