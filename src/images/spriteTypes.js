@@ -35,6 +35,7 @@ const spriteTypes = {
   PIPE: 'pipe',
   SOS: 'sos',
   FIREPLACE: 'fireplace',
+  FIRE: 'fire',
   GUY_WALKING_WEST: 'guyWalkingWest',
   GUY_WALKING_NORTH: 'guyWalkingNorth',
   GUY_WALKING_EAST: 'guyWalkingEast',

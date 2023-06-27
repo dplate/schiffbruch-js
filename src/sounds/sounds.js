@@ -14,6 +14,11 @@ const sounds = {
     baseGain: 0.8,
     instance: null
   },
+  FIRE: {
+    file: 'fire',
+    baseGain: 1,
+    instance: null
+  },
   CRACKLING: {
     file: 'crackling',
     baseGain: 0.9,

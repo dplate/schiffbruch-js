@@ -100,8 +100,7 @@ const BAUM1DOWN = 30;
 const BAUM2DOWN = BAUM1DOWN + 1;
 const BAUM3DOWN = BAUM1DOWN + 2;
 const BAUM4DOWN = BAUM1DOWN + 3;
-const FEUER = BAUM1DOWN + 5;
-const CUPFEIL = 38;
+const CUPFEIL = 34;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
 const BUTTGITTER = 51;
@@ -163,7 +162,6 @@ const BILDANZ = DPSOFTWARE + 1; //Wieviele Bilder
 
 //Sounds
 const WAVWALD = 1;
-const WAVFEUER = 2;
 const WAVFLUSS = 2;
 const WAVANZ = WAVFLUSS + 1    //Anzahl; der Sounds
 
@@ -619,24 +617,6 @@ const InitStructs = async () => {
   Bmp[SCHLEUSE6].rcDes.right = Bmp[SCHLEUSE6].rcDes.left + Bmp[SCHLEUSE6].Breite;
   Bmp[SCHLEUSE6].rcDes.top = 16;
   Bmp[SCHLEUSE6].rcDes.bottom = Bmp[SCHLEUSE6].rcDes.top + Bmp[SCHLEUSE6].Hoehe;
-
-  //Feuer
-  Bmp[FEUER].Anzahl = 3;
-  Bmp[FEUER].Surface = buildingsImage;
-  Bmp[FEUER].Breite = 21;
-  Bmp[FEUER].Hoehe = 28;
-  Bmp[FEUER].rcSrc.left = 276;
-  Bmp[FEUER].rcSrc.right = 276 + Bmp[FEUER].Breite;
-  Bmp[FEUER].rcSrc.top = 0;
-  Bmp[FEUER].rcSrc.bottom = 0 + Bmp[FEUER].Hoehe;
-  Bmp[FEUER].rcDes.left = 15;
-  Bmp[FEUER].rcDes.right = Bmp[FEUER].rcDes.left + Bmp[FEUER].Breite;
-  Bmp[FEUER].rcDes.top = 1;
-  Bmp[FEUER].rcDes.bottom = Bmp[FEUER].rcDes.top + Bmp[FEUER].Hoehe;
-  Bmp[FEUER].Animation = true;
-  Bmp[FEUER].Geschwindigkeit = 6;
-  Bmp[FEUER].Phase = 0;
-  Bmp[FEUER].Sound = WAVFEUER;
 
   //Buttons
 
@@ -1506,9 +1486,6 @@ const InitStructs = async () => {
   Wav[WAVWALD].Dateiname = 'forest';
   Wav[WAVWALD].Volume = 90;
 
-  Wav[WAVFEUER].Dateiname = 'fire';
-  Wav[WAVFEUER].Volume = 100;
-
   Wav[WAVFLUSS].Dateiname = 'river';
   Wav[WAVFLUSS].Volume = 85;
 
@@ -1831,15 +1808,14 @@ const AddTime = (h, m) => {
     for (x = 0; x < MAXXKACH; x++) {
       const tile = gameData.terrain[x][y];
       //Feuer nach einer bestimmten Zeit ausgehen lassen
-      if (tile.Objekt === FEUER) {
-        tile.Timer += (60 * h + m) * 0.0005;
-        if (tile.Timer >= 1) {
-          tile.Objekt = -1;
-          tile.Timer = 0;
-          tile.ObPos.x = 0;
-          tile.ObPos.y = 0;
-          tile.Phase = -1;
-          Chance -= 2 + 2 * tile.height;
+      const object = tile.object;
+      if (object?.lifetime) {
+        object.lifetime -= 60 * h + m;
+        if (object.lifetime <= 0) {
+          if (object.chance) {
+            Chance -= object.chance;
+          }
+          tile.object = null;
         }
       }
       //pro Minute Reifungsprozess fortführen
@@ -1972,7 +1948,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = texts.BAUMGROSSTEXT;
       else if (tile.object?.sprite === spriteTypes.FIREPLACE)
         TextTmp = texts.FEUERSTELLETEXT;
-      else if (tile.Objekt === FEUER)
+      else if (tile.object?.sprite === spriteTypes.FIRE)
         TextTmp = texts.FEUERTEXT;
       else if ((tile.object?.sprite === spriteTypes.SHIP_WRECK) || (tile.object?.sprite === spriteTypes.PIRATE_WRECK))
         TextTmp = texts.WRACKTEXT;
@@ -2608,7 +2584,6 @@ const startGame = async (newGame) => {
         tile.ObPos = { x: 0, y: 0 };
         tile.Reverse = false;
         tile.Phase = -1;
-        tile.Timer = 0;
       }
     }
 
@@ -2961,7 +2936,7 @@ const ZeichneObjekte = () => {
             gameData.terrain[x][y].position.y + object.y - gameData.camera.y,
             primaryCanvasContext
           );
-        } else if (Objekt === FEUER || Objekt === BAUM1DOWN || Objekt === BAUM2DOWN || Objekt === BAUM3DOWN || Objekt === BAUM4DOWN) {
+        } else if (Objekt === BAUM1DOWN || Objekt === BAUM2DOWN || Objekt === BAUM3DOWN || Objekt === BAUM4DOWN) {
 
           //Sound abspielen
           if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
@@ -3786,9 +3761,10 @@ const AkDestroy = () => {
       if (tile.construction) {
         tile.construction = null;
       } else {
-        if (object.sprite === spriteTypes.SOS) {
-          Chance -= 0.1;
-        } else if (object.sprite === spriteTypes.PIPE) {
+        if (object.chance) {
+          Chance -= object.chance;
+        }
+        if (object.sprite === spriteTypes.PIPE) {
           FillRohr();
         }
       }
@@ -4309,13 +4285,14 @@ const AkAngeln = () => {
 }
 
 const AkAnzuenden = () => {
+  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+
   if (Guy.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
       goToOnTile(gameData, {
         x: tile.object.x - 12,
         y: tile.object.y + 5
@@ -4327,10 +4304,10 @@ const AkAnzuenden = () => {
       break;
     case 3:
       startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = FEUER;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.x = Bmp[FEUER].rcDes.left;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ObPos.y = Bmp[FEUER].rcDes.top;
-      Chance += 2 + 2 * gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
+      tile.object.sprite = spriteTypes.FIRE;
+      tile.object.chance = 2 + 2 * tile.height;
+      tile.object.lifetime = 35 * 60;
+      Chance += tile.object.chance;
       AddTime(0, 2);
       break;
     case 4:
@@ -5046,9 +5023,14 @@ const AkSOS = () => {
       break;
     case 20:
       finishConstruction(tile);
-      if ((tile.ground === grounds.GRASS) || (tile.ground === grounds.WETLAND))
-        Chance += 1;
-      else Chance += 2; //Dürfte nur noch der Strand übrig sein
+      if ((tile.ground === grounds.GRASS) || (tile.ground === grounds.WETLAND)) {
+        tile.object.chance = 1;
+      }
+      else {
+        //Dürfte nur noch der Strand übrig sein
+        tile.object.chance = 2;
+      }
+      Chance += tile.object.chance;
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.SOS]) {
         PapierText = DrawText(texts.SOSHILFE, TXTPAPIER, 1);

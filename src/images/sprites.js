@@ -372,6 +372,18 @@ const sprites = {
     frameCount: 5,
     speed: 0
   },
+  [spriteTypes.FIRE]: {
+    image: images.BUILDINGS,
+    sound: sounds.FIRE,
+    x: 276,
+    y: 0,
+    width: 21,
+    height: 28,
+    offsetX: -11,
+    offsetY: -24,
+    frameCount: 3,
+    speed: 6
+  },
   [spriteTypes.GUY_WALKING_WEST]: {
     image: images.GUY,
     x: 0,
