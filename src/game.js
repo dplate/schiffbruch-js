@@ -104,7 +104,6 @@ const FEUER = BAUM1DOWN + 5;
 const CUPFEIL = 38;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
-const GUYSCHIFF = 50;
 const BUTTGITTER = 51;
 const BUTTBEENDEN = BUTTGITTER + 1;
 const BUTTNEU = BUTTGITTER + 2;
@@ -529,18 +528,6 @@ const InitStructs = async () => {
     Bmp[i].Hoehe = 0;
     Bmp[i].Sound = 0;
   }
-
-  Bmp[GUYSCHIFF].Animation = false;
-  Bmp[GUYSCHIFF].Phase = 0;
-  Bmp[GUYSCHIFF].Anzahl = 4;
-  Bmp[GUYSCHIFF].Geschwindigkeit = 10;
-  Bmp[GUYSCHIFF].rcSrc.left = 297;
-  Bmp[GUYSCHIFF].rcSrc.right = 297 + 48;
-  Bmp[GUYSCHIFF].rcSrc.top = 0;
-  Bmp[GUYSCHIFF].rcSrc.bottom = 38;
-  Bmp[GUYSCHIFF].Breite = 48;
-  Bmp[GUYSCHIFF].Hoehe = 38;
-  Bmp[GUYSCHIFF].Surface = buildingsImage;
 
   //Cursor
   for (i = CUPFEIL; i <= CUUHR; i++) {
@@ -4716,12 +4703,13 @@ const AkGerettet = () => {
         if (gameData.terrain[x][gameData.guy.tile.y].ground !== grounds.SEA) break;
       }
       //Schiff hinbauen
-      gameData.terrain[x + 2][gameData.guy.tile.y].Phase = 0;
-      gameData.terrain[x + 2][gameData.guy.tile.y].object = null;
-      gameData.terrain[x + 2][gameData.guy.tile.y].Objekt = GUYSCHIFF;
-      gameData.terrain[x + 2][gameData.guy.tile.y].ObPos.x = 10;
-      gameData.terrain[x + 2][gameData.guy.tile.y].ObPos.y = 10;
-
+      const shipTile = gameData.terrain[x + 2][gameData.guy.tile.y];
+      shipTile.object = {
+        sprite: spriteTypes.GUY_SAILING,
+        x: tileEdges[shipTile.type].center.x,
+        y: tileEdges[shipTile.type].center.y,
+        frame: 0
+      };
       gameData.guy.route = findRoute(gameData, { x, y: gameData.guy.tile.y });
       gameData.guy.active = true;
       break;
@@ -4741,7 +4729,6 @@ const AkGerettet = () => {
       sounds.STORM.instance.play(true);
       gameData.guy.route = findRoute(gameData, { x: gameData.terrain.length - 1, y: gameData.guy.tile.y });
       gameData.guy.active = true;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt = -1;
       gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object = createWaves();
       break;
     case 8:
