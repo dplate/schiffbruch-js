@@ -66,16 +66,13 @@ import isUsableTent from './terrain/objects/isUsableTent.js';
 import isUsableTreeHouse from './terrain/objects/isUsableTreeHouse.js';
 import findNeighbor from './guy/findNeighbor.js';
 import directions from './terrain/directions.js';
-import isDryPipe from './terrain/objects/isDryPipe.js';
-import fillPipeWithWater from './terrain/fillPipeWithWater.js';
-import updateWetlands from './terrain/updateWetlands.js';
-import isWateredPipe from './terrain/objects/isWateredPipe.js';
 import pauseConstruction from './construction/pauseConstruction.js';
 import continueConstruction from './construction/continueConstruction.js';
 import isDestroyable from './terrain/objects/isDestroyable.js';
 import isUsableBoat from './terrain/objects/isUsableBoat.js';
 import isBigTree from './terrain/objects/isBigTree.js';
 import isUsableFireplace from './terrain/objects/isUsableFireplace.js';
+import updatePipes from './terrain/updatePipes.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -90,12 +87,6 @@ const MAXYKACH = 61;
 const MAXX = 800; //Bildschirmauflösung
 const MAXY = 600;
 
-const SCHLEUSE1 = 19;
-const SCHLEUSE2 = SCHLEUSE1 + 1;
-const SCHLEUSE3 = SCHLEUSE1 + 2;
-const SCHLEUSE4 = SCHLEUSE1 + 3;
-const SCHLEUSE5 = SCHLEUSE1 + 4;
-const SCHLEUSE6 = SCHLEUSE1 + 5;
 const BAUM1DOWN = 30;
 const BAUM2DOWN = BAUM1DOWN + 1;
 const BAUM3DOWN = BAUM1DOWN + 2;
@@ -161,9 +152,8 @@ const DPSOFTWARE = PROGRAMMIERUNG + 14;
 const BILDANZ = DPSOFTWARE + 1; //Wieviele Bilder
 
 //Sounds
-const WAVWALD = 1;
-const WAVFLUSS = 2;
-const WAVANZ = WAVFLUSS + 1    //Anzahl; der Sounds
+const WAVWALD = 0;
+const WAVANZ = 1;    //Anzahl; der Sounds
 
 //Aktionen
 const AKNICHTS = 0;
@@ -226,13 +216,11 @@ let minimapCanvasContext = null;
 let textCanvasContext = null;
 
 let panelImage = null;
-let waterImage = null;
 let font1Image = null;
 let font2Image = null;
 let textfieldImage = null;
 let paperImage = null;
 let treesImage = null;
-let buildingsImage = null;
 let creditsImage = null;
 let logoImage = null;
 let cursorsImage = null;
@@ -364,7 +352,6 @@ const loadImage = async (file) => {
 
 const initCanvases = async (window) => {
   panelImage = await loadImage('panel.png');
-  waterImage = await loadImage('water.png');
   font1Image = await loadImage('font1.png');
   font2Image = await loadImage('font2.png');
   paperImage = await loadImage('paper.png');
@@ -373,7 +360,6 @@ const initCanvases = async (window) => {
   buttonsImage = await loadImage('buttons.png');
   textfieldImage = await loadImage('textfield.png');
   inventarImage = await loadImage('inventory.png');
-  buildingsImage = await loadImage('buildings.png');
   creditsImage = await loadImage('credits.png');
   logoImage = await loadImage('logo.png');
 
@@ -541,82 +527,6 @@ const InitStructs = async () => {
     Bmp[i].Breite = 18;
     Bmp[i].Hoehe = 18;
   }
-
-  //Landschaftsanimationen
-  for (i = SCHLEUSE1; i <= SCHLEUSE6; i++) {
-    Bmp[i].Animation = true;
-    Bmp[i].Anzahl = 7;
-    Bmp[i].Geschwindigkeit = 7;
-    Bmp[i].Phase = 0;
-    Bmp[i].Surface = waterImage;
-    Bmp[i].Sound = WAVFLUSS;
-  }
-
-  Bmp[SCHLEUSE1].Breite = 35;
-  Bmp[SCHLEUSE1].Hoehe = 22;
-  Bmp[SCHLEUSE1].rcSrc.left = 164;
-  Bmp[SCHLEUSE1].rcSrc.right = Bmp[SCHLEUSE1].rcSrc.left + Bmp[SCHLEUSE1].Breite;
-  Bmp[SCHLEUSE1].rcSrc.top = 126;
-  Bmp[SCHLEUSE1].rcSrc.bottom = Bmp[SCHLEUSE1].rcSrc.top + Bmp[SCHLEUSE1].Hoehe;
-  Bmp[SCHLEUSE1].rcDes.left = 10;
-  Bmp[SCHLEUSE1].rcDes.right = Bmp[SCHLEUSE1].rcDes.left + Bmp[SCHLEUSE1].Breite;
-  Bmp[SCHLEUSE1].rcDes.top = 17;
-  Bmp[SCHLEUSE1].rcDes.bottom = Bmp[SCHLEUSE1].rcDes.top + Bmp[SCHLEUSE1].Hoehe;
-
-  Bmp[SCHLEUSE2].Breite = 34;
-  Bmp[SCHLEUSE2].Hoehe = 23;
-  Bmp[SCHLEUSE2].rcSrc.left = 199;
-  Bmp[SCHLEUSE2].rcSrc.right = Bmp[SCHLEUSE2].rcSrc.left + Bmp[SCHLEUSE2].Breite;
-  Bmp[SCHLEUSE2].rcSrc.top = 126;
-  Bmp[SCHLEUSE2].rcSrc.bottom = Bmp[SCHLEUSE2].rcSrc.top + Bmp[SCHLEUSE2].Hoehe;
-  Bmp[SCHLEUSE2].rcDes.left = 10;
-  Bmp[SCHLEUSE2].rcDes.right = Bmp[SCHLEUSE2].rcDes.left + Bmp[SCHLEUSE2].Breite;
-  Bmp[SCHLEUSE2].rcDes.top = 16;
-  Bmp[SCHLEUSE2].rcDes.bottom = Bmp[SCHLEUSE2].rcDes.top + Bmp[SCHLEUSE2].Hoehe;
-
-  Bmp[SCHLEUSE3].Breite = 34;
-  Bmp[SCHLEUSE3].Hoehe = 22;
-  Bmp[SCHLEUSE3].rcSrc.left = 233;
-  Bmp[SCHLEUSE3].rcSrc.right = Bmp[SCHLEUSE3].rcSrc.left + Bmp[SCHLEUSE3].Breite;
-  Bmp[SCHLEUSE3].rcSrc.top = 126;
-  Bmp[SCHLEUSE3].rcSrc.bottom = Bmp[SCHLEUSE3].rcSrc.top + Bmp[SCHLEUSE3].Hoehe;
-  Bmp[SCHLEUSE3].rcDes.left = 10;
-  Bmp[SCHLEUSE3].rcDes.right = Bmp[SCHLEUSE3].rcDes.left + Bmp[SCHLEUSE3].Breite;
-  Bmp[SCHLEUSE3].rcDes.top = 17;
-  Bmp[SCHLEUSE3].rcDes.bottom = Bmp[SCHLEUSE3].rcDes.top + Bmp[SCHLEUSE3].Hoehe;
-
-  Bmp[SCHLEUSE4].Breite = 33;
-  Bmp[SCHLEUSE4].Hoehe = 23;
-  Bmp[SCHLEUSE4].rcSrc.left = 268;
-  Bmp[SCHLEUSE4].rcSrc.right = Bmp[SCHLEUSE4].rcSrc.left + Bmp[SCHLEUSE4].Breite;
-  Bmp[SCHLEUSE4].rcSrc.top = 105;
-  Bmp[SCHLEUSE4].rcSrc.bottom = Bmp[SCHLEUSE4].rcSrc.top + Bmp[SCHLEUSE4].Hoehe;
-  Bmp[SCHLEUSE4].rcDes.left = 11;
-  Bmp[SCHLEUSE4].rcDes.right = Bmp[SCHLEUSE4].rcDes.left + Bmp[SCHLEUSE4].Breite;
-  Bmp[SCHLEUSE4].rcDes.top = 16;
-  Bmp[SCHLEUSE4].rcDes.bottom = Bmp[SCHLEUSE4].rcDes.top + Bmp[SCHLEUSE4].Hoehe;
-
-  Bmp[SCHLEUSE5].Breite = 34;
-  Bmp[SCHLEUSE5].Hoehe = 17;
-  Bmp[SCHLEUSE5].rcSrc.left = 302;
-  Bmp[SCHLEUSE5].rcSrc.right = Bmp[SCHLEUSE5].rcSrc.left + Bmp[SCHLEUSE5].Breite;
-  Bmp[SCHLEUSE5].rcSrc.top = 91;
-  Bmp[SCHLEUSE5].rcSrc.bottom = Bmp[SCHLEUSE5].rcSrc.top + Bmp[SCHLEUSE5].Hoehe;
-  Bmp[SCHLEUSE5].rcDes.left = 10;
-  Bmp[SCHLEUSE5].rcDes.right = Bmp[SCHLEUSE5].rcDes.left + Bmp[SCHLEUSE5].Breite;
-  Bmp[SCHLEUSE5].rcDes.top = 20;
-  Bmp[SCHLEUSE5].rcDes.bottom = Bmp[SCHLEUSE5].rcDes.top + Bmp[SCHLEUSE5].Hoehe;
-
-  Bmp[SCHLEUSE6].Breite = 35;
-  Bmp[SCHLEUSE6].Hoehe = 23;
-  Bmp[SCHLEUSE6].rcSrc.left = 336;
-  Bmp[SCHLEUSE6].rcSrc.right = Bmp[SCHLEUSE6].rcSrc.left + Bmp[SCHLEUSE6].Breite;
-  Bmp[SCHLEUSE6].rcSrc.top = 154;
-  Bmp[SCHLEUSE6].rcSrc.bottom = Bmp[SCHLEUSE6].rcSrc.top + Bmp[SCHLEUSE6].Hoehe;
-  Bmp[SCHLEUSE6].rcDes.left = 10;
-  Bmp[SCHLEUSE6].rcDes.right = Bmp[SCHLEUSE6].rcDes.left + Bmp[SCHLEUSE6].Breite;
-  Bmp[SCHLEUSE6].rcDes.top = 16;
-  Bmp[SCHLEUSE6].rcDes.bottom = Bmp[SCHLEUSE6].rcDes.top + Bmp[SCHLEUSE6].Hoehe;
 
   //Buttons
 
@@ -1477,20 +1387,12 @@ const InitStructs = async () => {
   AbspannListe[6][1].Bild = DPSOFTWARE;
 
   //Sounds
-  for (i = 0; i < WAVANZ; i++) {
-    Wav[i].Dateiname = 'click';
-    Wav[i].Loop = false;
-    Wav[i].Volume = 100;
-  }
-
   Wav[WAVWALD].Dateiname = 'forest';
+  Wav[WAVWALD].Loop = false;
   Wav[WAVWALD].Volume = 90;
 
-  Wav[WAVFLUSS].Dateiname = 'river';
-  Wav[WAVFLUSS].Volume = 85;
-
   //Testweise alle Sounds gleich in den Speicher laden
-  for (i = 1; i < WAVANZ; i++) await LoadSound(i);
+  for (i = 0; i < WAVANZ; i++) await LoadSound(i);
 
   //Textausgabe
   TextBereich[TXTTEXTFELD].Aktiv = false;
@@ -1921,10 +1823,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
 
       if (isNormalTree(tile.object))
         TextTmp = texts.BAUMTEXT;
-      else if (
-        isRiver(tile.object) ||
-        ((tile.Objekt >= SCHLEUSE1) && (tile.Objekt <= SCHLEUSE6))
-      )
+      else if (isRiver(tile.object))
         TextTmp = texts.FLUSSTEXT;
       else if (tile.object?.sprite === spriteTypes.BUSH)
         TextTmp = texts.BUSCHTEXT;
@@ -2172,10 +2071,7 @@ const MouseInPanel = (Button, Push) => {
       Guy.AkNummer = 0;
       if (isEatable(tile.object)) {
         Guy.Aktion = AKESSEN;
-      } else if (
-        isDrinkable(tile.object) ||
-        (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6)
-      )
+      } else if (isDrinkable(tile.object))
         Guy.Aktion = AKTRINKEN;
       else PapierText = DrawText(texts.KEINESSENTRINKEN, TXTPAPIER, 1);
     }
@@ -2212,9 +2108,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (isFishable(tile) ||
-        (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6)
-      ) Guy.Aktion = AKANGELN;
+      if (isFishable(tile)) Guy.Aktion = AKANGELN;
       else PapierText = DrawText(texts.KEINWASSER, TXTPAPIER, 1);
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANZUENDEN].rcDes)) &&
@@ -2900,25 +2794,6 @@ const ZeichneObjekte = () => {
       //Der Guy ist immer vor diesen Objekten
       if (isOnGround(gameData.terrain[x][y].object)) {
         //this happens in drawObject now
-      } else if (Objekt > -1 && Objekt <= SCHLEUSE6) {
-        //Sound abspielen
-        if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
-          ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
-          if ((x === gameData.guy.tile.x) && (y === gameData.guy.tile.y))
-            PlaySound(Bmp[Objekt].Sound, 100);
-          else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 || (
-            Bmp[Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
-          ))
-            PlaySound(Bmp[Objekt].Sound, 50);
-        }
-
-        ZeichneBilder(
-          gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x,
-          gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y,
-          Objekt,
-          { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
-          gameData.terrain[x][y].Reverse,
-          gameData.terrain[x][y].Phase);
       } else {
         if (Objekt === -1 && gameData.terrain[x][y].object) {
           const object = gameData.terrain[x][y].object;
@@ -3765,7 +3640,7 @@ const AkDestroy = () => {
           Chance -= object.chance;
         }
         if (object.sprite === spriteTypes.PIPE) {
-          FillRohr();
+          updatePipes(gameData.terrain);
         }
       }
       goToStoredPosition(gameData);
@@ -3830,8 +3705,7 @@ const AkSuchen = () => {
       break;
     case 11:
       //Auf Strand und Fluss
-      if (tile.ground === grounds.BEACH || isRiver(tile.object) || (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6)
-      ) {
+      if (tile.ground === grounds.BEACH || isRiver(tile.object)) {
         if (gameData.guy.inventory[items.STONE] < 10) {
           PapierText = DrawText(texts.ROHSTEINGEFUNDEN, TXTPAPIER, 1);
           changeItem(gameData, items.STONE, 3);
@@ -4072,39 +3946,28 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
+          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
+          case spriteTypes.RIVER_DAM_WEST_SOUTH:
             goToOnTile(gameData, { x: 34, y: 33 });
             break;
           case spriteTypes.RIVER_WEST_EAST:
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
+          case spriteTypes.RIVER_DAM_WEST_EAST:
+          case spriteTypes.RIVER_DAM_WEST_NORTH:    
             goToOnTile(gameData, { x: 20, y: 33 });
             break;
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
+          case spriteTypes.RIVER_DAM_NORTH_EAST:  
             goToOnTile(gameData, { x: 22, y: 26 });
             break;
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            goToOnTile(gameData, { x: 32, y: 26 });
-            break;
-        }
-      } else {
-        switch (tile.Objekt) {
-          case SCHLEUSE2:
-          case SCHLEUSE3:
-            goToOnTile(gameData, { x: 34, y: 33 });
-            break;
-          case SCHLEUSE1:
-          case SCHLEUSE5:
-            goToOnTile(gameData, { x: 20, y: 33 });
-            break;
-          case SCHLEUSE4:
-            goToOnTile(gameData, { x: 22, y: 26 });
-            break;
-          case SCHLEUSE6:
+          case spriteTypes.RIVER_DAM_SOUTH_EAST:
             goToOnTile(gameData, { x: 32, y: 26 });
             break;
         }
@@ -4122,6 +3985,8 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
+          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
+          case spriteTypes.RIVER_DAM_WEST_SOUTH:
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
@@ -4129,35 +3994,22 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
+          case spriteTypes.RIVER_DAM_WEST_EAST:
+          case spriteTypes.RIVER_DAM_WEST_NORTH:  
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
+          case spriteTypes.RIVER_DAM_NORTH_EAST:  
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_SOUTH);
-            break;
-        }
-      } else {
-        switch (tile.Objekt) {
-          case SCHLEUSE2:
-          case SCHLEUSE3:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_WEST);
-            break;
-          case SCHLEUSE1:
-          case SCHLEUSE5:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_NORTH);
-            break;
-          case SCHLEUSE4:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_EAST);
-            break;
-          case SCHLEUSE6:
+          case spriteTypes.RIVER_DAM_SOUTH_EAST:
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_SOUTH);
             break;
         }
@@ -4178,6 +4030,8 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
+          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
+          case spriteTypes.RIVER_DAM_WEST_SOUTH:
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
@@ -4185,35 +4039,22 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
+          case spriteTypes.RIVER_DAM_WEST_EAST:
+          case spriteTypes.RIVER_DAM_WEST_NORTH:  
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
+          case spriteTypes.RIVER_DAM_NORTH_EAST:  
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SOUTH);
-            break;
-        }
-      } else {
-        switch (tile.Objekt) {
-          case SCHLEUSE2:
-          case SCHLEUSE3:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_WEST);
-            break;
-          case SCHLEUSE1:
-          case SCHLEUSE5:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_NORTH);
-            break;
-          case SCHLEUSE4:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_EAST);
-            break;
-          case SCHLEUSE6:
+          case spriteTypes.RIVER_DAM_SOUTH_EAST:
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SOUTH);
             break;
         }
@@ -4233,6 +4074,8 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_SOUTH:
           case spriteTypes.RIVER_MOUTH_NORTH:
           case spriteTypes.RIVER_SPRING_SOUTH:
+          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
+          case spriteTypes.RIVER_DAM_WEST_SOUTH:  
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
@@ -4240,35 +4083,22 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_WEST_NORTH:
           case spriteTypes.RIVER_MOUTH_WEST:
           case spriteTypes.RIVER_SPRING_EAST:
+          case spriteTypes.RIVER_DAM_WEST_EAST:
+          case spriteTypes.RIVER_DAM_WEST_NORTH:  
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
+          case spriteTypes.RIVER_DAM_NORTH_EAST: 
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_SOUTH);
-            break;
-        }
-      } else {
-        switch (tile.Objekt) {
-          case SCHLEUSE2:
-          case SCHLEUSE3:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_WEST);
-            break;
-          case SCHLEUSE1:
-          case SCHLEUSE5:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_NORTH);
-            break;
-          case SCHLEUSE4:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_EAST);
-            break;
-          case SCHLEUSE6:
+          case spriteTypes.RIVER_DAM_SOUTH_EAST:
             startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_SOUTH);
             break;
         }
@@ -4934,7 +4764,7 @@ const AkRohr = () => {
       break;
     case 16:
       finishConstruction(tile);
-      FillRohr();
+      updatePipes(gameData.terrain);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.PIPE]) {
         PapierText = DrawText(texts.ROHRHILFE, TXTPAPIER, 1);
@@ -5462,80 +5292,6 @@ const AkAnlegen = () => {
 const Fade = (intensity, smooth) => {
   primaryCanvasContext.canvas.style.transition = `${smooth}s filter ease-in-out`;
   primaryCanvasContext.canvas.style.filter = `brightness(${intensity}%) saturate(${intensity}%)`;
-}
-
-const isStartRohr = (x, y) => {
-  const tile = gameData.terrain[x][y];
-
-  if ((tile.Objekt >= SCHLEUSE1) && (tile.Objekt <= SCHLEUSE6)) {
-    return true;
-  }
-
-  switch (tile.object?.sprite) {
-    case spriteTypes.RIVER_NORTH_EAST:
-      tile.Objekt = SCHLEUSE4;
-      break;
-    case spriteTypes.RIVER_NORTH_SOUTH:
-      tile.Objekt = SCHLEUSE2;
-      break;
-    case spriteTypes.RIVER_SOUTH_EAST:
-      tile.Objekt = SCHLEUSE6;
-      break;
-    case spriteTypes.RIVER_WEST_NORTH:
-      tile.Objekt = SCHLEUSE5;
-      break;
-    case spriteTypes.RIVER_WEST_EAST:
-      tile.Objekt = SCHLEUSE1;
-      break;
-    case spriteTypes.RIVER_WEST_SOUTH:
-      tile.Objekt = SCHLEUSE3;
-      break;
-    default:
-      return false;
-  }
-  tile.originalObject = tile.object;
-  tile.object = null;
-  tile.Reverse = tile.originalObject.reverse;
-  tile.Phase = tile.originalObject.frame;
-  tile.ObPos.x = Bmp[tile.Objekt].rcDes.left;
-  tile.ObPos.y = Bmp[tile.Objekt].rcDes.top;
-  return true;
-}
-
-const FillRohr = () => {
-  let x, y;
-
-  for (y = 0; y < MAXYKACH; y++) {
-    for (x = 0; x < MAXXKACH; x++) {
-      const tile = gameData.terrain[x][y];
-      if (isWateredPipe(tile.object)) {
-        tile.object.frame = 0;
-      }
-      if (tile.Objekt >= SCHLEUSE1 && tile.Objekt <= SCHLEUSE6) {
-        tile.originalObject.frame = tile.Phase;
-        tile.object = tile.originalObject;
-        tile.originalObject = null;
-        tile.Objekt = -1;
-      }
-    }
-  }
-  //StartRohr finden
-  for (y = 0; y < MAXYKACH; y++) {
-    for (x = 0; x < MAXXKACH; x++) {
-      const tile = gameData.terrain[x][y];
-      if (!isWateredPipe(tile.object) && !isDryPipe(tile.object))
-        continue;
-      if (
-        isStartRohr(x - 1, y) ||
-        isStartRohr(x, y - 1) ||
-        isStartRohr(x + 1, y) ||
-        isStartRohr(x, y + 1)
-      ) {
-        fillPipeWithWater(gameData, x, y);
-      }
-    }
-  }
-  updateWetlands(gameData.terrain);
 }
 
 const CheckBenutze = (item) => {

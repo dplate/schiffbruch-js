@@ -1,4 +1,5 @@
 import spriteTypes from '../../images/spriteTypes.js';
+import isRiverDam from './isRiverDam.js';
 
 const riverSprites = [
   spriteTypes.RIVER_SPRING_EAST,
@@ -23,6 +24,9 @@ const riverSprites = [
 
 const isRiver = (object) => {
   if (riverSprites.includes(object?.sprite)) {
+    return true;
+  }
+  if (isRiverDam(object)) {
     return true;
   }
   return false;
