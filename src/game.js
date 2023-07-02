@@ -409,7 +409,7 @@ const SaveGame = () => {
     });
   }
 
-  window.localStorage.setItem('gameDataV8', JSON.stringify({
+  window.localStorage.setItem('gameDataV9', JSON.stringify({
     ...gameData,
     Guy,
     Chance,
@@ -426,7 +426,7 @@ const SaveGame = () => {
 const LoadGame = () => {
   let i;
 
-  const rawGameData = window.localStorage.getItem('gameDataV8');
+  const rawGameData = window.localStorage.getItem('gameDataV9');
   if (!rawGameData) {
     return false;
   }
