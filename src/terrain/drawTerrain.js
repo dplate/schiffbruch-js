@@ -1,3 +1,5 @@
+import drawGuy from '../guy/drawGuy.js';
+import drawObject from './objects/drawObject.js';
 import drawTile from './tiles/drawTile.js';
 
 const drawTerrain = (gameData, area, forTreasureMap, canvasContext) => {
@@ -9,6 +11,17 @@ const drawTerrain = (gameData, area, forTreasureMap, canvasContext) => {
       drawTile(gameData, area, x, y, forTreasureMap, canvasContext);
     });
   });
+
+  if (!forTreasureMap) {
+    gameData.terrain.forEach((terrainColumn, x) => {
+      terrainColumn.forEach((tile, y) => {
+        if (tile.discovered) {
+          const mustDrawGuy = gameData.guy.tile.x === x && gameData.guy.tile.y === y;
+          drawObject(gameData, area, tile, forTreasureMap, false, mustDrawGuy, canvasContext);
+        }
+      });
+    });
+  }
 };
 
 export default drawTerrain;

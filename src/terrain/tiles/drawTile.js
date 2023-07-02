@@ -4,7 +4,7 @@ import tileSprites from './tileSprites.js';
 const drawTile = (gameData, area, x, y, forTreasureMap, canvasContext) => {
   const tile = gameData.terrain[x][y];
   if (!forTreasureMap && !tile.discovered) {
-    return;
+    return false;
   }
   
   const sprite = tileSprites[tile.type];
@@ -16,7 +16,7 @@ const drawTile = (gameData, area, x, y, forTreasureMap, canvasContext) => {
     destinationX + sprite.width < 0 || destinationY + sprite.height < 0 || 
     destinationX >= area.width || destinationY >= area.height
   ) {
-    return;
+    return false;
   }
 
   const drawTileSprite = (variant) => {
@@ -35,15 +35,17 @@ const drawTile = (gameData, area, x, y, forTreasureMap, canvasContext) => {
 
   drawTileSprite(sprite.variants.grounds[tile.ground]);
   
-  if (!forTreasureMap && gameData.options.grid) {
-    drawTileSprite(sprite.variants.grid);
+  if (!forTreasureMap) {
+    if (gameData.options.grid) {
+      drawTileSprite(sprite.variants.grid);
+    }
+
+    if (!gameData.guy.active && gameData.guy.route.some((routeStep) => x === routeStep.x && y === routeStep.y)) {
+      drawTileSprite(sprite.variants.route);
+    }
   }
 
-  drawObject(gameData, area, tile, forTreasureMap, true, canvasContext);
-
-  if (!gameData.guy.active && gameData.guy.route.some((routeStep) => x === routeStep.x && y === routeStep.y)) {
-    drawTileSprite(sprite.variants.route);
-  }
+  drawObject(gameData, area, tile, forTreasureMap, true, false, canvasContext);
 };
 
 export default drawTile;

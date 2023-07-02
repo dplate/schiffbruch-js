@@ -7,7 +7,7 @@ const getRandomTree = () => {
   const nonBigTrees = [ 
     spriteTypes.TREE_HARDWOOD, 
     spriteTypes.TREE_PALM, 
-    spriteTypes.TREE_HARDWOOD, 
+    spriteTypes.TREE_EVERGREEN, 
     spriteTypes.TREE_SMALL, 
     spriteTypes.BUSH 
   ];

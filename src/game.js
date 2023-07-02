@@ -25,7 +25,6 @@ import isDrinkable from './terrain/objects/isDrinkable.js';
 import isEatable from './terrain/objects/isEatable.js';
 import isNormalTree from './terrain/objects/isNormalTree.js';
 import isFishable from './terrain/objects/isFishable.js';
-import isOnGround from './terrain/objects/isOnGround.js';
 import isRiver from './terrain/objects/isRiver.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
@@ -54,7 +53,6 @@ import drawItem from './guy/inventory/drawItem.js';
 import updateMinimap from './terrain/updateMinimap.js';
 import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
-import drawGuy from './guy/drawGuy.js';
 import sounds from './sounds/sounds.js';
 import startGuyAnimation from './guy/startGuyAnimation.js';
 import constructions from './construction/constructions.js';
@@ -73,6 +71,7 @@ import isUsableBoat from './terrain/objects/isUsableBoat.js';
 import isBigTree from './terrain/objects/isBigTree.js';
 import isUsableFireplace from './terrain/objects/isUsableFireplace.js';
 import updatePipes from './terrain/updatePipes.js';
+import createTreeFallObject from './terrain/objects/createTreeFallObject.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -87,10 +86,6 @@ const MAXYKACH = 61;
 const MAXX = 800; //Bildschirmauflösung
 const MAXY = 600;
 
-const BAUM1DOWN = 30;
-const BAUM2DOWN = BAUM1DOWN + 1;
-const BAUM3DOWN = BAUM1DOWN + 2;
-const BAUM4DOWN = BAUM1DOWN + 3;
 const CUPFEIL = 34;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
@@ -150,10 +145,6 @@ const SCHWARZ = PROGRAMMIERUNG + 12;
 const MUSIK = PROGRAMMIERUNG + 13;
 const DPSOFTWARE = PROGRAMMIERUNG + 14;
 const BILDANZ = DPSOFTWARE + 1; //Wieviele Bilder
-
-//Sounds
-const WAVWALD = 0;
-const WAVANZ = 1;    //Anzahl; der Sounds
 
 //Aktionen
 const AKNICHTS = 0;
@@ -220,7 +211,6 @@ let font1Image = null;
 let font2Image = null;
 let textfieldImage = null;
 let paperImage = null;
-let treesImage = null;
 let creditsImage = null;
 let logoImage = null;
 let cursorsImage = null;
@@ -237,7 +227,6 @@ const pressedKeyCodes = {};
 
 // Sound
 let audio;
-const lpdsbWav = Array(WAVANZ); //Wavedateispeicher
 
 let Spielzustand = GAME_LOGO;       // in welchem Zustand ist das Spiel?
 let MouseAktiv = false;    // Mouse angestellt?
@@ -290,13 +279,6 @@ const Bmp = Array.from(Array(BILDANZ), () => ({
   Breite: null,   //Die Breite des Bildes
   Hoehe: null,    //Die Hoehe des Bildes
   Geschwindigkeit: null, //Wieviel Bilder/sec
-  Sound: null,    //Welcher Sound gehört dazu
-}));
-
-const Wav = Array.from(Array(WAVANZ), () => ({
-  Dateiname: null, //Dateiname der Wavdatei
-  Loop: null,      //Nur einmal abspielen und ständig
-  Volume: null,    //Die Standardlautstärke in Prozent
 }));
 
 const AbspannListe = Array.from(Array(10), () => Array.from(Array(10), () => ({
@@ -355,7 +337,6 @@ const initCanvases = async (window) => {
   font1Image = await loadImage('font1.png');
   font2Image = await loadImage('font2.png');
   paperImage = await loadImage('paper.png');
-  treesImage = await loadImage('trees.png');
   cursorsImage = await loadImage('cursors.png');
   buttonsImage = await loadImage('buttons.png');
   textfieldImage = await loadImage('textfield.png');
@@ -415,17 +396,6 @@ const initInput = (window) => {
 const initAudio = () => {
   audio = setupAudio();
   return audio;
-}
-
-const LoadSound = async (Sound) => {
-  lpdsbWav[Sound] = await audio.load(Wav[Sound].Dateiname);
-}
-
-const PlaySound = (Sound, Volume) => {
-  if (Sound === 0) return;
-
-  lpdsbWav[Sound].setGain((Wav[Sound].Volume / 100) * (Volume / 100));
-  lpdsbWav[Sound].play(Wav[Sound].Loop);
 }
 
 const SaveGame = () => {
@@ -510,7 +480,6 @@ const InitStructs = async () => {
     Bmp[i].rcDes.bottom = 0;
     Bmp[i].Breite = 0;
     Bmp[i].Hoehe = 0;
-    Bmp[i].Sound = 0;
   }
 
   //Cursor
@@ -1003,50 +972,6 @@ const InitStructs = async () => {
   Bmp[BUTTDESTROY].Anzahl = 4;
   Bmp[BUTTDESTROY].Geschwindigkeit = 5;
 
-  //SpzAni
-  for (i = BAUM1DOWN; i <= BAUM4DOWN; i++) {
-    Bmp[i].Animation = true;
-    Bmp[i].Surface = treesImage;
-    Bmp[i].Phase = 0;
-    Bmp[i].rcDes.left = 0;
-    Bmp[i].rcDes.top = 0;
-    Bmp[i].rcDes.right = 0;
-    Bmp[i].rcDes.bottom = 0;
-    Bmp[i].Anzahl = 3;
-    Bmp[i].Geschwindigkeit = 4;
-  }
-  //BAUM1DOWN
-  Bmp[BAUM1DOWN].rcSrc.left = 101;
-  Bmp[BAUM1DOWN].rcSrc.top = 0;
-  Bmp[BAUM1DOWN].rcSrc.right = 101 + 35;
-  Bmp[BAUM1DOWN].rcSrc.bottom = 27;
-  Bmp[BAUM1DOWN].Breite = (Bmp[BAUM1DOWN].rcSrc.right - Bmp[BAUM1DOWN].rcSrc.left);
-  Bmp[BAUM1DOWN].Hoehe = (Bmp[BAUM1DOWN].rcSrc.bottom - Bmp[BAUM1DOWN].rcSrc.top);
-
-  //BAUM2DOWN
-  Bmp[BAUM2DOWN].rcSrc.left = 136;
-  Bmp[BAUM2DOWN].rcSrc.top = 0;
-  Bmp[BAUM2DOWN].rcSrc.right = 136 + 36;
-  Bmp[BAUM2DOWN].rcSrc.bottom = 27;
-  Bmp[BAUM2DOWN].Breite = (Bmp[BAUM2DOWN].rcSrc.right - Bmp[BAUM2DOWN].rcSrc.left);
-  Bmp[BAUM2DOWN].Hoehe = (Bmp[BAUM2DOWN].rcSrc.bottom - Bmp[BAUM2DOWN].rcSrc.top);
-
-  //BAUM3DOWN
-  Bmp[BAUM3DOWN].rcSrc.left = 172;
-  Bmp[BAUM3DOWN].rcSrc.top = 0;
-  Bmp[BAUM3DOWN].rcSrc.right = 172 + 34;
-  Bmp[BAUM3DOWN].rcSrc.bottom = 28;
-  Bmp[BAUM3DOWN].Breite = (Bmp[BAUM3DOWN].rcSrc.right - Bmp[BAUM3DOWN].rcSrc.left);
-  Bmp[BAUM3DOWN].Hoehe = (Bmp[BAUM3DOWN].rcSrc.bottom - Bmp[BAUM3DOWN].rcSrc.top);
-
-  //BAUM4DOWN
-  Bmp[BAUM4DOWN].rcSrc.left = 206;
-  Bmp[BAUM4DOWN].rcSrc.top = 0;
-  Bmp[BAUM4DOWN].rcSrc.right = 206 + 32;
-  Bmp[BAUM4DOWN].rcSrc.bottom = 17;
-  Bmp[BAUM4DOWN].Breite = (Bmp[BAUM4DOWN].rcSrc.right - Bmp[BAUM4DOWN].rcSrc.left);
-  Bmp[BAUM4DOWN].Hoehe = (Bmp[BAUM4DOWN].rcSrc.bottom - Bmp[BAUM4DOWN].rcSrc.top);
-
   //Sonstiges
 
   //Säule1
@@ -1385,14 +1310,6 @@ const InitStructs = async () => {
   AbspannListe[5][2].Bild = GISELA;
   AbspannListe[6][0].Bild = SCHWARZ;
   AbspannListe[6][1].Bild = DPSOFTWARE;
-
-  //Sounds
-  Wav[WAVWALD].Dateiname = 'forest';
-  Wav[WAVWALD].Loop = false;
-  Wav[WAVWALD].Volume = 90;
-
-  //Testweise alle Sounds gleich in den Speicher laden
-  for (i = 0; i < WAVANZ; i++) await LoadSound(i);
 
   //Textausgabe
   TextBereich[TXTTEXTFELD].Aktiv = false;
@@ -1818,7 +1735,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       default:
         Text = '?';
     }
-    if ((tile.Objekt !== -1 || tile.object) && (tile.object?.sprite !== spriteTypes.WAVES)) {
+    if (tile.object && tile.object?.sprite !== spriteTypes.WAVES) {
       Text += ' ' + texts.MIT + ' ';
 
       if (isNormalTree(tile.object))
@@ -2143,7 +2060,6 @@ const MouseInPanel = (Button, Push) => {
       Guy.AkNummer = 0;
       if (tile.ground !== grounds.SEA &&
         tile.type === tileTypes.FLAT &&
-        tile.Objekt === -1 &&
         !tile.object) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHATZ;
@@ -2183,8 +2099,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTFELD].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (tile.Objekt === -1 &&
-        !tile.object &&
+      if (!tile.object &&
         tile.type === tileTypes.FLAT &&
         tile.ground === grounds.WETLAND) {
         Bmp[BUTTSTOP].Phase = 0;
@@ -2207,8 +2122,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTZELT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (tile.Objekt === -1 &&
-        !tile.object &&
+      if (!tile.object &&
         tile.type === tileTypes.FLAT) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKZELT;
@@ -2230,8 +2144,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTBOOT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if ((tile.Objekt === -1) &&
-        !tile.object &&
+      if (!tile.object &&
         (tile.ground === grounds.BEACH) &&
         ((gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) ||
           (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) ||
@@ -2257,8 +2170,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTROHR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (tile.Objekt === -1 &&
-        !tile.object &&
+      if (!tile.object &&
         (tile.type === tileTypes.FLAT)) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKROHR;
@@ -2280,8 +2192,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTSOS].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (tile.Objekt === -1 &&
-        !tile.object &&
+      if (!tile.object &&
         (tile.type === tileTypes.FLAT)) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKSOS;
@@ -2376,8 +2287,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTFEUERST].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (tile.Objekt === -1 &&
-        !tile.object &&
+      if (!tile.object &&
         (tile.type === tileTypes.FLAT)) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKFEUERSTELLE;
@@ -2471,16 +2381,6 @@ const startGame = async (newGame) => {
     gameData.treasure = hideTreasure(gameData);
     addPirateWreck(gameData.terrain);
 
-    for (let x = 0; x < MAXXKACH; x++) {
-      for (let y = 0; y < MAXYKACH; y++) {
-        const tile = gameData.terrain[x][y];
-        tile.Objekt = -1;
-        tile.ObPos = { x: 0, y: 0 };
-        tile.Reverse = false;
-        tile.Phase = -1;
-      }
-    }
-
     //Guy Position
     gameData.guy.tile.x = 1;
     gameData.guy.tile.y = Math.floor(MAXYKACH / 2);
@@ -2526,8 +2426,6 @@ const Zeige = () => {
 
   drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
 
-  ZeichneObjekte();
-
   ZeichnePanel();
 
   //Die TagesZeit ausgeben
@@ -2571,8 +2469,7 @@ const Zeige = () => {
   }
 
   //Cursor
-  if (CursorTyp === CUPFEIL) ZeichneBilder(MousePosition.x, MousePosition.y,
-    CursorTyp, rcGesamt, false, -1);
+  if (CursorTyp === CUPFEIL) ZeichneBilder(MousePosition.x, MousePosition.y, CursorTyp, rcGesamt);
   else if (items.list.includes(CursorTyp)) {
     const position = {
       x: MousePosition.x - itemSprites[CursorTyp].width / 2,
@@ -2580,16 +2477,10 @@ const Zeige = () => {
     };
     drawItem(CursorTyp, position, primaryCanvasContext);
   } else {
-    ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2, MousePosition.y - Bmp[CursorTyp].Hoehe / 2, CursorTyp, rcGesamt, false, -1);
+    ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2, MousePosition.y - Bmp[CursorTyp].Hoehe / 2, CursorTyp, rcGesamt);
   }
 
   if (Nacht) Fade(100, 0); //Das muß hier stehen, damit man die Textnachricht in der Nacht lesen kann
-}
-
-const ZeigeIntro = () => {
-  drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
-
-  ZeichneObjekte();
 }
 
 const ZeigeAbspann = () => {
@@ -2605,7 +2496,7 @@ const ZeigeAbspann = () => {
 
   if (AbspannZustand === 0) {
     ZeichneBilder(Math.floor(MAXX / 2 - Bmp[AbspannListe[AbspannNr][0].Bild].Breite / 2), 100,
-      AbspannListe[AbspannNr][0].Bild, rcGesamt, false, -1);
+      AbspannListe[AbspannNr][0].Bild, rcGesamt);
     for (z = 1; z < 10; z++) {
       if (AbspannListe[AbspannNr][z].Aktiv)
         AbspannBlt(AbspannListe[AbspannNr][z].Bild,
@@ -2752,16 +2643,9 @@ const AbspannCalc = () => {
   }
 }
 
-const ZeichneBilder = (x, y, i, Ziel, Reverse, Frucht) => {
-  let Phase;
-
-  if (Frucht === -1) Phase = Bmp[i].Phase; else Phase = Math.floor(Frucht);
+const ZeichneBilder = (x, y, i, Ziel) => {
   rcRectsrc = { ...Bmp[i].rcSrc };
-  if (!Reverse) {
-    rcRectsrc.top += Math.floor(Phase * Bmp[i].Hoehe);
-  } else {
-    rcRectsrc.top = Math.floor(Bmp[i].rcSrc.top + (Bmp[i].Anzahl - 1) * Bmp[i].Hoehe - Phase * Bmp[i].Hoehe);
-  }
+  rcRectsrc.top += Math.floor(Bmp[i].Phase * Bmp[i].Hoehe);
   rcRectsrc.bottom = rcRectsrc.top + Bmp[i].Hoehe;
   rcRectdes.left = Math.round(x);
   rcRectdes.top = Math.round(y);
@@ -2769,81 +2653,6 @@ const ZeichneBilder = (x, y, i, Ziel, Reverse, Frucht) => {
   rcRectdes.bottom = Math.round(y) + Bmp[i].Hoehe;
   CalcRect(Ziel);
   drawImage(Bmp[i].Surface, primaryCanvasContext);
-}
-
-const ZeichneObjekte = () => {
-  let x, y;
-  let Guyzeichnen;
-
-  for (y = 0; y < MAXYKACH; y++)
-    for (x = 0; x < MAXXKACH; x++) {
-
-      Guyzeichnen = (gameData.guy.tile.x === x) && (gameData.guy.tile.y === y);
-      const Objekt = gameData.terrain[x][y].Objekt;
-
-      //Die nichtsichbaren Kacheln (oder nicht betroffenen) ausfiltern
-      if ((gameData.terrain[x][y].position.x <= gameData.camera.x - KXPIXEL ||
-        gameData.terrain[x][y].position.x >= gameData.camera.x + gameData.camera.width + KXPIXEL ||
-        gameData.terrain[x][y].position.y <= gameData.camera.y - KYPIXEL ||
-        gameData.terrain[x][y].position.y >= gameData.camera.y + gameData.camera.height + KYPIXEL ||
-        !gameData.terrain[x][y].discovered) &&
-        !Guyzeichnen) {
-        continue;
-      }
-
-      //Der Guy ist immer vor diesen Objekten
-      if (isOnGround(gameData.terrain[x][y].object)) {
-        //this happens in drawObject now
-      } else {
-        if (Objekt === -1 && gameData.terrain[x][y].object) {
-          const object = gameData.terrain[x][y].object;
-          if (Guyzeichnen) {
-            if (gameData.guy.position.y < gameData.terrain[x][y].position.y + object.y) {
-              drawGuy(gameData, primaryCanvasContext);
-              Guyzeichnen = false;
-            }
-          }
-
-          drawSprite(
-            object.sprite,
-            object.frame,
-            gameData.terrain[x][y].position.x + object.x - gameData.camera.x,
-            gameData.terrain[x][y].position.y + object.y - gameData.camera.y,
-            primaryCanvasContext
-          );
-        } else if (Objekt === BAUM1DOWN || Objekt === BAUM2DOWN || Objekt === BAUM3DOWN || Objekt === BAUM4DOWN) {
-
-          //Sound abspielen
-          if (((gameData.guy.tile.x - 1 <= x) && (x <= gameData.guy.tile.x + 1)) &&
-            ((gameData.guy.tile.y - 1 <= y) && (y <= gameData.guy.tile.y + 1))) {
-            if ((x === gameData.guy.tile.x) && (y === gameData.guy.tile.y))
-              PlaySound(Bmp[Objekt].Sound, 100);
-            else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt === -1 || (
-              Bmp[Objekt].Sound !== Bmp[gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].Objekt].Sound
-            ))
-              PlaySound(Bmp[Objekt].Sound, 50);
-          }
-          if (Guyzeichnen) {
-            if (gameData.guy.position.y < gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y) {
-              drawGuy(gameData, primaryCanvasContext);
-              Guyzeichnen = false;
-            }
-          }
-
-          ZeichneBilder(
-            gameData.terrain[x][y].position.x + gameData.terrain[x][y].ObPos.x - gameData.camera.x - Bmp[Objekt].Breite / 2,
-            gameData.terrain[x][y].position.y + gameData.terrain[x][y].ObPos.y - gameData.camera.y - Bmp[Objekt].Hoehe,
-            Objekt,
-            { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height },
-            false,
-            gameData.terrain[x][y].Phase
-          );
-        }
-      }
-      if (Guyzeichnen) {
-        drawGuy(gameData, primaryCanvasContext);
-      }
-    }
 }
 
 const ZeichnePapier = () => {
@@ -2917,99 +2726,67 @@ const ZeichnePanel = () => {
 
   //Gitternetzknopf
   if (gameData.options.grid) Bmp[BUTTGITTER].Phase = 1; else Bmp[BUTTGITTER].Phase = 0;
-  ZeichneBilder(Bmp[BUTTGITTER].rcDes.left,
-    Bmp[BUTTGITTER].rcDes.top,
-    BUTTGITTER, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTGITTER].rcDes.left, Bmp[BUTTGITTER].rcDes.top, BUTTGITTER, rcPanel);
 
   //SOUNDknopf
   if (audio.isRunning()) Bmp[BUTTSOUND].Phase = 0; else Bmp[BUTTSOUND].Phase = 1;
-  ZeichneBilder(Bmp[BUTTSOUND].rcDes.left,
-    Bmp[BUTTSOUND].rcDes.top,
-    BUTTSOUND, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTSOUND].rcDes.left, Bmp[BUTTSOUND].rcDes.top, BUTTSOUND, rcPanel);
 
   //BEENDENknopf
-  ZeichneBilder(Bmp[BUTTBEENDEN].rcDes.left,
-    Bmp[BUTTBEENDEN].rcDes.top,
-    BUTTBEENDEN, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTBEENDEN].rcDes.left, Bmp[BUTTBEENDEN].rcDes.top, BUTTBEENDEN, rcPanel);
 
   //NEUknopf
-  ZeichneBilder(Bmp[BUTTNEU].rcDes.left,
-    Bmp[BUTTNEU].rcDes.top,
-    BUTTNEU, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTNEU].rcDes.left, Bmp[BUTTNEU].rcDes.top, BUTTNEU, rcPanel);
 
   //TAGNEUknopf
-  ZeichneBilder(Bmp[BUTTTAGNEU].rcDes.left,
-    Bmp[BUTTTAGNEU].rcDes.top,
-    BUTTTAGNEU, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTTAGNEU].rcDes.left, Bmp[BUTTTAGNEU].rcDes.top, BUTTTAGNEU, rcPanel);
 
   //Aktionsknopf
   if (HauptMenue === MEAKTION) Bmp[BUTTAKTION].Phase = Bmp[BUTTAKTION].Anzahl;
   else if (Bmp[BUTTAKTION].Phase === Bmp[BUTTAKTION].Anzahl) Bmp[BUTTAKTION].Phase = 0;
-  ZeichneBilder(Bmp[BUTTAKTION].rcDes.left,
-    Bmp[BUTTAKTION].rcDes.top,
-    BUTTAKTION, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTAKTION].rcDes.left, Bmp[BUTTAKTION].rcDes.top, BUTTAKTION, rcPanel);
 
   //BauKnopf
   if (HauptMenue === MEBAUEN) Bmp[BUTTBAUEN].Phase = Bmp[BUTTBAUEN].Anzahl;
   else if (Bmp[BUTTBAUEN].Phase === Bmp[BUTTBAUEN].Anzahl) Bmp[BUTTBAUEN].Phase = 0;
-  ZeichneBilder(Bmp[BUTTBAUEN].rcDes.left,
-    Bmp[BUTTBAUEN].rcDes.top,
-    BUTTBAUEN, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTBAUEN].rcDes.left, Bmp[BUTTBAUEN].rcDes.top, BUTTBAUEN, rcPanel);
 
   //Inventarknopf
   if (HauptMenue === MEINVENTAR) Bmp[BUTTINVENTAR].Phase = Bmp[BUTTINVENTAR].Anzahl;
   else if (Bmp[BUTTINVENTAR].Phase === Bmp[BUTTINVENTAR].Anzahl) Bmp[BUTTINVENTAR].Phase = 0;
-  ZeichneBilder(Bmp[BUTTINVENTAR].rcDes.left,
-    Bmp[BUTTINVENTAR].rcDes.top,
-    BUTTINVENTAR, rcPanel, false, -1);
+  ZeichneBilder(Bmp[BUTTINVENTAR].rcDes.left, Bmp[BUTTINVENTAR].rcDes.top, BUTTINVENTAR, rcPanel);
 
   //WEITERknopf
-  if (Bmp[BUTTWEITER].Phase !== -1) ZeichneBilder(Bmp[BUTTWEITER].rcDes.left,
-    Bmp[BUTTWEITER].rcDes.top,
-    BUTTWEITER, rcPanel, false, -1);
+  if (Bmp[BUTTWEITER].Phase !== -1) ZeichneBilder(Bmp[BUTTWEITER].rcDes.left, Bmp[BUTTWEITER].rcDes.top, BUTTWEITER, rcPanel);
 
   //STOPknopf
-  if (Bmp[BUTTSTOP].Phase !== -1) ZeichneBilder(Bmp[BUTTSTOP].rcDes.left,
-    Bmp[BUTTSTOP].rcDes.top,
-    BUTTSTOP, rcPanel, false, -1);
+  if (Bmp[BUTTSTOP].Phase !== -1) ZeichneBilder(Bmp[BUTTSTOP].rcDes.left, Bmp[BUTTSTOP].rcDes.top, BUTTSTOP, rcPanel);
 
   //ABLEGENknopf
-  if (Bmp[BUTTABLEGEN].Phase !== -1) ZeichneBilder(Bmp[BUTTABLEGEN].rcDes.left,
-    Bmp[BUTTABLEGEN].rcDes.top,
-    BUTTABLEGEN, rcPanel, false, -1);
+  if (Bmp[BUTTABLEGEN].Phase !== -1) ZeichneBilder(Bmp[BUTTABLEGEN].rcDes.left, Bmp[BUTTABLEGEN].rcDes.top, BUTTABLEGEN, rcPanel);
 
   //Welches Menü zeichnen?
   switch (HauptMenue) {
     case MEAKTION:
       for (i = BUTTSUCHEN; i <= BUTTSCHLEUDER; i++) {
         if (Bmp[i].Phase === -1) {
-          ZeichneBilder(Bmp[i].rcDes.left,
-            Bmp[i].rcDes.top,
-            BUTTFRAGEZ, rcPanel, false, -1);
+          ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, BUTTFRAGEZ, rcPanel);
           continue;
         }
-        ZeichneBilder(Bmp[i].rcDes.left,
-          Bmp[i].rcDes.top,
-          i, rcPanel, false, -1);
+        ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, i, rcPanel);
       }
       break;
     case MEBAUEN:
       for (i = BUTTZELT; i <= BUTTDESTROY; i++) {
         if (Bmp[i].Phase === -1) {
-          ZeichneBilder(Bmp[i].rcDes.left,
-            Bmp[i].rcDes.top,
-            BUTTFRAGEZ, rcPanel, false, -1);
+          ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, BUTTFRAGEZ, rcPanel);
           continue;
         }
-        ZeichneBilder(Bmp[i].rcDes.left,
-          Bmp[i].rcDes.top,
-          i, rcPanel, false, -1);
+        ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, i, rcPanel);
       }
       break;
     case MEINVENTAR:
-      ZeichneBilder(Bmp[INVPAPIER].rcDes.left,
-        Bmp[INVPAPIER].rcDes.top,
-        INVPAPIER, rcPanel, false, -1);
+      ZeichneBilder(Bmp[INVPAPIER].rcDes.left, Bmp[INVPAPIER].rcDes.top, INVPAPIER, rcPanel);
       drawItems(gameData, primaryCanvasContext);
       break;
   }
@@ -3045,7 +2822,7 @@ const ZeichnePanel = () => {
 
   ZeichneBilder(Math.floor(Bmp[SONNE].rcDes.left + diffx * Math.cos(pi - pi * TagesZeit / 120) + diffx),
     Math.floor(Bmp[SONNE].rcDes.top + (-diffy * Math.sin(pi - pi * TagesZeit / 120) + diffy)),
-    SONNE, Bmp[SONNE].rcDes, false, -1);
+    SONNE, Bmp[SONNE].rcDes);
 
   //Rettungsring
   if (Chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * Chance));
@@ -3053,7 +2830,7 @@ const ZeichnePanel = () => {
   if (Ringtmp > 100) Ringtmp = 100;
   ZeichneBilder(Math.floor(Bmp[RING].rcDes.left),
     Math.floor(Bmp[RING].rcDes.top + Ringtmp),
-    RING, rcPanel, false, -1);
+    RING, rcPanel);
 
   //Die ChanceZahl ausgeben
   Textloeschen(TXTCHANCE);
@@ -3292,10 +3069,10 @@ const CheckSpzButton = () => {
 
   if (Bmp[BUTTSTOP].Phase === -1 && (isUsableBoat(tile) ||
     (isOnSea(gameData) &&
-      ((tileWest.ground !== grounds.SEA && tileWest.Objekt === -1 && !tileWest.object) ||
-        (tileNorth.ground !== grounds.SEA && tileNorth.Objekt === -1 && !tileNorth.object) ||
-        (tileEast.ground !== grounds.SEA && tileEast.Objekt === -1 && !tileEast.object) ||
-        (tileSouth.ground !== grounds.SEA && tileSouth.Objekt === -1 && !tileSouth.object))))) {
+      ((tileWest.ground !== grounds.SEA && !tileWest.object) ||
+        (tileNorth.ground !== grounds.SEA && !tileNorth.object) ||
+        (tileEast.ground !== grounds.SEA && !tileEast.object) ||
+        (tileSouth.ground !== grounds.SEA && !tileSouth.object))))) {
     if (Bmp[BUTTABLEGEN].Phase === -1) Bmp[BUTTABLEGEN].Phase = 0;
   } else Bmp[BUTTABLEGEN].Phase = -1;
 }
@@ -3601,7 +3378,6 @@ const AkAbbruch = () => {
 
 
 const AkDestroy = () => {
-  let i; //Um sich kurz das Objekt zu merken
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   if (Guy.AkNummer === 0) {
@@ -3890,31 +3666,17 @@ const AkFaellen = () => {
       break;
     case 7:
       startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
-      if (tree.sprite === spriteTypes.TREE_HARDWOOD) {
-        i = BAUM1DOWN;
-      } else if (tree.sprite === spriteTypes.TREE_PALM) {
-        i = BAUM2DOWN;
-      } else if (tree.sprite === spriteTypes.TREE_EVERGREEN) {
-        i = BAUM3DOWN;
-      } else if (tree.sprite === spriteTypes.TREE_SMALL) {
-        i = BAUM4DOWN;
-      }
-      tile.object = null;
-      tile.Objekt = i;
-      tile.Phase = 0;
-      tile.ObPos.x = tree.x - 17;
-      tile.ObPos.y = tree.y;
+      createTreeFallObject(tile);
       sounds.TREEFALL.instance.play();
+      changeItem(gameData, items.LOG, 1);
+      changeItem(gameData, items.BRANCH, 5);
+      changeItem(gameData, items.LEAF, 5);
+      changeItem(gameData, items.LIANA, 2);
       break;
     case 8:
       goToStoredPosition(gameData);
       break;
     case 9:
-      tile.Objekt = -1;
-      changeItem(gameData, items.LOG, 1);
-      changeItem(gameData, items.BRANCH, 5);
-      changeItem(gameData, items.LEAF, 5);
-      changeItem(gameData, items.LIANA, 2);
       Guy.Aktion = AKNICHTS;
       break;
   }
@@ -4390,11 +4152,6 @@ const AkTagEnde = () => {
       Stunden = 12;
       Minuten = 0;
       sounds.WOLF.instance.play();
-      //Falsche Objekte Löschen
-      if (tile.Objekt >= BAUM1DOWN && tile.Objekt <= BAUM4DOWN) {
-        tile.Objekt = -1;
-        changeItem(gameData, items.LOG, 1);
-      }
 
       //Je nach Schlafort Zustand verändern
       if (tent) {
@@ -5349,27 +5106,7 @@ const CheckBenutze = (item) => {
 const Animationen = () => {
   animateTerrain(gameData.terrain, frame, framesPerSecond);
 
-  let x, y, i, j, k, loop; //Zwischenspeicher
-
-  for (y = 0; y < MAXYKACH; y++) {
-    for (x = 0; x < MAXXKACH; x++) {
-      j = gameData.terrain[x][y].Objekt;
-      if ((j === -1) || (!Bmp[j].Animation)) continue;
-      i = Math.floor(framesPerSecond / Bmp[j].Geschwindigkeit);
-      if (i < 1) i = 1;
-      if (frame % i === 0) {
-        gameData.terrain[x][y].Phase++;
-
-        if (gameData.terrain[x][y].Phase >= Bmp[j].Anzahl) {
-          gameData.terrain[x][y].Phase = 0;
-          //Die Baumfällenanimation nur ein mal abspielen
-          if (j >= BAUM1DOWN && j <= BAUM4DOWN) {
-            gameData.terrain[x][y].Objekt = -1;
-          }
-        }
-      }
-    }
-  }
+  let i, j; //Zwischenspeicher
 
   for (j = BUTTGITTER; j <= BUTTDESTROY; j++) {
     if (!Bmp[j].Animation) continue;
@@ -5417,7 +5154,7 @@ const refresh = (timestamp) => {
 
     if (!gameData.guy.active) Event(Guy.Aktion); //Aktionen starten
 
-    ZeigeIntro(); //Bild auffrischen
+    drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
 
   } else if (Spielzustand === GAME_PLAY) {
     if ((Stunden >= 12) && (Minuten !== 0) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
