@@ -115,7 +115,7 @@ const sounds = {
     instance: null
   },
   OUTRO: {
-    file: 'OUTRO',
+    file: 'outro',
     baseGain: 1,
     instance: null
   },
