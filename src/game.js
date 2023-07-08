@@ -72,15 +72,16 @@ import isBigTree from './terrain/objects/isBigTree.js';
 import isUsableFireplace from './terrain/objects/isUsableFireplace.js';
 import updatePipes from './terrain/updatePipes.js';
 import createTreeFallObject from './terrain/objects/createTreeFallObject.js';
+import drawText from './text/drawText.js';
+import textAreas from './text/textAreas.js';
+import clearText from './text/clearText.js';
+import closePaper from './text/closePaper.js';
+import drawPaper from './text/drawPaper.js';
+import blitText from './text/blitText.js';
+import openPaper from './text/openPaper.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
-const S1XPIXEL = 20; //Breite der Schrift1
-const S1YPIXEL = 20; //Höhe der Schrift1
-const S1ABSTAND = 13; //Abstand zum nächsten Buchstaben
-const S2XPIXEL = 10; //Breite der Schrift2
-const S2YPIXEL = 15; //Höhe der Schrift2
-const S2ABSTAND = 10; //Abstand zum nächsten Buchstaben
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
 const MAXX = 800; //Bildschirmauflösung
@@ -126,9 +127,7 @@ const SAEULE2 = SAEULE1 + 1;
 const SAEULE3 = SAEULE1 + 2;
 const INVPAPIER = 157;
 const RING = INVPAPIER + 1;
-const JA = INVPAPIER + 2;
-const NEIN = INVPAPIER + 3;
-const SONNE = INVPAPIER + 4;
+const SONNE = INVPAPIER + 2;
 const PROGRAMMIERUNG = 164;
 const DIRKPLATE = PROGRAMMIERUNG + 1;
 const MATTHIAS = PROGRAMMIERUNG + 2;
@@ -185,14 +184,6 @@ const MEAKTION = 1;
 const MEBAUEN = 2;
 const MEINVENTAR = 3;
 
-//Textfelder
-const TXTTEXTFELD = 0;
-const TXTFPS = 1;
-const TXTTAGESZEIT = 2;
-const TXTCHANCE = 3;
-const TXTPAPIER = 4; //Muß!!! als letztes stehen
-const TEXTANZ = 5; //Wieviele Textbreiche
-
 //Spielzustände
 const GAME_WAIT = 'wait';
 const GAME_INTRO = 'intro';
@@ -207,10 +198,7 @@ let minimapCanvasContext = null;
 let textCanvasContext = null;
 
 let panelImage = null;
-let font1Image = null;
-let font2Image = null;
 let textfieldImage = null;
-let paperImage = null;
 let creditsImage = null;
 let logoImage = null;
 let cursorsImage = null;
@@ -237,16 +225,12 @@ let timestampInSeconds;            //Start der Sekunde
 let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
-let Tag, Stunden, Minuten;        //Wieviel Uhr (0-12h)
 let StdString = '';    //Standard string
 let RohString = '';    //Darin wird gespeichert, wieviel Rohstoffe noch benötigt werden
-let PapierText;            //Wieviel Papier? (in Pixel) -1 = Kein Text
 let HauptMenue;            //Welches Menü?
 let TwoClicks;                //Für Aktionen mit zwei Mausklicks
-let Chance;                    //Wie groß ist die Chance am Tag gerettet zu werden
 let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
 let Spielbeenden = false;    //Wenn true wird das Spiel sofort beendet
-let Frage;                    //-1=KeineFrage;0=Frage wird gestellt;1=Ja;2=Nein
 const pi = 3.1415926535;        //pi, was sonst
 let AbspannNr = 0;            //Zähler für Abspann
 let AbspannZustand = 0;            //Wo im Abspann
@@ -256,11 +240,6 @@ const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
 const rcPanel = { left: MAXX - 205, top: 0, right: MAXX, bottom: MAXY };
 const rcKarte = { left: MAXX - 158, top: 23, right: MAXX - 158 + MAXXKACH * 2, bottom: 23 + MAXYKACH * 2 };
 const rcTextFeld1 = { left: 0, top: MAXY - 20, right: MAXX - 195, bottom: MAXY };
-
-let TextBereich = Array.from(Array(TEXTANZ), () => ({
-  Aktiv: null, //Steht Text in diesem Bereich?
-  rcText: { left: null, top: null, right: null, bottom: null } //Die Position des Ausgabe
-}));
 
 const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
 
@@ -318,9 +297,15 @@ const gameData = {
     water: null,
     food: null,
     health: null,
-    inventory: null
+    inventory: null,
+    chance: null
   },
-  constructionHints: {}
+  constructionHints: {},
+  calendar: {
+    day: null,
+    minutes: null,
+  },
+  paper: null
 };
 
 //Bilder
@@ -334,9 +319,6 @@ const loadImage = async (file) => {
 
 const initCanvases = async (window) => {
   panelImage = await loadImage('panel.png');
-  font1Image = await loadImage('font1.png');
-  font2Image = await loadImage('font2.png');
-  paperImage = await loadImage('paper.png');
   cursorsImage = await loadImage('cursors.png');
   buttonsImage = await loadImage('buttons.png');
   textfieldImage = await loadImage('textfield.png');
@@ -412,13 +394,8 @@ const SaveGame = () => {
   window.localStorage.setItem('gameDataV9', JSON.stringify({
     ...gameData,
     Guy,
-    Chance,
     HauptMenue,
-    Minuten,
     Spielzustand,
-    Stunden,
-    Tag,
-    TextBereich,
     animations
   }));
 }
@@ -441,15 +418,11 @@ const LoadGame = () => {
   for (const key in parsedGameData) {
     gameData[key] = parsedGameData[key];
   }
+  gameData.paper = null;
 
   Guy = gameData.Guy;
-  Chance = gameData.Chance;
   HauptMenue = gameData.HauptMenue;
-  Minuten = gameData.Minuten;
   Spielzustand = gameData.Spielzustand;
-  Stunden = gameData.Stunden;
-  Tag = gameData.Tag;
-  TextBereich = gameData.TextBereich;
 
   for (i = 0; i < BILDANZ; i++) {
     Bmp[i].Animation = gameData.animations[i].Animation;
@@ -1044,26 +1017,6 @@ const InitStructs = async () => {
   Bmp[RING].Hoehe = (Bmp[RING].rcSrc.bottom - Bmp[RING].rcSrc.top);
   Bmp[RING].Surface = panelImage;
 
-  //JA
-  Bmp[JA].Anzahl = 1;
-  Bmp[JA].rcSrc.left = 0;
-  Bmp[JA].rcSrc.top = 154;
-  Bmp[JA].rcSrc.right = Bmp[JA].rcSrc.left + 41;
-  Bmp[JA].rcSrc.bottom = Bmp[JA].rcSrc.top + 42;
-  Bmp[JA].Breite = (Bmp[JA].rcSrc.right - Bmp[JA].rcSrc.left);
-  Bmp[JA].Hoehe = (Bmp[JA].rcSrc.bottom - Bmp[JA].rcSrc.top);
-  Bmp[JA].Surface = paperImage;
-
-  //NEIN
-  Bmp[NEIN].Anzahl = 1;
-  Bmp[NEIN].rcSrc.left = 41;
-  Bmp[NEIN].rcSrc.top = 154;
-  Bmp[NEIN].rcSrc.right = Bmp[NEIN].rcSrc.left + 100;
-  Bmp[NEIN].rcSrc.bottom = Bmp[NEIN].rcSrc.top + 39;
-  Bmp[NEIN].Breite = (Bmp[NEIN].rcSrc.right - Bmp[NEIN].rcSrc.left);
-  Bmp[NEIN].Hoehe = (Bmp[NEIN].rcSrc.bottom - Bmp[NEIN].rcSrc.top);
-  Bmp[NEIN].Surface = paperImage;
-
   //Sonne
   Bmp[SONNE].Anzahl = 1;
   Bmp[SONNE].rcSrc.left = 205;
@@ -1311,44 +1264,11 @@ const InitStructs = async () => {
   AbspannListe[6][0].Bild = SCHWARZ;
   AbspannListe[6][1].Bild = DPSOFTWARE;
 
-  //Textausgabe
-  TextBereich[TXTTEXTFELD].Aktiv = false;
-  TextBereich[TXTTEXTFELD].rcText.left = 9;
-  TextBereich[TXTTEXTFELD].rcText.top = MAXY - 17;
-  TextBereich[TXTTEXTFELD].rcText.right = MAXX - 200;
-  TextBereich[TXTTEXTFELD].rcText.bottom = MAXY - 2;
-
-  TextBereich[TXTFPS].Aktiv = false;
-  TextBereich[TXTFPS].rcText.left = MAXX - 40;
-  TextBereich[TXTFPS].rcText.top = 3;
-  TextBereich[TXTFPS].rcText.right = TextBereich[TXTFPS].rcText.left + 2 * S1XPIXEL;
-  TextBereich[TXTFPS].rcText.bottom = TextBereich[TXTFPS].rcText.top + S1YPIXEL;
-
-  TextBereich[TXTTAGESZEIT].Aktiv = true;
-  TextBereich[TXTTAGESZEIT].rcText.left = MAXX - 110;
-  TextBereich[TXTTAGESZEIT].rcText.top = MAXY - 20;
-  TextBereich[TXTTAGESZEIT].rcText.right = TextBereich[TXTTAGESZEIT].rcText.left + 5 * S2XPIXEL;
-  TextBereich[TXTTAGESZEIT].rcText.bottom = TextBereich[TXTTAGESZEIT].rcText.top + S2YPIXEL;
-
-  TextBereich[TXTPAPIER].Aktiv = false;
-  TextBereich[TXTPAPIER].rcText.left = 150;
-  TextBereich[TXTPAPIER].rcText.top = 100;
-  TextBereich[TXTPAPIER].rcText.right = 530;
-  TextBereich[TXTPAPIER].rcText.bottom = 500;
-
-  TextBereich[TXTCHANCE].Aktiv = false;
-  TextBereich[TXTCHANCE].rcText.left = Bmp[RING].rcDes.left + 5;
-  TextBereich[TXTCHANCE].rcText.top = Bmp[RING].rcDes.top + Bmp[RING].Hoehe + 10;
-  TextBereich[TXTCHANCE].rcText.right = TextBereich[TXTCHANCE].rcText.left + 3 * S2XPIXEL;
-  TextBereich[TXTCHANCE].rcText.bottom = TextBereich[TXTCHANCE].rcText.top + S2YPIXEL;
-
   CursorTyp = CUPFEIL;
   MouseAktiv = true;
-  PapierText = -1;
   HauptMenue = 0;
   TwoClicks = -1;
   Nacht = false;
-  Frage = -1;
   framesPerSecond = 100;
   frame = 0;
   timestampInSeconds = 0;
@@ -1439,38 +1359,51 @@ const CheckMouse = () => {
   }
 
   //Wenn ein Text steht, dann bei Mausdruck Text weg
-  if (PapierText !== -1) {
-    if (Frage === 0) {
-      if (InRect(MousePosition.x, MousePosition.y, Bmp[JA].rcDes)) {
+  if (gameData.paper) {
+    if (gameData.paper.question) {
+      if (InRect(
+        MousePosition.x, 
+        MousePosition.y, 
+        { 
+          left: gameData.paper.question.yes.x,
+          top: gameData.paper.question.yes.y,
+          right: gameData.paper.question.yes.x + gameData.paper.question.yes.width,
+          bottom: gameData.paper.question.yes.y + gameData.paper.question.yes.height,
+        }
+      )) {
         CursorTyp = CUPFEIL;
         if ((Button === 0) && (Push === 1)) {
-          Frage = 1;
-          Textloeschen(TXTPAPIER);
-          PapierText = -1;
+          gameData.paper.question.answer = true;
           gameData.guy.active = false;
           sounds.CLICK2.instance.play();
         }
-      } else if (InRect(MousePosition.x, MousePosition.y, Bmp[NEIN].rcDes)) {
+      } else if (InRect(
+        MousePosition.x, 
+        MousePosition.y, 
+        { 
+          left: gameData.paper.question.no.x,
+          top: gameData.paper.question.no.y,
+          right: gameData.paper.question.no.x + gameData.paper.question.no.width,
+          bottom: gameData.paper.question.no.y + gameData.paper.question.no.height,
+        }
+      )) {
         CursorTyp = CUPFEIL;
         if ((Button === 0) && (Push === 1)) {
-          Frage = 2;
-          Textloeschen(TXTPAPIER);
-          PapierText = -1;
+          gameData.paper.question.answer = false;
           gameData.guy.active = false;
           sounds.CLICK2.instance.play();
         }
-      } else if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
+      } else if ((Button === 0) && (Push === 1)) {
+        sounds.CLICK.instance.play();
+      }
     } else if ((Button !== -1) && (Push === 1)) {
-      Textloeschen(TXTPAPIER);
-      PapierText = -1;
-      gameData.guy.active = false;
+      closePaper(gameData, textCanvasContext);
     }
     return;
-
   }
 
   //Animationen und Text löschen (werden dann von den MouseIn.. Sachen neu angestellt
-  Textloeschen(TXTTEXTFELD);
+  clearText(textAreas.STATUS, textCanvasContext);
   ButtAniAus();
 
   //Wenn der Guy aktiv dann linke Mouse-Buttons ignorieren
@@ -1604,7 +1537,7 @@ const CheckKey = () => {
       Bmp[BUTTHAUS2].Phase = 0;
       Bmp[BUTTHAUS3].Phase = 0;
 
-      Chance += 100;
+      gameData.guy.chance += 10;
     }
   } else if (Spielzustand === GAME_CREDITS) {
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
@@ -1614,39 +1547,35 @@ const CheckKey = () => {
   return (1);
 }
 
-const AddTime = (h, m) => {
+const AddTime = (m) => {
   let x, y;
 
-  Stunden += h;
-  Minuten += m;
-  if (Minuten >= 60) {
-    Minuten -= 60;
-    Stunden++;
-  }
+  gameData.calendar.minutes += m;
+
   for (y = 0; y < MAXYKACH; y++)
     for (x = 0; x < MAXXKACH; x++) {
       const tile = gameData.terrain[x][y];
       //Feuer nach einer bestimmten Zeit ausgehen lassen
       const object = tile.object;
       if (object?.lifetime) {
-        object.lifetime -= 60 * h + m;
+        object.lifetime -= m;
         if (object.lifetime <= 0) {
           if (object.chance) {
-            Chance -= object.chance;
+            gameData.guy.chance -= object.chance;
           }
           tile.object = null;
         }
       }
       //pro Minute Reifungsprozess fortführen
       if (tile.object?.sprite === spriteTypes.FIELD && !tile.construction) {
-        tile.object.frame += (60 * h + m) * 0.005;
+        tile.object.frame += m * 0.005;
         tile.object.frame = Math.min(tile.object.frame, 2);
       } else if (tile.object?.sprite === spriteTypes.BUSH) {
-        tile.object.frame += (60 * h + m) * 0.0005;
+        tile.object.frame += m * 0.0005;
         tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
       }
     }
-  changeHealth(gameData, (60 * h + m) * (gameData.guy.water - 50 + gameData.guy.food - 50) / 1000);
+  changeHealth(gameData, m * (gameData.guy.water - 50 + gameData.guy.food - 50) / 1000);
   if (gameData.guy.health <= 0 && Guy.Aktion !== AKTOD && Guy.Aktion !== AKTAGENDE && Spielzustand === GAME_PLAY) {
     gameData.guy.active = false;
     Guy.AkNummer = 0;
@@ -1654,7 +1583,7 @@ const AddTime = (h, m) => {
   }
 
   if ((Spielzustand === GAME_PLAY) && (!isOnSea(gameData))) {
-    if (Math.random() < (Chance / 100) * ((60 * h + m) / 720)) {
+    if (Math.random() < (gameData.guy.chance / 100) * (m / 720)) {
       gameData.guy.active = false;
       Guy.AkNummer = 0;
       Guy.Aktion = AKGERETTET;
@@ -1781,9 +1710,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       }
 
     }
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(Text, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(Text, textAreas.STATUS, gameData, textCanvasContext);
   }
 
   //rechte Maustastescrollen
@@ -1824,7 +1751,7 @@ const ButtAniAus = () => {
 }
 
 const MouseInPanel = (Button, Push) => {
-  let mx, my, i;  //Mauskoordinaten in Minimap
+  let mx, my;  //Mauskoordinaten in Minimap
 
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
@@ -1835,16 +1762,22 @@ const MouseInPanel = (Button, Push) => {
     gameData.camera.x = Math.floor(((KXPIXEL / 4) * (mx - my) + MAXXKACH * KXPIXEL / 2) - gameData.camera.width / 2);
     gameData.camera.y = Math.floor(((KXPIXEL / 7) * (my + mx)) - gameData.camera.height / 2);
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTGITTER].rcDes)) {
-    if (gameData.options.grid) DrawText(texts.GITTERAUS, TXTTEXTFELD, 2);
-    else DrawText(texts.GITTERAN, TXTTEXTFELD, 2);
+    if (gameData.options.grid) {
+      drawText(texts.GITTERAUS, textAreas.STATUS, gameData, textCanvasContext);
+    } else {
+      drawText(texts.GITTERAN, textAreas.STATUS, gameData, textCanvasContext);
+    }
 
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       gameData.options.grid = !gameData.options.grid;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOUND].rcDes)) {
-    if (audio.isRunning()) DrawText(texts.SOUNDAUS, TXTTEXTFELD, 2);
-    else DrawText(texts.SOUNDAN, TXTTEXTFELD, 2);
+    if (audio.isRunning()) {
+      drawText(texts.SOUNDAUS, textAreas.STATUS, gameData, textCanvasContext);
+    } else {
+      drawText(texts.SOUNDAN, textAreas.STATUS, gameData, textCanvasContext);
+    }
 
     if ((Button === 0) && (Push === 1)) {
       if (audio.isRunning()) {
@@ -1855,7 +1788,7 @@ const MouseInPanel = (Button, Push) => {
       }
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBEENDEN].rcDes)) {
-    DrawText(texts.BEENDEN, TXTTEXTFELD, 2);
+    drawText(texts.BEENDEN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTBEENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1864,7 +1797,7 @@ const MouseInPanel = (Button, Push) => {
       Guy.Aktion = AKSPIELVERLASSEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTNEU].rcDes)) {
-    DrawText(texts.NEU, TXTTEXTFELD, 2);
+    drawText(texts.NEU, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1873,7 +1806,7 @@ const MouseInPanel = (Button, Push) => {
       Guy.Aktion = AKNEUBEGINNEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTTAGNEU].rcDes)) {
-    DrawText(texts.TAGNEU2, TXTTEXTFELD, 2);
+    drawText(texts.TAGNEU2, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTTAGNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1882,8 +1815,11 @@ const MouseInPanel = (Button, Push) => {
       Guy.Aktion = AKTAGNEUBEGINNEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAKTION].rcDes)) {
-    if (HauptMenue === MEAKTION) DrawText(texts.MEAKTIONZU, TXTTEXTFELD, 2);
-    else DrawText(texts.MEAKTIONAUF, TXTTEXTFELD, 2);
+    if (HauptMenue === MEAKTION) {
+      drawText(texts.MEAKTIONZU, textAreas.STATUS, gameData, textCanvasContext);
+    } else {
+      drawText(texts.MEAKTIONAUF, textAreas.STATUS, gameData, textCanvasContext);
+    }
     Bmp[BUTTAKTION].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1892,8 +1828,11 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBAUEN].rcDes) &&
     (Bmp[BUTTBAUEN].Phase !== -1)) {
-    if (HauptMenue === MEBAUEN) DrawText(texts.MEBAUENZU, TXTTEXTFELD, 2);
-    else DrawText(texts.MEBAUENAUF, TXTTEXTFELD, 2);
+    if (HauptMenue === MEBAUEN) {
+      drawText(texts.MEBAUENZU, textAreas.STATUS, gameData, textCanvasContext);
+    } else {
+      drawText(texts.MEBAUENAUF, textAreas.STATUS, gameData, textCanvasContext);
+    }
     Bmp[BUTTBAUEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1901,8 +1840,11 @@ const MouseInPanel = (Button, Push) => {
       else HauptMenue = MEBAUEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTINVENTAR].rcDes)) {
-    if (HauptMenue === MEINVENTAR) DrawText(texts.MEINVENTARZU, TXTTEXTFELD, 2);
-    else DrawText(texts.MEINVENTARAUF, TXTTEXTFELD, 2);
+    if (HauptMenue === MEINVENTAR) {
+      drawText(texts.MEINVENTARZU, textAreas.STATUS, gameData, textCanvasContext);
+    } else {
+      drawText(texts.MEINVENTARAUF, textAreas.STATUS, gameData, textCanvasContext);
+    }
     Bmp[BUTTINVENTAR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1911,7 +1853,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTWEITER].rcDes)) &&
     (Bmp[BUTTWEITER].Phase !== -1)) {
-    DrawText(texts.WEITER, TXTTEXTFELD, 2);
+    drawText(texts.WEITER, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTWEITER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1950,7 +1892,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes)) &&
     (Bmp[BUTTSTOP].Phase !== -1)) {
-    DrawText(texts.STOP, TXTTEXTFELD, 2);
+    drawText(texts.STOP, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTSTOP].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1961,7 +1903,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTABLEGEN].rcDes)) &&
     (Bmp[BUTTABLEGEN].Phase !== -1)) {
-    DrawText(texts.BEGINNABLEGEN, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNABLEGEN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTABLEGEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1972,7 +1914,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSUCHEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSUCHEN].Phase !== -1)) {
-    DrawText(texts.BEGINNSUCHEN, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNSUCHEN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTSUCHEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1981,7 +1923,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTESSEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTESSEN].Phase !== -1)) {
-    DrawText(texts.BEGINNESSEN, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNESSEN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTESSEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1990,22 +1932,26 @@ const MouseInPanel = (Button, Push) => {
         Guy.Aktion = AKESSEN;
       } else if (isDrinkable(tile.object))
         Guy.Aktion = AKTRINKEN;
-      else PapierText = DrawText(texts.KEINESSENTRINKEN, TXTPAPIER, 1);
+      else {
+        openPaper(texts.KEINESSENTRINKEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLAFEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLAFEN].Phase !== -1)) {
-    DrawText(texts.BEGINNSCHLAFEN, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNSCHLAFEN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTSCHLAFEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (tile.ground !== grounds.SEA) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLAFEN;
-      } else PapierText = DrawText(texts.NICHTAUFWASSERSCHLAFEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.NICHTAUFWASSERSCHLAFEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFAELLEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTFAELLEN].Phase !== -1)) {
-    DrawText(texts.BEGINNFAELLEN, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNFAELLEN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTFAELLEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2013,35 +1959,44 @@ const MouseInPanel = (Button, Push) => {
       if (gameData.guy.inventory[items.LOG] <= 10) {
         if (isNormalTree(tile.object)) {
           Guy.Aktion = AKFAELLEN;
-        } else if (isBigTree(tile.object))
-          PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
-        else PapierText = DrawText(texts.KEINBAUM, TXTPAPIER, 1);
-      } else PapierText = DrawText(texts.ROHSTAMMZUVIEL, TXTPAPIER, 1);
+        } else if (isBigTree(tile.object)) {
+          openPaper(texts.BAUMZUGROSS, false, gameData, textCanvasContext);
+        } else {
+          openPaper(texts.KEINBAUM, false, gameData, textCanvasContext);
+        }
+      } else {
+        openPaper(texts.ROHSTAMMZUVIEL, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANGELN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTANGELN].Phase !== -1)) {
-    DrawText(texts.BEGINNANGELN, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNANGELN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTANGELN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (isFishable(tile)) Guy.Aktion = AKANGELN;
-      else PapierText = DrawText(texts.KEINWASSER, TXTPAPIER, 1);
+      if (isFishable(tile)) {
+        Guy.Aktion = AKANGELN;
+      } else {
+        openPaper(texts.KEINWASSER, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANZUENDEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTANZUENDEN].Phase !== -1)) {
-    DrawText(texts.BEGINNANZUENDEN, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNANZUENDEN, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTANZUENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
       if (isUsableFireplace(tile)) {
         Guy.Aktion = AKANZUENDEN;
-      } else PapierText = DrawText(texts.KEINEFEUERST, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.KEINEFEUERST, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAUSSCHAU].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTAUSSCHAU].Phase !== -1)) {
-    DrawText(texts.BEGINNAUSSCHAU, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNAUSSCHAU, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTAUSSCHAU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2049,11 +2004,13 @@ const MouseInPanel = (Button, Push) => {
       if (tile.ground !== grounds.SEA) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKAUSSCHAU;
-      } else PapierText = DrawText(texts.WELLENZUHOCH, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.WELLENZUHOCH, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZ].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZ].Phase !== -1)) {
-    DrawText(texts.BEGINNSCHATZ, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNSCHATZ, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTSCHATZ].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2063,11 +2020,13 @@ const MouseInPanel = (Button, Push) => {
         !tile.object) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHATZ;
-      } else PapierText = DrawText(texts.GRABENBEDINGUNGEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.GRABENBEDINGUNGEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLEUDER].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLEUDER].Phase !== -1)) {
-    DrawText(texts.BEGINNSCHLEUDER, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNSCHLEUDER, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTSCHLEUDER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2075,13 +2034,15 @@ const MouseInPanel = (Button, Push) => {
       if (isNormalTree(tile.object)) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLEUDER;
-      } else if (isBigTree(tile.object))
-        PapierText = DrawText(texts.BAUMZUGROSS, TXTPAPIER, 1);
-      else PapierText = DrawText(texts.KEINVOGEL, TXTPAPIER, 1);
+      } else if (isBigTree(tile.object)) {
+        openPaper(texts.BAUMZUGROSS, false, gameData, textCanvasContext);
+      } else {
+        openPaper(texts.KEINVOGEL, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZKARTE].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZKARTE].Phase !== -1)) {
-    DrawText(texts.BEGINNSCHATZKARTE, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNSCHATZKARTE, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTSCHATZKARTE].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2092,9 +2053,7 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNFELD;
     MakeRohString(-1, -1, constructionTypes.FIELD);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTFELD].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2108,16 +2067,16 @@ const MouseInPanel = (Button, Push) => {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKFELD;
-      } else PapierText = DrawText(texts.FELDBEDINGUNGEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.FELDBEDINGUNGEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTZELT].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTZELT].Phase !== -1)) {
     StdString = texts.BEGINNZELT;
     MakeRohString(-1, -1, constructionTypes.TENT);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTZELT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2130,16 +2089,16 @@ const MouseInPanel = (Button, Push) => {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKZELT;
-      } else PapierText = DrawText(texts.ZELTBEDINGUNGEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.ZELTBEDINGUNGEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBOOT].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTBOOT].Phase !== -1)) {
     StdString = texts.BEGINNBOOT;
     MakeRohString(-1, -1, constructionTypes.BOAT);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTBOOT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2156,16 +2115,16 @@ const MouseInPanel = (Button, Push) => {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKBOOT;
-      } else PapierText = DrawText(texts.BOOTBEDINGUNGEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.BOOTBEDINGUNGEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTROHR].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTROHR].Phase !== -1)) {
     StdString = texts.BEGINNROHR;
     MakeRohString(-1, -1, constructionTypes.PIPE);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTROHR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2178,16 +2137,16 @@ const MouseInPanel = (Button, Push) => {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKROHR;
-      } else PapierText = DrawText(texts.ROHRBEDINGUNGEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.ROHRBEDINGUNGEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOS].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTSOS].Phase !== -1)) {
     StdString = texts.BEGINNSOS;
     MakeRohString(-1, -1, constructionTypes.SOS);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTSOS].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2200,89 +2159,89 @@ const MouseInPanel = (Button, Push) => {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKSOS;
-      } else PapierText = DrawText(texts.SOSBEDINGUNGEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.SOSBEDINGUNGEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS1].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS1].Phase !== -1)) {
     StdString = texts.BEGINNHAUS1;
     MakeRohString(-1, -1, constructionTypes.LADDER);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (isNormalTree(tile.object))
-        PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
+      if (isNormalTree(tile.object)) {
+        openPaper(texts.BAUMZUKLEIN, false, gameData, textCanvasContext);
+      } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS1;
       } else if (tile.construction?.type === constructionTypes.LADDER) {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKHAUS1;
-      } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.GEGENDNICHT, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS2].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS2].Phase !== -1)) {
     StdString = texts.BEGINNHAUS2;
     MakeRohString(-1, -1, constructionTypes.PLATFORM);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (isNormalTree(tile.object))
-        PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE)
-        PapierText = DrawText(texts.NICHTOHNELEITER, TXTPAPIER, 1);
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
+      if (isNormalTree(tile.object)) {
+        openPaper(texts.BAUMZUKLEIN, false, gameData, textCanvasContext);
+      } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
+        openPaper(texts.NICHTOHNELEITER, false, gameData, textCanvasContext);
+      } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS2;
       } else if (tile.construction?.type === constructionTypes.PLATFORM) {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKHAUS2;
-      } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.GEGENDNICHT, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS3].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS3].Phase !== -1)) {
     StdString = texts.BEGINNHAUS3;
     MakeRohString(-1, -1, constructionTypes.TREE_HOUSE);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      if (isNormalTree(tile.object))
-        PapierText = DrawText(texts.BAUMZUKLEIN, TXTPAPIER, 1);
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE || tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER)
-        PapierText = DrawText(texts.NICHTOHNEPLATTFORM, TXTPAPIER, 1);
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM) {
+      if (isNormalTree(tile.object)) {
+        openPaper(texts.BAUMZUKLEIN, false, gameData, textCanvasContext);
+      } else if (tile.object?.sprite === spriteTypes.BIG_TREE || tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
+        openPaper(texts.NICHTOHNEPLATTFORM, false, gameData, textCanvasContext);
+      } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS3;
       } else if (tile.construction?.type === constructionTypes.TREE_HOUSE) {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKHAUS3;
-      } else PapierText = DrawText(texts.GEGENDNICHT, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.GEGENDNICHT, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFEUERST].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTFEUERST].Phase !== -1)) {
     StdString = texts.BEGINNFEUERSTELLE;
     MakeRohString(-1, -1, constructionTypes.FIREPLACE);
     StdString += RohString;
-    TextBereich[TXTTEXTFELD].Aktiv = true;
-    DrawString(StdString, TextBereich[TXTTEXTFELD].rcText.left,
-      TextBereich[TXTTEXTFELD].rcText.top, 2);
+    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
 
     Bmp[BUTTFEUERST].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2295,18 +2254,22 @@ const MouseInPanel = (Button, Push) => {
         Bmp[BUTTSTOP].Phase = 0;
         continueConstruction(gameData)
         Guy.Aktion = AKFEUERSTELLE;
-      } else PapierText = DrawText(texts.FEUERSTELLENBEDINGUNGEN, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.FEUERSTELLENBEDINGUNGEN, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTDESTROY].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTDESTROY].Phase !== -1)) {
-    DrawText(texts.BEGINNDESTROY, TXTTEXTFELD, 2);
+    drawText(texts.BEGINNDESTROY, textAreas.STATUS, gameData, textCanvasContext);
     Bmp[BUTTDESTROY].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (isDestroyable(tile.object)) {
         Guy.AkNummer = 0;
         Guy.Aktion = AKDESTROY;
-      } else PapierText = DrawText(texts.KEINBAUWERK, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.KEINBAUWERK, false, gameData, textCanvasContext);
+      }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (HauptMenue === MEINVENTAR)) {
     const item = findItemUnderCursor(gameData, MousePosition);
@@ -2317,14 +2280,31 @@ const MouseInPanel = (Button, Push) => {
           TwoClicks = item;
         } else CheckBenutze(item);
       }
-      DrawText(texts[itemTextIds[item]], TXTTEXTFELD, 2);
+      drawText(texts[itemTextIds[item]], textAreas.STATUS, gameData, textCanvasContext);
     };
-  } else if (InRect(MousePosition.x, MousePosition.y, TextBereich[TXTTAGESZEIT].rcText))
-    DrawText(texts.SOSPAET, TXTTEXTFELD, 2);
-  else if (InRect(MousePosition.x, MousePosition.y, TextBereich[TXTCHANCE].rcText))
-    DrawText(texts.CHANCETEXT, TXTTEXTFELD, 2);
-  else //TwoClicks löschen
-  {
+  } else if (InRect(
+    MousePosition.x, 
+    MousePosition.y, 
+    {
+      left: textAreas.TIME.x,
+      top: textAreas.TIME.y,
+      right: textAreas.TIME.x + textAreas.TIME.width,
+      bottom: textAreas.TIME.y + textAreas.TIME.height
+    }
+  )) {
+    drawText(texts.SOSPAET, textAreas.STATUS, gameData, textCanvasContext);
+  } else if (InRect(
+    MousePosition.x, 
+    MousePosition.y, 
+    {
+      left: textAreas.CHANCE.x,
+      top: textAreas.CHANCE.y,
+      right: textAreas.CHANCE.x + textAreas.CHANCE.width,
+      bottom: textAreas.CHANCE.y + textAreas.CHANCE.height
+    }
+  )) {
+    drawText(texts.CHANCETEXT, textAreas.STATUS, gameData, textCanvasContext);
+  } else {
     if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
     TwoClicks = -1;
   }
@@ -2360,24 +2340,11 @@ const startGame = async (newGame) => {
     clearCanvas(rcRectdes, textCanvasContext);
 
     //Landschaft erzeugen
-    DrawString('Erschaffe Landschaft...', 5, 5, 2, primaryCanvasContext);
-    await new Promise(window.requestAnimationFrame);
     generateIsland(gameData.terrain);
-
-    DrawString('Ueberflute Land...', 5, 35, 2, primaryCanvasContext);
-    await new Promise(window.requestAnimationFrame);
     setGrounds(gameData.terrain);
-
-    DrawString('Lege Fluss fest...', 5, 65, 2, primaryCanvasContext);
-    await new Promise(window.requestAnimationFrame);
     addRiver(gameData.terrain);
-
-    DrawString('Pflanze Baeume...', 5, 95, 2, primaryCanvasContext);
-    await new Promise(window.requestAnimationFrame);
     addTrees(gameData.terrain);
 
-    DrawString('Vergrabe Schatz...', 5, 125, 2, primaryCanvasContext);
-    await new Promise(window.requestAnimationFrame);
     gameData.treasure = hideTreasure(gameData);
     addPirateWreck(gameData.terrain);
 
@@ -2393,11 +2360,10 @@ const startGame = async (newGame) => {
     gameData.guy.health = 100;
     gameData.guy.inventory = createInventory();
 
-    Chance = 0;
+    gameData.guy.chance = 0;
 
-    Tag = 1;
-    Stunden = 0;
-    Minuten = 0;
+    gameData.calendar.day = 1;
+    gameData.calendar.minutes = 0;
 
     Spielzustand = GAME_INTRO;
     gameData.guy.active = false;
@@ -2406,12 +2372,7 @@ const startGame = async (newGame) => {
     Guy.Aktion = AKINTRO;
   }
 
-  //SchriftSurface löschen
-  rcRectdes.left = 0;
-  rcRectdes.top = 0;
-  rcRectdes.right = MAXX;
-  rcRectdes.bottom = MAXY;
-  clearCanvas(rcRectdes, textCanvasContext);
+  closePaper(gameData, textCanvasContext);
 
   drawTreasureMap(gameData);
 
@@ -2420,7 +2381,6 @@ const startGame = async (newGame) => {
 }
 
 const Zeige = () => {
-  let i;
   let Stringsave1 = '';
   let Stringsave2 = ''; //Für die Zeitausgabe
 
@@ -2429,28 +2389,26 @@ const Zeige = () => {
   ZeichnePanel();
 
   //Die TagesZeit ausgeben
-  Textloeschen(TXTTAGESZEIT);
-  TextBereich[TXTTAGESZEIT].Aktiv = true;
-  Stringsave1 = Stunden + 6;
-  Stringsave2 = Minuten;
+  const hour = 6 + Math.floor(gameData.calendar.minutes / 60);
+  const minute = gameData.calendar.minutes % 60;
+  Stringsave1 = hour;
+  Stringsave2 = minute;
   StdString = '';
-  if (Stunden + 6 < 10) StdString += '0';;
+  if (hour < 10) StdString += '0';;
   StdString += Stringsave1;
   StdString += ':';
-  if (Minuten < 10) StdString += '0';
+  if (minute < 10) StdString += '0';
   StdString += Stringsave2;
-  DrawString(StdString, (TextBereich[TXTTAGESZEIT].rcText.left),
-    (TextBereich[TXTTAGESZEIT].rcText.top), 2);
+  drawText(StdString, textAreas.TIME, gameData, textCanvasContext);
 
-  if (PapierText !== -1) ZeichnePapier();
+  if (gameData.paper) {
+    drawPaper(gameData.paper, textCanvasContext, primaryCanvasContext);
+  };
 
-  //Die Textsurface blittenrcRectsrc
-  for (i = 0; i < TEXTANZ; i++) {
-    if (!TextBereich[i].Aktiv) continue; //Die nicht aktiven Felder auslassen
-    rcRectsrc = { ...TextBereich[i].rcText };
-    rcRectdes = { ...TextBereich[i].rcText };
-    drawImage(textCanvasContext.canvas, primaryCanvasContext);
-  }
+  blitText(textAreas.CHANCE, textCanvasContext, primaryCanvasContext);
+  blitText(textAreas.STATUS, textCanvasContext, primaryCanvasContext);
+  blitText(textAreas.TIME, textCanvasContext, primaryCanvasContext);
+
   //Alles schwarz übermalen und nur das Papier mit Text anzeigen
   if (Nacht) {
     rcRectdes.left = 0;
@@ -2459,12 +2417,10 @@ const Zeige = () => {
     rcRectdes.bottom = MAXY;
     fillCanvas(rcRectdes, 0, 0, 0, 1, primaryCanvasContext);
 
-    if (PapierText !== -1) {
-      ZeichnePapier();
-      rcRectsrc = { ...TextBereich[TXTPAPIER].rcText };
-      rcRectdes = { ...TextBereich[TXTPAPIER].rcText };
-      drawImage(textCanvasContext.canvas, primaryCanvasContext);
-    }
+    if (gameData.paper) {
+      drawPaper(gameData.paper, textCanvasContext, primaryCanvasContext);
+    };
+  
     Fade(100, 0);
   }
 
@@ -2655,33 +2611,8 @@ const ZeichneBilder = (x, y, i, Ziel) => {
   drawImage(Bmp[i].Surface, primaryCanvasContext);
 }
 
-const ZeichnePapier = () => {
-  rcRectsrc.left = 0;
-  rcRectsrc.top = 0;
-  rcRectsrc.right = 464;
-  rcRectsrc.bottom = 77;
-  rcRectdes.left = TextBereich[TXTPAPIER].rcText.left - 60;
-  rcRectdes.top = TextBereich[TXTPAPIER].rcText.top - 30;
-  rcRectdes.right = rcRectdes.left + 464;
-  rcRectdes.bottom = rcRectdes.top + 77;
-  drawImage(paperImage, primaryCanvasContext);
-  rcRectdes.left = rcRectdes.left + 34;
-  rcRectdes.top = rcRectdes.top + 77;
-  rcRectdes.bottom = TextBereich[TXTPAPIER].rcText.top + PapierText;
-  fillCanvas(rcRectdes, 236, 215, 179, 1, primaryCanvasContext);
-  rcRectsrc.left = 0;
-  rcRectsrc.top = 77;
-  rcRectsrc.right = 464;
-  rcRectsrc.bottom = 154;
-  rcRectdes.left = TextBereich[TXTPAPIER].rcText.left - 60;
-  rcRectdes.top = rcRectdes.bottom - 47;
-  rcRectdes.right = rcRectdes.left + 464;
-  rcRectdes.bottom = rcRectdes.top + 77;
-  drawImage(paperImage, primaryCanvasContext);
-}
-
 const ZeichnePanel = () => {
-  let diffx, diffy, TagesZeit, i, j, Ringtmp;  //für die Sonnenanzeige
+  let diffx, diffy, i, j, Ringtmp;  //für die Sonnenanzeige
 
   //Karte
   rcRectsrc.left = 0;
@@ -2818,14 +2749,14 @@ const ZeichnePanel = () => {
   //Sonnenanzeige
   diffx = (Bmp[SONNE].rcDes.right - Bmp[SONNE].rcDes.left - Bmp[SONNE].Breite) / 2;
   diffy = Bmp[SONNE].rcDes.bottom - Bmp[SONNE].rcDes.top - Bmp[SONNE].Hoehe / 2;
-  TagesZeit = (Stunden * 10 + Minuten * 10 / 60);
-
-  ZeichneBilder(Math.floor(Bmp[SONNE].rcDes.left + diffx * Math.cos(pi - pi * TagesZeit / 120) + diffx),
-    Math.floor(Bmp[SONNE].rcDes.top + (-diffy * Math.sin(pi - pi * TagesZeit / 120) + diffy)),
+  
+  
+  ZeichneBilder(Math.floor(Bmp[SONNE].rcDes.left + diffx * Math.cos(pi - pi * gameData.calendar.minutes / 720) + diffx),
+    Math.floor(Bmp[SONNE].rcDes.top + (-diffy * Math.sin(pi - pi * gameData.calendar.minutes / 720) + diffy)),
     SONNE, Bmp[SONNE].rcDes);
 
   //Rettungsring
-  if (Chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * Chance));
+  if (gameData.guy.chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * gameData.guy.chance));
   else Ringtmp = 100;
   if (Ringtmp > 100) Ringtmp = 100;
   ZeichneBilder(Math.floor(Bmp[RING].rcDes.left),
@@ -2833,13 +2764,10 @@ const ZeichnePanel = () => {
     RING, rcPanel);
 
   //Die ChanceZahl ausgeben
-  Textloeschen(TXTCHANCE);
-  TextBereich[TXTCHANCE].Aktiv = true;
-  TextBereich[TXTCHANCE].rcText.top = Math.floor(Bmp[RING].rcDes.top + Ringtmp + Bmp[RING].Hoehe);
-  TextBereich[TXTCHANCE].rcText.bottom = TextBereich[TXTCHANCE].rcText.top + S2YPIXEL;
-  StdString = Chance.toFixed(1);
-  DrawString(StdString, (TextBereich[TXTCHANCE].rcText.left),
-    (TextBereich[TXTCHANCE].rcText.top), 2);
+  clearText(textAreas.CHANCE, textCanvasContext);
+  textAreas.CHANCE.y = Math.floor(Bmp[RING].rcDes.top + Ringtmp + Bmp[RING].Hoehe - 25);
+  StdString = gameData.guy.chance.toFixed(0);
+  drawText(StdString, textAreas.CHANCE, gameData, textCanvasContext);
 
   //TextFeld malen
   rcRectsrc.left = 0;
@@ -2850,186 +2778,19 @@ const ZeichnePanel = () => {
   drawImage(textfieldImage, primaryCanvasContext);
 }
 
-const DrawString = (string, x, y, Art, canvasContext = textCanvasContext) => {
-  let length, index, cindex, Breite, Hoehe;
-
-  if (Art === 1) {
-    Breite = S1XPIXEL;
-    Hoehe = S1YPIXEL;
-  }
-  if (Art === 2) {
-    Breite = S2XPIXEL;
-    Hoehe = S2YPIXEL;
-  }
-
-  // Länge der Schrift ermitteln
-  length = string.length;
-
-  // Alle Zeichen durchgehen
-  for (index = 0; index < length; index++) {
-    //Korrekte indexNummer ermitteln
-    cindex = string.charCodeAt(index) - ' '.charCodeAt(0);
-
-    if ((string[index] >= ' ') && (string[index] <= '/')) {
-      rcRectsrc.left = cindex * Breite;
-      rcRectsrc.top = 0;
-    }
-    if ((string[index] >= '0') && (string[index] <= '?')) {
-      rcRectsrc.left = (cindex - 16) * Breite;
-      rcRectsrc.top = Hoehe;
-    }
-    if ((string[index] >= '@') && (string[index] <= 'O')) {
-      rcRectsrc.left = (cindex - 16 * 2) * Breite;
-      rcRectsrc.top = 2 * Hoehe;
-    }
-    if ((string[index] >= 'P') && (string[index] <= '_')) {
-      rcRectsrc.left = (cindex - 16 * 3) * Breite;
-      rcRectsrc.top = 3 * Hoehe;
-    }
-    if ((string[index] > '_') && (string[index] <= 'o')) {
-      rcRectsrc.left = (cindex - 16 * 4) * Breite;
-      rcRectsrc.top = 4 * Hoehe;
-    }
-    if ((string[index] >= 'p') && (string[index] <= '~')) {
-      rcRectsrc.left = (cindex - 16 * 5) * Breite;
-      rcRectsrc.top = 5 * Hoehe;
-    }
-
-    rcRectsrc.right = rcRectsrc.left + Breite;
-    rcRectsrc.bottom = rcRectsrc.top + Hoehe;
-    rcRectdes.left = x;
-    rcRectdes.top = y;
-    rcRectdes.right = x + Breite;
-    rcRectdes.bottom = y + Hoehe;
-    //Zeichen zeichnen
-    if (Art === 1) {
-      drawImage(font1Image, canvasContext);
-      //x Position weiterschieben
-      x += S1ABSTAND;
-    }
-    if (Art === 2) {
-      drawImage(font2Image, canvasContext);
-      //x Position weiterschieben
-      x += S2ABSTAND;
-    }
-  }
-}
-
-const DrawText = (TEXT, Bereich, Art) => {
-  let BBreite, BHoehe, Posx, Posy;
-  let Pos;
-  let Posnext, Posnext2;
-  let Text = TEXT;
-  const blank = ' ';
-  const slash = '/';
-  let scratch;//Zur Variablenausgabe
-  let StdString2 = '';//Zur Variablenausgabe
-  let Erg;
-
-  Textloeschen(Bereich);
-  TextBereich[Bereich].Aktiv = true;
-
-  if (Art === 1) {
-    BBreite = S1ABSTAND;
-    BHoehe = S1YPIXEL;
-  }
-  if (Art === 2) {
-    BBreite = S2ABSTAND;
-    BHoehe = S2YPIXEL;
-  }
-  Posx = TextBereich[Bereich].rcText.left;
-  Posy = TextBereich[Bereich].rcText.top;
-  Posnext = 0;
-
-  while (1) {
-    StdString = '';
-    Pos = Posnext;
-    Posnext = Text.indexOf(blank, Pos + 1);
-    Posnext2 = Text.indexOf(slash, Pos + 1);
-    if ((Posnext !== -1) && (Posnext2 !== -1) && (Posnext2 <= Posnext)) {
-      scratch = Text[Posnext2 + 1];
-      switch (scratch) {
-        case 'a':
-          StdString2 = ' ' + Tag;
-          DrawString(StdString2, Posx, Posy, Art);
-          Posx += BBreite * StdString2.length;
-          break;
-        case 'b':
-          StdString2 = ' ' + Math.round(gameData.guy.health).toString();
-          DrawString(StdString2, Posx, Posy, Art);
-          Posx += BBreite * StdString2.length;
-          break;
-        case 'c':
-          StdString2 = ' ' + Chance.toFixed(1);
-          DrawString(StdString2, Posx, Posy, Art);
-          Posx += BBreite * StdString2.length;
-          break;
-        case 'd':
-          Frage = 0;
-          rcRectsrc = { ...Bmp[JA].rcSrc };
-          rcRectdes.left = TextBereich[Bereich].rcText.left + 50;
-          rcRectdes.top = Posy + 50;
-          rcRectdes.right = rcRectdes.left + Bmp[JA].Breite;
-          rcRectdes.bottom = rcRectdes.top + Bmp[JA].Hoehe;
-          Bmp[JA].rcDes = { ...rcRectdes };
-          drawImage(Bmp[JA].Surface, textCanvasContext);
-
-          rcRectsrc = { ...Bmp[NEIN].rcSrc };
-          rcRectdes.left = TextBereich[Bereich].rcText.left + 220;
-          rcRectdes.top = Posy + 50;
-          rcRectdes.right = rcRectdes.left + Bmp[NEIN].Breite;
-          rcRectdes.bottom = rcRectdes.top + Bmp[NEIN].Hoehe;
-          Bmp[NEIN].rcDes = { ...rcRectdes };
-          drawImage(Bmp[NEIN].Surface, textCanvasContext);
-          Posy += 115;
-          break;
-        case 'z':
-          Posx = TextBereich[Bereich].rcText.left - BBreite;
-          Posy += BHoehe + 3;
-          break;
-      }
-      Pos = Pos + 3;
-      Posnext = Posnext2 + 2;
-    }
-    if (Posnext === -1) Posnext = Text.length;
-    StdString = Text.substring(Pos, Posnext);
-    if (Posx + BBreite * (Posnext - Pos) > TextBereich[Bereich].rcText.right) {
-      Posx = TextBereich[Bereich].rcText.left - BBreite;
-      Posy += BHoehe + 3;
-    }
-    DrawString(StdString, Posx, Posy, Art);
-    if (Posnext >= Text.length) break;
-    Posx += BBreite * (Posnext - Pos);
-    Pos++;
-  }
-
-  if (Bereich === TXTPAPIER) {
-    startGuyAnimation(gameData, isOnSea(gameData) ? spriteTypes.GUY_WAITING_BOAT : spriteTypes.GUY_WAITING);
-  }
-
-  Erg = (Posy + BHoehe - TextBereich[Bereich].rcText.top);
-  if (Erg < 100) Erg = 100;
-  return Erg;
-}
-
-const Textloeschen = (Bereich) => {
-  TextBereich[Bereich].Aktiv = false;
-  clearCanvas(TextBereich[Bereich].rcText, textCanvasContext);
-}
-
 const DrawSchatzkarte = () => {
   const treasureMapCanvas = getTreasureMapCanvasContext().canvas;
 
-  Textloeschen(TXTPAPIER);
-  TextBereich[TXTPAPIER].Aktiv = true;
-  PapierText = treasureMapCanvas.height;
+  gameData.paper = {
+    height: treasureMapCanvas.height
+  };
 
   rcRectsrc.left = 0;
   rcRectsrc.right = treasureMapCanvas.width;
   rcRectsrc.top = 0;
   rcRectsrc.bottom = treasureMapCanvas.height;
-  rcRectdes.left = TextBereich[TXTPAPIER].rcText.left;
-  rcRectdes.top = TextBereich[TXTPAPIER].rcText.top;
+  rcRectdes.left = textAreas.PAPER.x;
+  rcRectdes.top = textAreas.PAPER.y;
   rcRectdes.right = rcRectdes.left + treasureMapCanvas.width;
   rcRectdes.bottom = rcRectdes.top + treasureMapCanvas.height;
 
@@ -3105,7 +2866,7 @@ const CheckRohstoff = () => {
     }
     if (Check === false) break;
   }
-  PapierText = DrawText(texts.ROHSTOFFNICHT, TXTPAPIER, 1);
+  openPaper(texts.ROHSTOFFNICHT, false, gameData, textCanvasContext);
   Guy.AkNummer = 0;
   Guy.Aktion = AKABBRUCH;
   Bmp[BUTTSTOP].Phase = -1;
@@ -3262,7 +3023,7 @@ const AkIntro = () => {
       gameData.guy.storedPosition = { ...gameData.guy.position };
       Spielzustand = GAME_PLAY;
       Guy.Aktion = AKNICHTS;
-      PapierText = DrawText(texts.INTROTEXT, TXTPAPIER, 1);
+      openPaper(texts.INTROTEXT, false, gameData, textCanvasContext);
       SaveGame();
       break;
   }
@@ -3276,15 +3037,15 @@ const AkNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      PapierText = DrawText(texts.NEUBEGINNEN, TXTPAPIER, 1);
+      openPaper(texts.NEUBEGINNEN, true, gameData, textCanvasContext);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (Frage === 1) {
+      if (gameData.paper.question.answer) {
         startGame(true);
         return;
       }
-      Frage = -1;
+      closePaper(gameData, textCanvasContext);
       break;
   }
 }
@@ -3297,15 +3058,15 @@ const AkTagNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      PapierText = DrawText(texts.TAGNEU, TXTPAPIER, 1);
+      openPaper(texts.TAGNEU, true, gameData, textCanvasContext);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (Frage === 1) {
+      if (gameData.paper.question.answer) {
         startGame(false);
         return;
       }
-      Frage = -1;
+      closePaper(gameData, textCanvasContext);
       break;
   }
 }
@@ -3318,16 +3079,18 @@ const AkSpielverlassen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      PapierText = DrawText(texts.SPIELVERLASSEN, TXTPAPIER, 1);
+      openPaper(texts.SPIELVERLASSEN, true, gameData, textCanvasContext);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (Frage === 1) {
-        if (gameData.guy.health > 10) SaveGame();
+      if (gameData.paper.question.answer) {
+        if (gameData.guy.health > 10) {
+          SaveGame();
+        }
         audio.stopAll();
         Spielzustand = GAME_CREDITS;
       }
-      Frage = -1;
+      closePaper(gameData, textCanvasContext);
       break;
   }
 }
@@ -3336,7 +3099,7 @@ const AkTod = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      PapierText = DrawText(texts.TOD, TXTPAPIER, 1);
+      openPaper(texts.TOD, false, gameData, textCanvasContext);
       break;
     case 2:
       if (!isOnSea(gameData)) {
@@ -3350,16 +3113,18 @@ const AkTod = () => {
       break;
     case 4:
       Nacht = true;
-      PapierText = DrawText(texts.TAGNEU, TXTPAPIER, 1);
+      openPaper(texts.TAGNEU, true, gameData, textCanvasContext);
       break;
     case 5:
       Nacht = false;
       Guy.Aktion = AKNICHTS;
-      if (Frage === 2) {
+      if (gameData.paper.question.answer) {
+        startGame(false)
+      } else {
         audio.stopAll();
         Spielzustand = GAME_CREDITS;
-      } else startGame(false);
-      Frage = -1;
+      };
+      closePaper(gameData, textCanvasContext);
       break;
   }
 }
@@ -3396,14 +3161,14 @@ const AkDestroy = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 5);
+      AddTime(5);
       break;
     case 3:
     case 5:
       startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 5);
+      AddTime(5);
       break;
     case 6:
       const object = tile.object;
@@ -3413,7 +3178,7 @@ const AkDestroy = () => {
         tile.construction = null;
       } else {
         if (object.chance) {
-          Chance -= object.chance;
+          gameData.guy.chance -= object.chance;
         }
         if (object.sprite === spriteTypes.PIPE) {
           updatePipes(gameData.terrain);
@@ -3468,7 +3233,7 @@ const AkSuchen = () => {
         startGuyAnimation(gameData, spriteTypes.GUY_SEARCHING);
         sounds.CRACKLING.instance.play();
       }
-      AddTime(0, 4);
+      AddTime(4);
       break;
     case 9:
       if (isOnSea(gameData)) {
@@ -3483,24 +3248,29 @@ const AkSuchen = () => {
       //Auf Strand und Fluss
       if (tile.ground === grounds.BEACH || isRiver(tile.object)) {
         if (gameData.guy.inventory[items.STONE] < 10) {
-          PapierText = DrawText(texts.ROHSTEINGEFUNDEN, TXTPAPIER, 1);
+          openPaper(texts.ROHSTEINGEFUNDEN, false, gameData, textCanvasContext);
           changeItem(gameData, items.STONE, 3);
-        } else PapierText = DrawText(texts.ROHSTEINZUVIEL, TXTPAPIER, 1);
-
+        } else {
+          openPaper(texts.ROHSTEINZUVIEL, false, gameData, textCanvasContext);
+        }
       } else if (tile.object?.sprite === spriteTypes.BUSH) {
         i = Math.floor(Math.random() * 2);
         switch (i) {
           case 0:
             if (gameData.guy.inventory[items.BRANCH] < 10) {
-              PapierText = DrawText(texts.ROHASTGEFUNDEN, TXTPAPIER, 1);
+              openPaper(texts.ROHASTGEFUNDEN, false, gameData, textCanvasContext);
               changeItem(gameData, items.BRANCH, 1);
-            } else PapierText = DrawText(texts.ROHASTZUVIEL, TXTPAPIER, 1);
+            } else {
+              openPaper(texts.ROHASTZUVIEL, false, gameData, textCanvasContext);
+            }
             break;
           case 1:
             if (gameData.guy.inventory[items.LEAF] < 10) {
-              PapierText = DrawText(texts.ROHBLATTGEFUNDEN, TXTPAPIER, 1);
+              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData, textCanvasContext);
               changeItem(gameData, items.LEAF, 1);
-            } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
+            } else {
+              openPaper(texts.ROHBLATTZUVIEL, false, gameData, textCanvasContext);
+            }
             break;
         }
       } else if (isNormalTree(tile.object) || isBigTree(tile.object)) {
@@ -3508,45 +3278,57 @@ const AkSuchen = () => {
         switch (i) {
           case 0:
             if (gameData.guy.inventory[items.BRANCH] < 10) {
-              PapierText = DrawText(texts.ROHASTGEFUNDEN, TXTPAPIER, 1);
+              openPaper(texts.ROHASTGEFUNDEN, false, gameData, textCanvasContext);
               changeItem(gameData, items.BRANCH, 1);
-            } else PapierText = DrawText(texts.ROHASTZUVIEL, TXTPAPIER, 1);
+            } else {
+              openPaper(texts.ROHASTZUVIEL, false, gameData, textCanvasContext);
+            }
             break;
           case 1:
             if (gameData.guy.inventory[items.LEAF] < 10) {
-              PapierText = DrawText(texts.ROHBLATTGEFUNDEN, TXTPAPIER, 1);
+              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData, textCanvasContext);
               changeItem(gameData, items.LEAF, 1);
-            } else PapierText = DrawText(texts.ROHBLATTZUVIEL, TXTPAPIER, 1);
+            } else {
+              openPaper(texts.ROHBLATTZUVIEL, false, gameData, textCanvasContext);
+            }
             break;
           case 2:
             if (gameData.guy.inventory[items.LIANA] < 10) {
-              PapierText = DrawText(texts.ROHLIANEGEFUNDEN, TXTPAPIER, 1);
+              openPaper(texts.ROHLIANEGEFUNDEN, false, gameData, textCanvasContext);
               changeItem(gameData, items.LIANA, 1);
-            } else PapierText = DrawText(texts.ROHLIANEZUVIEL, TXTPAPIER, 1);
+            } else {
+              openPaper(texts.ROHLIANEZUVIEL, false, gameData, textCanvasContext);
+            }
             break;
         }
       } else if (isOnSea(gameData)) {
         if (tile.object?.sprite === spriteTypes.SHIP_WRECK) {
           if (!gameData.guy.inventory[items.SPYGLASS]) {
-            PapierText = DrawText(texts.FERNROHRGEFUNDEN, TXTPAPIER, 1);
+            openPaper(texts.FERNROHRGEFUNDEN, false, gameData, textCanvasContext);
             changeItem(gameData, items.SPYGLASS, 1);
             Bmp[BUTTAUSSCHAU].Phase = 0;
             changeItem(gameData, items.HAMMER, 1);
             Bmp[BUTTHAUS1].Phase = 0;
             Bmp[BUTTHAUS2].Phase = 0;
             Bmp[BUTTHAUS3].Phase = 0;
-          } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
+          } else {
+            openPaper(texts.NICHTSGEFUNDEN2, false, gameData, textCanvasContext);
+          }
         } else if (tile.object?.sprite === spriteTypes.PIRATE_WRECK) {
           if (!gameData.guy.inventory[items.MAP]) {
-            PapierText = DrawText(texts.KARTEGEFUNDEN, TXTPAPIER, 1);
+            openPaper(texts.KARTEGEFUNDEN, false, gameData, textCanvasContext);
             changeItem(gameData, items.MAP, 1);
             Bmp[BUTTSCHATZKARTE].Phase = 0;
             changeItem(gameData, items.SHOVEL, 1);
             Bmp[BUTTSCHATZ].Phase = 0;
-          } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
-        } else PapierText = DrawText(texts.NICHTSGEFUNDEN2, TXTPAPIER, 1);
+          } else {
+            openPaper(texts.NICHTSGEFUNDEN2, false, gameData, textCanvasContext);
+          }
+        } else {
+          openPaper(texts.NICHTSGEFUNDEN2, false, gameData, textCanvasContext);
+        }
       } else {
-        PapierText = DrawText(texts.NICHTSGEFUNDEN, TXTPAPIER, 1);
+        openPaper(texts.NICHTSGEFUNDEN, false, gameData, textCanvasContext);
       }
       break;
     case 12:
@@ -3572,7 +3354,7 @@ const AkEssen = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_EATING);
       sounds.CRACKLING.instance.play();
       changeWaterAndFood(gameData, 0, 15);
-      AddTime(0, 2);
+      AddTime(2);
       break;
     case 4:
       tile.object.frame = 0;
@@ -3595,7 +3377,7 @@ const AkSchleuder = () => {
       break;
     case 2:
       startGuyAnimation(gameData, spriteTypes.GUY_SLINGING);
-      AddTime(0, 2);
+      AddTime(2);
       sounds.SLINGING.instance.play();
       break;
     case 3:
@@ -3605,7 +3387,7 @@ const AkSchleuder = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_SEARCHING);
       sounds.CRACKLING.instance.play();
       changeWaterAndFood(gameData, 0, 5);
-      AddTime(0, 20);
+      AddTime(20);
       break;
     case 5:
       goToStoredPosition(gameData);
@@ -3630,7 +3412,7 @@ const AkTrinken = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_DRINKING);
       sounds.DRINKING.instance.play();
       changeWaterAndFood(gameData, 30, 0);
-      AddTime(0, 3);
+      AddTime(3);
       break;
     case 4:
       goToStoredPosition(gameData);
@@ -3662,7 +3444,7 @@ const AkFaellen = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 10);
+      AddTime(10);
       break;
     case 7:
       startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
@@ -3822,7 +3604,7 @@ const AkAngeln = () => {
         }
       }
       changeHealth(gameData, 2);
-      AddTime(0, 20);
+      AddTime(20);
       break;
     case 7:
       if (isOnSea(gameData)) {
@@ -3892,15 +3674,15 @@ const AkAnzuenden = () => {
       break;
     case 2:
       startGuyAnimation(gameData, spriteTypes.GUY_LIGHTNING);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 3:
       startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
       tile.object.sprite = spriteTypes.FIRE;
       tile.object.chance = 2 + 2 * tile.height;
       tile.object.lifetime = 35 * 60;
-      Chance += tile.object.chance;
-      AddTime(0, 2);
+      gameData.guy.chance += tile.object.chance;
+      AddTime(2);
       break;
     case 4:
       goToStoredPosition(gameData);
@@ -3919,22 +3701,22 @@ const AkAusschau = () => {
   switch (Guy.AkNummer) {
     case 1:
       startGuyAnimation(gameData, spriteTypes.GUY_LOOKING);
-      AddTime(0, 40);
-      Chance += 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
+      AddTime(40);
+      gameData.guy.chance += 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       break;
     case 2:
       startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
-      AddTime(0, 40);
+      AddTime(40);
       break;
     case 3:
       startGuyAnimation(gameData, spriteTypes.GUY_LOOKING);
-      AddTime(0, 40);
+      AddTime(40);
       break;
     case 4:
       goToStoredPosition(gameData);
       break;
     case 5:
-      Chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
+      gameData.guy.chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       Guy.Aktion = AKNICHTS;
       break;
   }
@@ -3952,15 +3734,17 @@ const AkSchatz = () => {
       sounds.SHOVELING.instance.play();
       break;
     case 2:
-      AddTime(0, 20);
+      AddTime(20);
       changeWaterAndFood(gameData, -10, -10);
       goToStoredPosition(gameData);
       if (gameData.guy.tile.x === gameData.treasure.x && gameData.guy.tile.y === gameData.treasure.y && !gameData.treasure.found) {
-        PapierText = DrawText(texts.SCHATZGEFUNDEN, TXTPAPIER, 1);
+        openPaper(texts.SCHATZGEFUNDEN, false, gameData, textCanvasContext);
         changeItem(gameData, items.MATCHES, 1);
         Bmp[BUTTANZUENDEN].Phase = 0;
         gameData.treasure.found = true;
-      } else PapierText = DrawText(texts.KEINSCHATZ, TXTPAPIER, 1);
+      } else {
+        openPaper(texts.KEINSCHATZ, false, gameData, textCanvasContext);
+      }
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
@@ -3994,7 +3778,7 @@ const AkFeld = () => {
         y: tile.object.y + 5
       });
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 30);
+      AddTime(30);
       break;
     case 7:
       construct(tile, 2);
@@ -4003,7 +3787,7 @@ const AkFeld = () => {
         y: tile.object.y + 3
       });
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 30);
+      AddTime(30);
       break;
     case 10:
       construct(tile, 3);
@@ -4012,7 +3796,7 @@ const AkFeld = () => {
         y: tile.object.y + 1
       });
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 30);
+      AddTime(30);
       break;
     case 13:
       construct(tile, 4);
@@ -4021,7 +3805,7 @@ const AkFeld = () => {
         y: tile.object.y - 1
       });
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 30);
+      AddTime(30);
       break;
     case 16:
       construct(tile, 5);
@@ -4030,7 +3814,7 @@ const AkFeld = () => {
         y: tile.object.y - 3
       });
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 30);
+      AddTime(30);
       break;
     case 2:
     case 3:
@@ -4053,7 +3837,7 @@ const AkFeld = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.FIELD]) {
-        PapierText = DrawText(texts.FELDHILFE, TXTPAPIER, 1);
+        openPaper(texts.FELDHILFE, false, gameData, textCanvasContext);
         gameData.constructionHints[constructionTypes.FIELD] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4073,16 +3857,14 @@ const AkTagEnde = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      Stunden = 12;
-      Minuten = 0;
+      gameData.calendar.minutes = 12 * 60;
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       Bmp[BUTTSTOP].Phase = -1;
       if (alreadyAtSleepPosition) break;
       pauseConstruction(gameData);
       break;
     case 2:
-      Stunden = 12;
-      Minuten = 0;
+      gameData.calendar.minutes = 12 * 60;
       if (alreadyAtSleepPosition) break;
       const neighborWithHouse = findNeighbor(gameData, isUsableTreeHouse, false);
       const neighborWithTent = findNeighbor(gameData, isUsableTent, false);
@@ -4105,8 +3887,7 @@ const AkTagEnde = () => {
       }
       break;
     case 3:
-      Stunden = 12;
-      Minuten = 0;
+      gameData.calendar.minutes = 12 * 60;
       if (alreadyAtSleepPosition) break;
       if (house) {
         startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
@@ -4114,8 +3895,7 @@ const AkTagEnde = () => {
       break;
     case 4:
       Fade(0, 3);
-      Stunden = 12;
-      Minuten = 0;
+      gameData.calendar.minutes = 12 * 60;
       if (alreadyAtSleepPosition) break;
       if (tent) {
         startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_TENT);
@@ -4126,8 +3906,7 @@ const AkTagEnde = () => {
       }
       break;
     case 5:
-      Stunden = 12;
-      Minuten = 0;
+      gameData.calendar.minutes = 12 * 60;
       if (isOnSea(gameData)) break;
       if (tent) {
         startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
@@ -4137,8 +3916,7 @@ const AkTagEnde = () => {
       sounds.SNORING.instance.play();
       break;
     case 6:
-      Stunden = 12;
-      Minuten = 0;
+      gameData.calendar.minutes = 12 * 60;
       if (isOnSea(gameData)) break;
       if (tent)
         startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
@@ -4149,50 +3927,45 @@ const AkTagEnde = () => {
       break;
     case 7:
       Nacht = true;
-      Stunden = 12;
-      Minuten = 0;
+      gameData.calendar.minutes = 12 * 60;
       sounds.WOLF.instance.play();
 
       //Je nach Schlafort Zustand verändern
       if (tent) {
         changeHealth(gameData, -5);
         if (gameData.guy.health <= 0) {
-          PapierText = DrawText(texts.TAGENDE5, TXTPAPIER, 1);
+          openPaper(texts.TAGENDE5, false, gameData, textCanvasContext);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
-          Stunden = 0;
-          Minuten = 0;
+          gameData.calendar.minutes = 0;
         } else {
-          PapierText = DrawText(texts.TAGENDE2, TXTPAPIER, 1);
+          openPaper(texts.TAGENDE2, false, gameData, textCanvasContext);
         }
       } else if (house) {
         changeHealth(gameData, 20);
-        PapierText = DrawText(texts.TAGENDE4, TXTPAPIER, 1);
+        openPaper(texts.TAGENDE4, false, gameData, textCanvasContext);
       } else if (isOnSea(gameData)) {
-        PapierText = DrawText(texts.TAGENDE3, TXTPAPIER, 1);
+        openPaper(texts.TAGENDE3, false, gameData, textCanvasContext);
         Guy.AkNummer = 2;
         Guy.Aktion = AKTOD;
-        Stunden = 0;
-        Minuten = 0;
+        gameData.calendar.minutes = 0;
       } else {
         changeHealth(gameData, -20);
         if (gameData.guy.health <= 0) {
-          PapierText = DrawText(texts.TAGENDE5, TXTPAPIER, 1);
+          openPaper(texts.TAGENDE5, false, gameData, textCanvasContext);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
-          Stunden = 0;
-          Minuten = 0;
+          gameData.calendar.minutes = 0;
         } else {
-          PapierText = DrawText(texts.TAGENDE1, TXTPAPIER, 1);
+          openPaper(texts.TAGENDE1, false, gameData, textCanvasContext);
         }
       }
       break;
     case 8:
       Fade(0, 0);
       Nacht = false;
-      Tag++;
-      Stunden = 0;
-      Minuten = 0;
+      gameData.calendar.day++;
+      gameData.calendar.minutes = 0;
       if (tent)
         startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
       else if (house)
@@ -4202,10 +3975,7 @@ const AkTagEnde = () => {
       break;
     case 9:
       Fade(100, 2);
-      Stunden = 0;
-      Minuten = 0;
-      Stunden = 0;
-      Minuten = 0;
+      gameData.calendar.minutes = 0;
       if (tent)
         startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
       else if (house)
@@ -4214,23 +3984,20 @@ const AkTagEnde = () => {
       sounds.SNORING.instance.play();
       break;
     case 10:
-      Stunden = 0;
-      Minuten = 0;
+      gameData.calendar.minutes = 0;
       sounds.SNORING.instance.stop();
       if (house) {
         startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP_HOUSE);
       } else startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       break;
     case 11:
-      Stunden = 0;
-      Minuten = 0;
+      gameData.calendar.minutes = 0;
       if (house) {
         startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
       }
       break;
     case 12:
-      Stunden = 0;
-      Minuten = 0;
+      gameData.calendar.minutes = 0;
 
       goToCenterOfTile(gameData);
       Guy.Aktion = AKNICHTS;
@@ -4249,16 +4016,15 @@ const AkGerettet = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      PapierText = DrawText(texts.GERETTET, TXTPAPIER, 1);
+      openPaper(texts.GERETTET, true, gameData, textCanvasContext);
       break;
     case 3:
-      if (Frage === 2) {
+      if (gameData.paper.question.answer) {
+        Spielzustand = GAME_OUTRO;
+      } else {
         Guy.Aktion = AKNICHTS;
-        Frage = -1;
-        break;
       }
-      Spielzustand = GAME_OUTRO;
-      Frage = -1;
+      closePaper(gameData, textCanvasContext);
       break;
     case 4:
       // Route herstellen
@@ -4327,7 +4093,7 @@ const AkZelt = () => {
     case 13:
       startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_SOUTH);
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 15);
+      AddTime(15);
       break;
     case 4:
       construct(tile, 1);
@@ -4349,7 +4115,7 @@ const AkZelt = () => {
     case 8:
       startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_NORTH);
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 15);
+      AddTime(15);
       break;
     case 9:
       construct(tile, 2);
@@ -4380,7 +4146,7 @@ const AkZelt = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.TENT]) {
-        PapierText = DrawText(texts.ZELTHILFE, TXTPAPIER, 1);
+        openPaper(texts.ZELTHILFE, false, gameData, textCanvasContext);
         gameData.constructionHints[constructionTypes.TENT] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4418,7 +4184,7 @@ const AkBoot = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -2, -2);
-      AddTime(0, 15);
+      AddTime(15);
       break;
     case 5:
       goToOnTile(gameData, {
@@ -4460,7 +4226,7 @@ const AkBoot = () => {
       }
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.BOAT]) {
-        PapierText = DrawText(texts.BOOTHILFE, TXTPAPIER, 1);
+        openPaper(texts.BOOTHILFE, false, gameData, textCanvasContext);
         gameData.constructionHints[constructionTypes.BOAT] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4496,7 +4262,7 @@ const AkRohr = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 5);
+      AddTime(5);
       break;
     case 5:
     case 6:
@@ -4507,7 +4273,7 @@ const AkRohr = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 5);
+      AddTime(5);
       break;
     case 8:
       goToOnTile(gameData, {
@@ -4524,7 +4290,7 @@ const AkRohr = () => {
       updatePipes(gameData.terrain);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.PIPE]) {
-        PapierText = DrawText(texts.ROHRHILFE, TXTPAPIER, 1);
+        openPaper(texts.ROHRHILFE, false, gameData, textCanvasContext);
         gameData.constructionHints[constructionTypes.PIPE] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4593,7 +4359,7 @@ const AkSOS = () => {
     case 17:
       startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 3:
     case 6:
@@ -4603,7 +4369,7 @@ const AkSOS = () => {
     case 18:
       startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 19:
       goToStoredPosition(gameData);
@@ -4617,10 +4383,10 @@ const AkSOS = () => {
         //Dürfte nur noch der Strand übrig sein
         tile.object.chance = 2;
       }
-      Chance += tile.object.chance;
+      gameData.guy.chance += tile.object.chance;
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.SOS]) {
-        PapierText = DrawText(texts.SOSHILFE, TXTPAPIER, 1);
+        openPaper(texts.SOSHILFE, false, gameData, textCanvasContext);
         gameData.constructionHints[constructionTypes.SOS] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4649,12 +4415,12 @@ const AkFeuerstelle = () => {
     case 2:
       startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 3:
       startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       construct(tile, 1);
       break;
     case 4:
@@ -4668,7 +4434,7 @@ const AkFeuerstelle = () => {
     case 7:
       startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_NORTH);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       if (tile.construction.actionStep !== 5) {
         construct(tile, 2);
       }
@@ -4680,7 +4446,7 @@ const AkFeuerstelle = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.FIREPLACE]) {
-        PapierText = DrawText(texts.FEUERSTELLEHILFE, TXTPAPIER, 1);
+        openPaper(texts.FEUERSTELLEHILFE, false, gameData, textCanvasContext);
         gameData.constructionHints[constructionTypes.FIREPLACE] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4713,7 +4479,7 @@ const AkHaus1 = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 6:
     case 7:
@@ -4723,7 +4489,7 @@ const AkHaus1 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
       changeWaterAndFood(gameData, -0.5, 0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 10:
     case 11:
@@ -4733,7 +4499,7 @@ const AkHaus1 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 14:
     case 15:
@@ -4743,7 +4509,7 @@ const AkHaus1 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 18:
       goToStoredPosition(gameData);
@@ -4776,7 +4542,7 @@ const AkHaus2 = () => {
     case 2:
       startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 3:
     case 4:
@@ -4785,7 +4551,7 @@ const AkHaus2 = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 7:
     case 8:
@@ -4795,7 +4561,7 @@ const AkHaus2 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 11:
     case 12:
@@ -4805,7 +4571,7 @@ const AkHaus2 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 15:
     case 16:
@@ -4815,13 +4581,13 @@ const AkHaus2 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 19:
       startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
       construct(tile, 4);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 20:
       goToStoredPosition(gameData);
@@ -4854,7 +4620,7 @@ const AkHaus3 = () => {
     case 2:
       startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 3:
     case 4:
@@ -4863,7 +4629,7 @@ const AkHaus3 = () => {
       startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 7:
     case 8:
@@ -4873,7 +4639,7 @@ const AkHaus3 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 11:
     case 12:
@@ -4883,7 +4649,7 @@ const AkHaus3 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 15:
     case 16:
@@ -4893,13 +4659,13 @@ const AkHaus3 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
       changeWaterAndFood(gameData, -0.5, -0.5);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 19:
       startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
       construct(tile, 4);
       changeWaterAndFood(gameData, -1, -1);
-      AddTime(0, 1);
+      AddTime(1);
       break;
     case 20:
       goToStoredPosition(gameData);
@@ -4908,7 +4674,7 @@ const AkHaus3 = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.TREE_HOUSE]) {
-        PapierText = DrawText(texts.HAUS3HILFE, TXTPAPIER, 1);
+        openPaper(texts.HAUS3HILFE, false, gameData, textCanvasContext);
         gameData.constructionHints[constructionTypes.TREE_HOUSE] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4961,7 +4727,7 @@ const AkSchlafen = () => {
       } else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
       sounds.SNORING.instance.play();
       changeHealth(gameData, 5);
-      AddTime(0, 30);
+      AddTime(30);
       break;
     case 6:
       sounds.SNORING.instance.stop();
@@ -5061,17 +4827,17 @@ const CheckBenutze = (item) => {
       Bmp[BUTTFAELLEN].Phase = 0;
       Bmp[BUTTBOOT].Phase = 0;
       Bmp[BUTTROHR].Phase = 0;
-      PapierText = DrawText(texts.BAUEAXT, TXTPAPIER, 1);
+      openPaper(texts.BAUEAXT, false, gameData, textCanvasContext);
       sounds.INVENTION.instance.play();
     } else if (!gameData.guy.inventory[items.HARROW]) {
       changeItem(gameData, items.STONE, -1);
       changeItem(gameData, items.BRANCH, -1);
       changeItem(gameData, items.HARROW, 1);
       Bmp[BUTTFELD].Phase = 0;
-      PapierText = DrawText(texts.BAUEEGGE, TXTPAPIER, 1);
+      openPaper(texts.BAUEEGGE, false, gameData, textCanvasContext);
       sounds.INVENTION.instance.play();
     } else {
-      PapierText = DrawText(texts.STEINPLUSASTNICHTS, TXTPAPIER, 1);
+      openPaper(texts.STEINPLUSASTNICHTS, false, gameData, textCanvasContext);
     }
   } else if ((item === items.LIANA && TwoClicks === items.BRANCH) ||
     (item === items.BRANCH && TwoClicks === items.LIANA)) {
@@ -5080,10 +4846,10 @@ const CheckBenutze = (item) => {
       changeItem(gameData, items.BRANCH, -1);
       changeItem(gameData, items.FISHING_ROD, 1);
       Bmp[BUTTANGELN].Phase = 0;
-      PapierText = DrawText(texts.BAUEANGEL, TXTPAPIER, 1);
+      openPaper(texts.BAUEANGEL, false, gameData, textCanvasContext);
       sounds.INVENTION.instance.play();
     } else {
-      PapierText = DrawText(texts.ASTPLUSLIANENICHTS, TXTPAPIER, 1);
+      openPaper(texts.ASTPLUSLIANENICHTS, false, gameData, textCanvasContext);
     }
   } else if (((item === items.LIANA) && (TwoClicks === items.STONE)) ||
     ((item === items.STONE) && (TwoClicks === items.LIANA))) {
@@ -5092,13 +4858,13 @@ const CheckBenutze = (item) => {
       changeItem(gameData, items.STONE, -1);
       changeItem(gameData, items.SLING, 1);
       Bmp[BUTTSCHLEUDER].Phase = 0;
-      PapierText = DrawText(texts.BAUESCHLEUDER, TXTPAPIER, 1);
+      openPaper(texts.BAUESCHLEUDER, false, gameData, textCanvasContext);
       sounds.INVENTION.instance.play();
     } else {
-      PapierText = DrawText(texts.STEINPLUSLIANENICHTS, TXTPAPIER, 1);
+      openPaper(texts.STEINPLUSLIANENICHTS, false, gameData, textCanvasContext);
     }
   } else {
-    PapierText = DrawText(texts.NICHTBASTELN, TXTPAPIER, 1);
+    openPaper(texts.NICHTBASTELN, false, gameData, textCanvasContext);
   }
   TwoClicks = -1;
 }
@@ -5118,7 +4884,7 @@ const Animationen = () => {
     }
   }
 
-  if (PapierText === -1) {
+  if (!gameData.paper) {
     animateGuy(gameData, frame, framesPerSecond, AddTime.bind(this));
   }
 }
@@ -5131,12 +4897,6 @@ const refresh = (timestamp) => {
     framesPerSecond = (framesPerSecond + frame / 5) / 2;
     frame = 0;
     if (framesPerSecond === 0) framesPerSecond = 50;
-
-    //BilderproSec ausgeben
-    /*Textloeschen(TXTFPS);
-    TextBereich[TXTFPS].Aktiv = true;
-    DrawString(LastBild,TextBereich[TXTFPS].rcText.left,TextBereich[TXTFPS].rcText.top,1);
-*/
   }
 
   if (Spielzustand === GAME_WAIT) {
@@ -5157,9 +4917,9 @@ const refresh = (timestamp) => {
     drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
 
   } else if (Spielzustand === GAME_PLAY) {
-    if ((Stunden >= 12) && (Minuten !== 0) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
+    if (gameData.calendar.minutes > (12 * 60) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
     {
-      if (Guy.Aktion === AKAUSSCHAU) Chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
+      if (Guy.Aktion === AKAUSSCHAU) gameData.guy.chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
       gameData.guy.active = false;
       Guy.AkNummer = 0;
       Guy.Aktion = AKTAGENDE;

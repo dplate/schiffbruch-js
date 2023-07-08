@@ -53,7 +53,7 @@ const animateRoute = (gameData, frame, addTimeLegacy) => {
     guy.tile.x = routePoint.x;
     guy.tile.y = routePoint.y;
     
-    addTimeLegacy(0, tileCosts * (isOnSea(gameData) ? 3 : 5));
+    addTimeLegacy(tileCosts * (isOnSea(gameData) ? 3 : 5));
     changeWaterAndFood(gameData, -1, -1);
   }
   

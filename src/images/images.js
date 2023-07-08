@@ -26,6 +26,18 @@ const images = {
   INVENTORY: {
     file: 'inventory.png',
     instance: null
+  },
+  FONT_HAND: {
+    file: 'fontHand.png',
+    instance: null
+  },
+  FONT_DIGITAL: {
+    file: 'fontDigital.png',
+    instance: null
+  },
+  PAPER: {
+    file: 'paper.png',
+    instance: null
   }
 };
 
