@@ -22,6 +22,7 @@ const drawObject = (gameData, area, tile, forTreasureMap, groundObjects, mustDra
     object.frame, 
     tile.position.x + object.x - area.x, 
     tile.position.y + object.y - area.y,
+    1,
     canvasContext
   );
 

@@ -5,8 +5,8 @@ import clearText from './clearText.js';
 import drawText from './drawText.js';
 import textAreas from './textAreas.js';
 
-const closePaper = (gameData, textCanvasContext) => {
-  clearText(textAreas.PAPER, textCanvasContext);
+const closePaper = (gameData) => {
+  clearText(textAreas.PAPER);
   gameData.paper = null;
   gameData.guy.active = false;
 };

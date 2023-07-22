@@ -1,3 +1,4 @@
+import canvases from '../../images/canvases.js';
 import images from '../../images/images.js';
 import drawItem from './drawItem.js';
 import inventoryOffsets from './inventoryOffsets.js';
@@ -9,8 +10,8 @@ const romanFiveWidth = 15;
 const romanFiveHeight = 10;
 const romanNumberDistance = romanOneWidth + 1;
 
-const drawRomanOne = (position, canvasContext) => {
-  canvasContext.drawImage(
+const drawRomanOne = (position) => {
+  canvases.PRIMARY.drawImage(
     images.INVENTORY.instance, 
     0, 
     0, 
@@ -23,8 +24,8 @@ const drawRomanOne = (position, canvasContext) => {
   );
 };
 
-const drawRomanFive = (position, canvasContext) => {
-  canvasContext.drawImage(
+const drawRomanFive = (position) => {
+  canvases.PRIMARY.drawImage(
     images.INVENTORY.instance, 
     3, 
     0, 
@@ -37,21 +38,21 @@ const drawRomanFive = (position, canvasContext) => {
   );
 };
 
-const drawRomanNumber = (amountPosition, number, canvasContext) => {
+const drawRomanNumber = (amountPosition, number) => {
   if (number % 5 === 0) {
     drawRomanFive({
       x: amountPosition.x + 3 + ((number / 5 - 1) * 20),
       y: amountPosition.y
-    }, canvasContext);
+    });
   } else {
     drawRomanOne({
       x: amountPosition.x + number * romanNumberDistance,
       y: amountPosition.y
-    }, canvasContext);
+    });
   };
 };
 
-const drawItems = (gameData, canvasContext) => {
+const drawItems = (gameData) => {
   Object.entries(gameData.guy.inventory).forEach(([item, amount]) => {
     if (amount > 0) {
       const sprite = itemSprites[item];
@@ -59,14 +60,14 @@ const drawItems = (gameData, canvasContext) => {
         x: inventoryOffsets.items.x + sprite.inventoryPosition.x, 
         y: inventoryOffsets.items.y + sprite.inventoryPosition.y
       };
-      drawItem(item, position, canvasContext);
+      drawItem(item, position);
       
       const amountPosition = {
         x: position.x + sprite.width + 4,
         y: position.y
       };
       for (let number = 1; number <= amount; number++) {
-        drawRomanNumber(amountPosition, number, canvasContext);
+        drawRomanNumber(amountPosition, number);
       }
     }
   });

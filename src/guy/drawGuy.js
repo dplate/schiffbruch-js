@@ -7,7 +7,8 @@ const drawGuy = (gameData, canvasContext) => {
     guy.sprite, 
     guy.frame, 
     Math.round(guy.position.x - gameData.camera.x), 
-    Math.round(guy.position.y - gameData.camera.y), 
+    Math.round(guy.position.y - gameData.camera.y),
+    1,
     canvasContext
   );
 };

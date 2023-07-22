@@ -1,6 +1,7 @@
+import canvases from './canvases.js';
 import sprites from './sprites.js'
 
-const drawSprite = (type, frame, x, y, canvasContext, scaling = 1) => {
+const drawSprite = (type, frame, x, y, scaling = 1, canvasContext = canvases.PRIMARY) => {
   const sprite = sprites[type];
   canvasContext.drawImage(
     sprite.image.instance, 

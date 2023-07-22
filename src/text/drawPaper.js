@@ -1,3 +1,4 @@
+import canvases from '../images/canvases.js';
 import images from '../images/images.js';
 import blitText from './blitText.js';
 import textAreas from './textAreas.js';
@@ -7,13 +8,13 @@ const width = 464;
 const paperColor = `rgba(236, 215, 179, 1)`
 const middleOffsetX = 34;
 
-const drawPaper = (paper, textCanvasContext, canvasContext) => {
+const drawPaper = (paper) => {
   const paperHeight = Math.max(paper.height - 90, 0);
 
   const x = textAreas.PAPER.x - 60;
   const y = textAreas.PAPER.y - 30;
 
-  canvasContext.drawImage(
+  canvases.PRIMARY.drawImage(
     images.PAPER.instance, 
     0, 
     0, 
@@ -25,15 +26,15 @@ const drawPaper = (paper, textCanvasContext, canvasContext) => {
     rollHeight, 
   );
 
-  canvasContext.fillStyle = paperColor;
-  canvasContext.fillRect(
+  canvases.PRIMARY.fillStyle = paperColor;
+  canvases.PRIMARY.fillRect(
     x + middleOffsetX, 
     y + rollHeight, 
     width - middleOffsetX, 
     paperHeight
   );
 
-  canvasContext.drawImage(
+  canvases.PRIMARY.drawImage(
     images.PAPER.instance, 
     0, 
     rollHeight, 
@@ -45,7 +46,7 @@ const drawPaper = (paper, textCanvasContext, canvasContext) => {
     rollHeight, 
   );
 
-  blitText(textAreas.PAPER, textCanvasContext, canvasContext);
+  blitText(textAreas.PAPER, canvases.TEXT, canvases.PRIMARY);
 };
 
 export default drawPaper;

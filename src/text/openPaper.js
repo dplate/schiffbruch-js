@@ -1,12 +1,13 @@
 import isOnSea from '../guy/isOnSea.js';
 import startGuyAnimation from '../guy/startGuyAnimation.js';
+import canvases from '../images/canvases.js';
 import images from '../images/images.js';
 import spriteTypes from '../images/spriteTypes.js';
 import drawText from './drawText.js';
 import textAreas from './textAreas.js';
 
-const drawYes = (yes, canvasContext) => {
-  canvasContext.drawImage(
+const drawYes = (yes) => {
+  canvases.TEXT.drawImage(
     images.PAPER.instance, 
     0, 
     154, 
@@ -19,8 +20,8 @@ const drawYes = (yes, canvasContext) => {
   );
 };
 
-const drawNo = (no, canvasContext) => {
-  canvasContext.drawImage(
+const drawNo = (no) => {
+  canvases.TEXT.drawImage(
     images.PAPER.instance, 
     41, 
     154, 
@@ -33,8 +34,8 @@ const drawNo = (no, canvasContext) => {
   );
 };
 
-const openPaper = (text, question, gameData, textCanvasContext) => {
-  const textHeight = drawText(text, textAreas.PAPER, gameData, textCanvasContext)
+const openPaper = (text, question, gameData) => {
+  const textHeight = drawText(text, textAreas.PAPER, gameData)
 
   gameData.paper = {
     height: textHeight
@@ -50,7 +51,7 @@ const openPaper = (text, question, gameData, textCanvasContext) => {
       width: 41,
       height: 42
     }
-    drawYes(gameData.paper.question.yes, textCanvasContext);
+    drawYes(gameData.paper.question.yes);
 
     gameData.paper.question.no = {
       x: textAreas.PAPER.x + 220,
@@ -58,7 +59,7 @@ const openPaper = (text, question, gameData, textCanvasContext) => {
       width: 100,
       height: 39
     }
-    drawNo(gameData.paper.question.no, textCanvasContext);
+    drawNo(gameData.paper.question.no);
     
     gameData.paper.height += 115;
   }

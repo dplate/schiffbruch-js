@@ -1,3 +1,4 @@
+import canvases from '../images/canvases.js';
 import grounds from './tiles/grounds.js';
 
 const scaling = 2;
@@ -19,14 +20,14 @@ const getColor = (tile) => {
   return undiscoveredColor;
 };
 
-const updateMinimap = (terrain, canvasContext) => {
-  canvasContext.fillStyle = undiscoveredColor
-  canvasContext.fillRect(0, 0, terrain.length * scaling, terrain[0].length * scaling);
+const updateMinimap = (terrain) => {
+  canvases.MINIMAP.fillStyle = undiscoveredColor
+  canvases.MINIMAP.fillRect(0, 0, terrain.length * scaling, terrain[0].length * scaling);
 
   terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
-      canvasContext.fillStyle = getColor(tile);
-      canvasContext.fillRect(x * scaling, y * scaling, scaling, scaling);
+      canvases.MINIMAP.fillStyle = getColor(tile);
+      canvases.MINIMAP.fillRect(x * scaling, y * scaling, scaling, scaling);
     });
   });
 };

@@ -1,6 +1,6 @@
 import updateMinimap from '../terrain/updateMinimap.js';
 
-const discoverTerrain = (gameData, minimapCanvasContext) => {
+const discoverTerrain = (gameData) => {
   let newDiscovery = false;
   
   for (let x = gameData.guy.tile.x - 1; x <= gameData.guy.tile.x + 1; x++) {
@@ -14,7 +14,7 @@ const discoverTerrain = (gameData, minimapCanvasContext) => {
   }
 
   if (newDiscovery) {
-    updateMinimap(gameData.terrain, minimapCanvasContext);
+    updateMinimap(gameData.terrain);
   }
 }
 

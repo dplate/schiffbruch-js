@@ -1,8 +1,9 @@
+import canvases from '../../images/canvases.js';
 import itemSprites from './itemSprites.js';
 
-const drawItem = (item, position, canvasContext) => {
+const drawItem = (item, position) => {
   const sprite = itemSprites[item];
-  canvasContext.drawImage(
+  canvases.PRIMARY.drawImage(
     sprite.image.instance, 
     sprite.x, 
     sprite.y, 

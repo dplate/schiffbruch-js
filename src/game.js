@@ -17,7 +17,6 @@ import addTrees from './terrain/addTrees.js';
 import sprites from './images/sprites.js';
 import hideTreasure from './treasure/hideTreasure.js';
 import drawTerrain from './terrain/drawTerrain.js';
-import getTreasureMapCanvasContext from './treasure/getTreasureMapCanvasContext.js';
 import drawTreasureMap from './treasure/drawTreasureMap.js';
 import addPirateWreck from './terrain/addPirateWreck.js';
 import addShipWreck from './terrain/addShipWreck.js';
@@ -79,6 +78,7 @@ import closePaper from './text/closePaper.js';
 import drawPaper from './text/drawPaper.js';
 import blitText from './text/blitText.js';
 import openPaper from './text/openPaper.js';
+import canvases from './images/canvases.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -193,10 +193,6 @@ const GAME_OUTRO = 'outro';
 const GAME_LOGO = 'logo';
 
 //ddraw
-let primaryCanvasContext = null;
-let minimapCanvasContext = null;
-let textCanvasContext = null;
-
 let panelImage = null;
 let textfieldImage = null;
 let creditsImage = null;
@@ -332,26 +328,31 @@ const initCanvases = async (window) => {
   primaryCanvas.height = MAXY;
   window.document.body.appendChild(primaryCanvas);
   //window.document.body.requestFullscreen();
-  primaryCanvasContext = primaryCanvas.getContext('2d');
-  primaryCanvasContext.imageSmoothingEnabled = false;
+  canvases.PRIMARY = primaryCanvas.getContext('2d');
+  canvases.PRIMARY.imageSmoothingEnabled = false;
 
   //In diese Surface soll die MiniMap gespeichert werden
   const minimapCanvas = window.document.createElement('canvas');
   minimapCanvas.width = 2 * MAXXKACH;
   minimapCanvas.height = 2 * MAXYKACH;
-  minimapCanvasContext = minimapCanvas.getContext('2d');
+  canvases.MINIMAP = minimapCanvas.getContext('2d');
 
   //In diese Surface soll die Schrift gespeichert werden
   const textCanvas = window.document.createElement('canvas');
   textCanvas.width = MAXX;
   textCanvas.height = MAXY;
-  textCanvasContext = textCanvas.getContext('2d');
+  canvases.TEXT = textCanvas.getContext('2d');
+
+  const treasureMapCanvas = window.document.createElement('canvas');
+  treasureMapCanvas.width = 370;
+  treasureMapCanvas.height = 370;
+  canvases.TREASURE_MAP = treasureMapCanvas.getContext('2d');
 }
 
 
 const initInput = (window) => {
   window.document.onmousemove = (event) => {
-    const rect = primaryCanvasContext.canvas.getBoundingClientRect();
+    const rect = canvases.PRIMARY.canvas.getBoundingClientRect();
     mouseUpdates.x = Math.min(rect.width, Math.max(0, event.clientX - rect.left));
     mouseUpdates.y = Math.min(rect.height, Math.max(0, event.clientY - rect.top));
   };
@@ -1397,13 +1398,13 @@ const CheckMouse = () => {
         sounds.CLICK.instance.play();
       }
     } else if ((Button !== -1) && (Push === 1)) {
-      closePaper(gameData, textCanvasContext);
+      closePaper(gameData);
     }
     return;
   }
 
   //Animationen und Text löschen (werden dann von den MouseIn.. Sachen neu angestellt
-  clearText(textAreas.STATUS, textCanvasContext);
+  clearText(textAreas.STATUS);
   ButtAniAus();
 
   //Wenn der Guy aktiv dann linke Mouse-Buttons ignorieren
@@ -1451,7 +1452,7 @@ const CheckKey = () => {
       gameData.guy.active = false;
       for (let x = gameData.guy.tile.x; x < MAXXKACH; x++) {
         gameData.guy.tile.x = x;
-        discoverTerrain(gameData, minimapCanvasContext);
+        discoverTerrain(gameData);
         if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) break;
       }
       addShipWreck(gameData.terrain[gameData.guy.tile.x - 2][gameData.guy.tile.y]);
@@ -1460,7 +1461,7 @@ const CheckKey = () => {
       gameData.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
       gameData.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
       gameData.guy.route = [];
-      updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, false);
+      updateCamera(gameData.camera, gameData.guy.position, false);
 
       gameData.guy.sprite = spriteTypes.GUY_WAITING;
       Guy.Aktion = AKNICHTS;
@@ -1500,7 +1501,7 @@ const CheckKey = () => {
       for (y = 0; y < MAXYKACH; y++)
         for (x = 0; x < MAXXKACH; x++)
           gameData.terrain[x][y].discovered = true;
-      updateMinimap(gameData.terrain, minimapCanvasContext);
+      updateMinimap(gameData.terrain);
     }
 
     if (pressedKeyCodes[DIK_I])  //Zum testen
@@ -1710,7 +1711,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
       }
 
     }
-    drawText(Text, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(Text, textAreas.STATUS, gameData);
   }
 
   //rechte Maustastescrollen
@@ -1763,9 +1764,9 @@ const MouseInPanel = (Button, Push) => {
     gameData.camera.y = Math.floor(((KXPIXEL / 7) * (my + mx)) - gameData.camera.height / 2);
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTGITTER].rcDes)) {
     if (gameData.options.grid) {
-      drawText(texts.GITTERAUS, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.GITTERAUS, textAreas.STATUS, gameData);
     } else {
-      drawText(texts.GITTERAN, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.GITTERAN, textAreas.STATUS, gameData);
     }
 
     if ((Button === 0) && (Push === 1)) {
@@ -1774,9 +1775,9 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOUND].rcDes)) {
     if (audio.isRunning()) {
-      drawText(texts.SOUNDAUS, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.SOUNDAUS, textAreas.STATUS, gameData);
     } else {
-      drawText(texts.SOUNDAN, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.SOUNDAN, textAreas.STATUS, gameData);
     }
 
     if ((Button === 0) && (Push === 1)) {
@@ -1788,7 +1789,7 @@ const MouseInPanel = (Button, Push) => {
       }
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBEENDEN].rcDes)) {
-    drawText(texts.BEENDEN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEENDEN, textAreas.STATUS, gameData);
     Bmp[BUTTBEENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1797,7 +1798,7 @@ const MouseInPanel = (Button, Push) => {
       Guy.Aktion = AKSPIELVERLASSEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTNEU].rcDes)) {
-    drawText(texts.NEU, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.NEU, textAreas.STATUS, gameData);
     Bmp[BUTTNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1806,7 +1807,7 @@ const MouseInPanel = (Button, Push) => {
       Guy.Aktion = AKNEUBEGINNEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTTAGNEU].rcDes)) {
-    drawText(texts.TAGNEU2, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.TAGNEU2, textAreas.STATUS, gameData);
     Bmp[BUTTTAGNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1816,9 +1817,9 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAKTION].rcDes)) {
     if (HauptMenue === MEAKTION) {
-      drawText(texts.MEAKTIONZU, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.MEAKTIONZU, textAreas.STATUS, gameData);
     } else {
-      drawText(texts.MEAKTIONAUF, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.MEAKTIONAUF, textAreas.STATUS, gameData);
     }
     Bmp[BUTTAKTION].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1829,9 +1830,9 @@ const MouseInPanel = (Button, Push) => {
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBAUEN].rcDes) &&
     (Bmp[BUTTBAUEN].Phase !== -1)) {
     if (HauptMenue === MEBAUEN) {
-      drawText(texts.MEBAUENZU, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.MEBAUENZU, textAreas.STATUS, gameData);
     } else {
-      drawText(texts.MEBAUENAUF, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.MEBAUENAUF, textAreas.STATUS, gameData);
     }
     Bmp[BUTTBAUEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1841,9 +1842,9 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTINVENTAR].rcDes)) {
     if (HauptMenue === MEINVENTAR) {
-      drawText(texts.MEINVENTARZU, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.MEINVENTARZU, textAreas.STATUS, gameData);
     } else {
-      drawText(texts.MEINVENTARAUF, textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts.MEINVENTARAUF, textAreas.STATUS, gameData);
     }
     Bmp[BUTTINVENTAR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1853,7 +1854,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTWEITER].rcDes)) &&
     (Bmp[BUTTWEITER].Phase !== -1)) {
-    drawText(texts.WEITER, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.WEITER, textAreas.STATUS, gameData);
 
     Bmp[BUTTWEITER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1892,7 +1893,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes)) &&
     (Bmp[BUTTSTOP].Phase !== -1)) {
-    drawText(texts.STOP, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.STOP, textAreas.STATUS, gameData);
 
     Bmp[BUTTSTOP].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1903,7 +1904,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTABLEGEN].rcDes)) &&
     (Bmp[BUTTABLEGEN].Phase !== -1)) {
-    drawText(texts.BEGINNABLEGEN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNABLEGEN, textAreas.STATUS, gameData);
     Bmp[BUTTABLEGEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1914,7 +1915,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSUCHEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSUCHEN].Phase !== -1)) {
-    drawText(texts.BEGINNSUCHEN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNSUCHEN, textAreas.STATUS, gameData);
     Bmp[BUTTSUCHEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1923,7 +1924,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTESSEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTESSEN].Phase !== -1)) {
-    drawText(texts.BEGINNESSEN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNESSEN, textAreas.STATUS, gameData);
     Bmp[BUTTESSEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1933,12 +1934,12 @@ const MouseInPanel = (Button, Push) => {
       } else if (isDrinkable(tile.object))
         Guy.Aktion = AKTRINKEN;
       else {
-        openPaper(texts.KEINESSENTRINKEN, false, gameData, textCanvasContext);
+        openPaper(texts.KEINESSENTRINKEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLAFEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLAFEN].Phase !== -1)) {
-    drawText(texts.BEGINNSCHLAFEN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNSCHLAFEN, textAreas.STATUS, gameData);
     Bmp[BUTTSCHLAFEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1946,12 +1947,12 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLAFEN;
       } else {
-        openPaper(texts.NICHTAUFWASSERSCHLAFEN, false, gameData, textCanvasContext);
+        openPaper(texts.NICHTAUFWASSERSCHLAFEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFAELLEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTFAELLEN].Phase !== -1)) {
-    drawText(texts.BEGINNFAELLEN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNFAELLEN, textAreas.STATUS, gameData);
     Bmp[BUTTFAELLEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1960,17 +1961,17 @@ const MouseInPanel = (Button, Push) => {
         if (isNormalTree(tile.object)) {
           Guy.Aktion = AKFAELLEN;
         } else if (isBigTree(tile.object)) {
-          openPaper(texts.BAUMZUGROSS, false, gameData, textCanvasContext);
+          openPaper(texts.BAUMZUGROSS, false, gameData);
         } else {
-          openPaper(texts.KEINBAUM, false, gameData, textCanvasContext);
+          openPaper(texts.KEINBAUM, false, gameData);
         }
       } else {
-        openPaper(texts.ROHSTAMMZUVIEL, false, gameData, textCanvasContext);
+        openPaper(texts.ROHSTAMMZUVIEL, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANGELN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTANGELN].Phase !== -1)) {
-    drawText(texts.BEGINNANGELN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNANGELN, textAreas.STATUS, gameData);
     Bmp[BUTTANGELN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1978,12 +1979,12 @@ const MouseInPanel = (Button, Push) => {
       if (isFishable(tile)) {
         Guy.Aktion = AKANGELN;
       } else {
-        openPaper(texts.KEINWASSER, false, gameData, textCanvasContext);
+        openPaper(texts.KEINWASSER, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANZUENDEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTANZUENDEN].Phase !== -1)) {
-    drawText(texts.BEGINNANZUENDEN, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNANZUENDEN, textAreas.STATUS, gameData);
     Bmp[BUTTANZUENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1991,12 +1992,12 @@ const MouseInPanel = (Button, Push) => {
       if (isUsableFireplace(tile)) {
         Guy.Aktion = AKANZUENDEN;
       } else {
-        openPaper(texts.KEINEFEUERST, false, gameData, textCanvasContext);
+        openPaper(texts.KEINEFEUERST, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAUSSCHAU].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTAUSSCHAU].Phase !== -1)) {
-    drawText(texts.BEGINNAUSSCHAU, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNAUSSCHAU, textAreas.STATUS, gameData);
     Bmp[BUTTAUSSCHAU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2005,12 +2006,12 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKAUSSCHAU;
       } else {
-        openPaper(texts.WELLENZUHOCH, false, gameData, textCanvasContext);
+        openPaper(texts.WELLENZUHOCH, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZ].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZ].Phase !== -1)) {
-    drawText(texts.BEGINNSCHATZ, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNSCHATZ, textAreas.STATUS, gameData);
     Bmp[BUTTSCHATZ].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2021,12 +2022,12 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHATZ;
       } else {
-        openPaper(texts.GRABENBEDINGUNGEN, false, gameData, textCanvasContext);
+        openPaper(texts.GRABENBEDINGUNGEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLEUDER].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLEUDER].Phase !== -1)) {
-    drawText(texts.BEGINNSCHLEUDER, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNSCHLEUDER, textAreas.STATUS, gameData);
     Bmp[BUTTSCHLEUDER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2035,14 +2036,14 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLEUDER;
       } else if (isBigTree(tile.object)) {
-        openPaper(texts.BAUMZUGROSS, false, gameData, textCanvasContext);
+        openPaper(texts.BAUMZUGROSS, false, gameData);
       } else {
-        openPaper(texts.KEINVOGEL, false, gameData, textCanvasContext);
+        openPaper(texts.KEINVOGEL, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZKARTE].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZKARTE].Phase !== -1)) {
-    drawText(texts.BEGINNSCHATZKARTE, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNSCHATZKARTE, textAreas.STATUS, gameData);
     Bmp[BUTTSCHATZKARTE].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2053,7 +2054,7 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNFELD;
     MakeRohString(-1, -1, constructionTypes.FIELD);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTFELD].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2068,7 +2069,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKFELD;
       } else {
-        openPaper(texts.FELDBEDINGUNGEN, false, gameData, textCanvasContext);
+        openPaper(texts.FELDBEDINGUNGEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTZELT].rcDes)) &&
@@ -2076,7 +2077,7 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNZELT;
     MakeRohString(-1, -1, constructionTypes.TENT);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTZELT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2090,7 +2091,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKZELT;
       } else {
-        openPaper(texts.ZELTBEDINGUNGEN, false, gameData, textCanvasContext);
+        openPaper(texts.ZELTBEDINGUNGEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBOOT].rcDes)) &&
@@ -2098,7 +2099,7 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNBOOT;
     MakeRohString(-1, -1, constructionTypes.BOAT);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTBOOT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2116,7 +2117,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKBOOT;
       } else {
-        openPaper(texts.BOOTBEDINGUNGEN, false, gameData, textCanvasContext);
+        openPaper(texts.BOOTBEDINGUNGEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTROHR].rcDes)) &&
@@ -2124,7 +2125,7 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNROHR;
     MakeRohString(-1, -1, constructionTypes.PIPE);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTROHR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2138,7 +2139,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKROHR;
       } else {
-        openPaper(texts.ROHRBEDINGUNGEN, false, gameData, textCanvasContext);
+        openPaper(texts.ROHRBEDINGUNGEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOS].rcDes)) &&
@@ -2146,7 +2147,7 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNSOS;
     MakeRohString(-1, -1, constructionTypes.SOS);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTSOS].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2160,7 +2161,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKSOS;
       } else {
-        openPaper(texts.SOSBEDINGUNGEN, false, gameData, textCanvasContext);
+        openPaper(texts.SOSBEDINGUNGEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS1].rcDes)) &&
@@ -2168,13 +2169,13 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNHAUS1;
     MakeRohString(-1, -1, constructionTypes.LADDER);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false, gameData, textCanvasContext);
+        openPaper(texts.BAUMZUKLEIN, false, gameData);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS1;
@@ -2183,7 +2184,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKHAUS1;
       } else {
-        openPaper(texts.GEGENDNICHT, false, gameData, textCanvasContext);
+        openPaper(texts.GEGENDNICHT, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS2].rcDes)) &&
@@ -2191,15 +2192,15 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNHAUS2;
     MakeRohString(-1, -1, constructionTypes.PLATFORM);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false, gameData, textCanvasContext);
+        openPaper(texts.BAUMZUKLEIN, false, gameData);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
-        openPaper(texts.NICHTOHNELEITER, false, gameData, textCanvasContext);
+        openPaper(texts.NICHTOHNELEITER, false, gameData);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS2;
@@ -2208,7 +2209,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKHAUS2;
       } else {
-        openPaper(texts.GEGENDNICHT, false, gameData, textCanvasContext);
+        openPaper(texts.GEGENDNICHT, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS3].rcDes)) &&
@@ -2216,15 +2217,15 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNHAUS3;
     MakeRohString(-1, -1, constructionTypes.TREE_HOUSE);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false, gameData, textCanvasContext);
+        openPaper(texts.BAUMZUKLEIN, false, gameData);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE || tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
-        openPaper(texts.NICHTOHNEPLATTFORM, false, gameData, textCanvasContext);
+        openPaper(texts.NICHTOHNEPLATTFORM, false, gameData);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS3;
@@ -2233,7 +2234,7 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKHAUS3;
       } else {
-        openPaper(texts.GEGENDNICHT, false, gameData, textCanvasContext);
+        openPaper(texts.GEGENDNICHT, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFEUERST].rcDes)) &&
@@ -2241,7 +2242,7 @@ const MouseInPanel = (Button, Push) => {
     StdString = texts.BEGINNFEUERSTELLE;
     MakeRohString(-1, -1, constructionTypes.FIREPLACE);
     StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(StdString, textAreas.STATUS, gameData);
 
     Bmp[BUTTFEUERST].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2255,12 +2256,12 @@ const MouseInPanel = (Button, Push) => {
         continueConstruction(gameData)
         Guy.Aktion = AKFEUERSTELLE;
       } else {
-        openPaper(texts.FEUERSTELLENBEDINGUNGEN, false, gameData, textCanvasContext);
+        openPaper(texts.FEUERSTELLENBEDINGUNGEN, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTDESTROY].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTDESTROY].Phase !== -1)) {
-    drawText(texts.BEGINNDESTROY, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.BEGINNDESTROY, textAreas.STATUS, gameData);
     Bmp[BUTTDESTROY].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2268,7 +2269,7 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKDESTROY;
       } else {
-        openPaper(texts.KEINBAUWERK, false, gameData, textCanvasContext);
+        openPaper(texts.KEINBAUWERK, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (HauptMenue === MEINVENTAR)) {
@@ -2280,7 +2281,7 @@ const MouseInPanel = (Button, Push) => {
           TwoClicks = item;
         } else CheckBenutze(item);
       }
-      drawText(texts[itemTextIds[item]], textAreas.STATUS, gameData, textCanvasContext);
+      drawText(texts[itemTextIds[item]], textAreas.STATUS, gameData);
     };
   } else if (InRect(
     MousePosition.x, 
@@ -2292,7 +2293,7 @@ const MouseInPanel = (Button, Push) => {
       bottom: textAreas.TIME.y + textAreas.TIME.height
     }
   )) {
-    drawText(texts.SOSPAET, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.SOSPAET, textAreas.STATUS, gameData);
   } else if (InRect(
     MousePosition.x, 
     MousePosition.y, 
@@ -2303,7 +2304,7 @@ const MouseInPanel = (Button, Push) => {
       bottom: textAreas.CHANCE.y + textAreas.CHANCE.height
     }
   )) {
-    drawText(texts.CHANCETEXT, textAreas.STATUS, gameData, textCanvasContext);
+    drawText(texts.CHANCETEXT, textAreas.STATUS, gameData);
   } else {
     if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
     TwoClicks = -1;
@@ -2336,8 +2337,8 @@ const startGame = async (newGame) => {
     rcRectdes.top = 0;
     rcRectdes.right = MAXX;
     rcRectdes.bottom = MAXY;
-    fillCanvas(rcRectdes, 70, 70, 100, 1, primaryCanvasContext);
-    clearCanvas(rcRectdes, textCanvasContext);
+    fillCanvas(rcRectdes, 70, 70, 100, 1, canvases.PRIMARY);
+    clearCanvas(rcRectdes, canvases.TEXT);
 
     //Landschaft erzeugen
     generateIsland(gameData.terrain);
@@ -2372,11 +2373,11 @@ const startGame = async (newGame) => {
     Guy.Aktion = AKINTRO;
   }
 
-  closePaper(gameData, textCanvasContext);
+  closePaper(gameData);
 
   drawTreasureMap(gameData);
 
-  updateMinimap(gameData.terrain, minimapCanvasContext);
+  updateMinimap(gameData.terrain);
   gameData.guy.storedPosition = { ...gameData.guy.position };
 }
 
@@ -2384,7 +2385,7 @@ const Zeige = () => {
   let Stringsave1 = '';
   let Stringsave2 = ''; //Für die Zeitausgabe
 
-  drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
+  drawTerrain(gameData, gameData.camera, false);
 
   ZeichnePanel();
 
@@ -2399,15 +2400,15 @@ const Zeige = () => {
   StdString += ':';
   if (minute < 10) StdString += '0';
   StdString += Stringsave2;
-  drawText(StdString, textAreas.TIME, gameData, textCanvasContext);
+  drawText(StdString, textAreas.TIME, gameData);
 
   if (gameData.paper) {
-    drawPaper(gameData.paper, textCanvasContext, primaryCanvasContext);
+    drawPaper(gameData.paper);
   };
 
-  blitText(textAreas.CHANCE, textCanvasContext, primaryCanvasContext);
-  blitText(textAreas.STATUS, textCanvasContext, primaryCanvasContext);
-  blitText(textAreas.TIME, textCanvasContext, primaryCanvasContext);
+  blitText(textAreas.CHANCE);
+  blitText(textAreas.STATUS);
+  blitText(textAreas.TIME);
 
   //Alles schwarz übermalen und nur das Papier mit Text anzeigen
   if (Nacht) {
@@ -2415,10 +2416,10 @@ const Zeige = () => {
     rcRectdes.top = 0;
     rcRectdes.right = MAXX;
     rcRectdes.bottom = MAXY;
-    fillCanvas(rcRectdes, 0, 0, 0, 1, primaryCanvasContext);
+    fillCanvas(rcRectdes, 0, 0, 0, 1, canvases.PRIMARY);
 
     if (gameData.paper) {
-      drawPaper(gameData.paper, textCanvasContext, primaryCanvasContext);
+      drawPaper(gameData.paper);
     };
   
     Fade(100, 0);
@@ -2431,7 +2432,7 @@ const Zeige = () => {
       x: MousePosition.x - itemSprites[CursorTyp].width / 2,
       y: MousePosition.y - itemSprites[CursorTyp].height / 2
     };
-    drawItem(CursorTyp, position, primaryCanvasContext);
+    drawItem(CursorTyp, position);
   } else {
     ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2, MousePosition.y - Bmp[CursorTyp].Hoehe / 2, CursorTyp, rcGesamt);
   }
@@ -2448,7 +2449,7 @@ const ZeigeAbspann = () => {
   rcRectdes.top = 0;
   rcRectdes.right = MAXX;
   rcRectdes.bottom = MAXY;
-  fillCanvas(rcRectdes, 0, 0, 0, 1, primaryCanvasContext);
+  fillCanvas(rcRectdes, 0, 0, 0, 1, canvases.PRIMARY);
 
   if (AbspannZustand === 0) {
     ZeichneBilder(Math.floor(MAXX / 2 - Bmp[AbspannListe[AbspannNr][0].Bild].Breite / 2), 100,
@@ -2461,12 +2462,12 @@ const ZeigeAbspann = () => {
     }
   }
   else if (AbspannZustand === 1) {
-    drawSprite(guySpritesForAbspann[Math.floor(AbspannNr / 10)], AbspannNr % 10, MAXX / 2, MAXY / 2 + 50, primaryCanvasContext, 10)
+    drawSprite(guySpritesForAbspann[Math.floor(AbspannNr / 10)], AbspannNr % 10, MAXX / 2, MAXY / 2 + 50, 10)
   }
 }
 
 const ZeigeLogo = () => {
-  fillCanvas({ left: 0, top: 0, right: MAXX, bottom: MAXY }, 0, 0, 0, 1, primaryCanvasContext);
+  fillCanvas({ left: 0, top: 0, right: MAXX, bottom: MAXY }, 0, 0, 0, 1, canvases.PRIMARY);
 
   rcRectsrc.left = 0;
   rcRectsrc.right = 500;
@@ -2477,7 +2478,7 @@ const ZeigeLogo = () => {
   rcRectdes.top = MAXY / 2 - 250;
   rcRectdes.bottom = MAXY / 2 + 250;
 
-  drawImage(logoImage, primaryCanvasContext);
+  drawImage(logoImage, canvases.PRIMARY);
 
   sounds.LOGO.instance.play(true);
 }
@@ -2491,9 +2492,9 @@ const AbspannBlt = (Bild, Prozent) => {
   rcRectdes.top = Bmp[Bild].rcDes.top;
   rcRectdes.right = Bmp[Bild].rcDes.right;
   rcRectdes.bottom = Bmp[Bild].rcDes.bottom;
-  primaryCanvasContext.globalAlpha = Prozent / 100;
-  drawImage(creditsImage, primaryCanvasContext);
-  primaryCanvasContext.globalAlpha = 1;
+  canvases.PRIMARY.globalAlpha = Prozent / 100;
+  drawImage(creditsImage, canvases.PRIMARY);
+  canvases.PRIMARY.globalAlpha = 1;
 }
 
 const guySpritesForAbspann = [
@@ -2608,7 +2609,7 @@ const ZeichneBilder = (x, y, i, Ziel) => {
   rcRectdes.right = Math.round(x) + Bmp[i].Breite;
   rcRectdes.bottom = Math.round(y) + Bmp[i].Hoehe;
   CalcRect(Ziel);
-  drawImage(Bmp[i].Surface, primaryCanvasContext);
+  drawImage(Bmp[i].Surface, canvases.PRIMARY);
 }
 
 const ZeichnePanel = () => {
@@ -2623,14 +2624,14 @@ const ZeichnePanel = () => {
   rcRectdes.top = rcKarte.top;
   rcRectdes.right = rcKarte.right;
   rcRectdes.bottom = rcKarte.bottom;
-  drawImage(minimapCanvasContext.canvas, primaryCanvasContext);
+  drawImage(canvases.MINIMAP.canvas, canvases.PRIMARY);
 
   //Spielfigur
   rcRectdes.left = rcKarte.left + 2 * gameData.guy.tile.x;
   rcRectdes.top = rcKarte.top + 2 * gameData.guy.tile.y;
   rcRectdes.right = rcRectdes.left + 2;
   rcRectdes.bottom = rcRectdes.top + 2;
-  fillCanvas(rcRectdes, 255, 0, 0, 1, primaryCanvasContext);
+  fillCanvas(rcRectdes, 255, 0, 0, 1, canvases.PRIMARY);
 
   //Position einmalen
   rcRectsrc.left = 205;
@@ -2642,7 +2643,7 @@ const ZeichnePanel = () => {
   rcRectdes.right = rcRectdes.left + 65;
   rcRectdes.bottom = rcRectdes.top + 65;
   CalcRect(rcKarte);
-  drawImage(panelImage, primaryCanvasContext);
+  drawImage(panelImage, canvases.PRIMARY);
 
   //Panel malen
   rcRectsrc.left = 0;
@@ -2653,7 +2654,7 @@ const ZeichnePanel = () => {
   rcRectdes.top = rcPanel.top;
   rcRectdes.right = rcPanel.right;
   rcRectdes.bottom = rcPanel.bottom;
-  drawImage(panelImage, primaryCanvasContext);
+  drawImage(panelImage, canvases.PRIMARY);
 
   //Gitternetzknopf
   if (gameData.options.grid) Bmp[BUTTGITTER].Phase = 1; else Bmp[BUTTGITTER].Phase = 0;
@@ -2718,7 +2719,7 @@ const ZeichnePanel = () => {
       break;
     case MEINVENTAR:
       ZeichneBilder(Bmp[INVPAPIER].rcDes.left, Bmp[INVPAPIER].rcDes.top, INVPAPIER, rcPanel);
-      drawItems(gameData, primaryCanvasContext);
+      drawItems(gameData);
       break;
   }
 
@@ -2728,7 +2729,7 @@ const ZeichnePanel = () => {
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE1].rcDes };
   rcRectdes.top += i;
-  drawImage(Bmp[SAEULE1].Surface, primaryCanvasContext);
+  drawImage(Bmp[SAEULE1].Surface, canvases.PRIMARY);
 
   //Säule2
   i = Bmp[SAEULE2].Hoehe - gameData.guy.food * Bmp[SAEULE2].Hoehe / 100;
@@ -2736,7 +2737,7 @@ const ZeichnePanel = () => {
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE2].rcDes };
   rcRectdes.top += i;
-  drawImage(Bmp[SAEULE2].Surface, primaryCanvasContext);
+  drawImage(Bmp[SAEULE2].Surface, canvases.PRIMARY);
 
   //Säule3
   i = Bmp[SAEULE3].Hoehe - gameData.guy.health * Bmp[SAEULE3].Hoehe / 100;
@@ -2744,7 +2745,7 @@ const ZeichnePanel = () => {
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE3].rcDes };
   rcRectdes.top += i;
-  drawImage(Bmp[SAEULE3].Surface, primaryCanvasContext);
+  drawImage(Bmp[SAEULE3].Surface, canvases.PRIMARY);
 
   //Sonnenanzeige
   diffx = (Bmp[SONNE].rcDes.right - Bmp[SONNE].rcDes.left - Bmp[SONNE].Breite) / 2;
@@ -2764,10 +2765,10 @@ const ZeichnePanel = () => {
     RING, rcPanel);
 
   //Die ChanceZahl ausgeben
-  clearText(textAreas.CHANCE, textCanvasContext);
+  clearText(textAreas.CHANCE);
   textAreas.CHANCE.y = Math.floor(Bmp[RING].rcDes.top + Ringtmp + Bmp[RING].Hoehe - 25);
   StdString = gameData.guy.chance.toFixed(0);
-  drawText(StdString, textAreas.CHANCE, gameData, textCanvasContext);
+  drawText(StdString, textAreas.CHANCE, gameData);
 
   //TextFeld malen
   rcRectsrc.left = 0;
@@ -2775,11 +2776,11 @@ const ZeichnePanel = () => {
   rcRectsrc.right = 605;
   rcRectsrc.bottom = 20;
   rcRectdes = { ...rcTextFeld1 };
-  drawImage(textfieldImage, primaryCanvasContext);
+  drawImage(textfieldImage, canvases.PRIMARY);
 }
 
 const DrawSchatzkarte = () => {
-  const treasureMapCanvas = getTreasureMapCanvasContext().canvas;
+  const treasureMapCanvas = canvases.TREASURE_MAP.canvas;
 
   gameData.paper = {
     height: treasureMapCanvas.height
@@ -2794,7 +2795,7 @@ const DrawSchatzkarte = () => {
   rcRectdes.right = rcRectdes.left + treasureMapCanvas.width;
   rcRectdes.bottom = rcRectdes.top + treasureMapCanvas.height;
 
-  drawImage(treasureMapCanvas, textCanvasContext);
+  drawImage(treasureMapCanvas, canvases.TEXT);
 }
 
 const CalcRect = (rcBereich) => {
@@ -2866,7 +2867,7 @@ const CheckRohstoff = () => {
     }
     if (Check === false) break;
   }
-  openPaper(texts.ROHSTOFFNICHT, false, gameData, textCanvasContext);
+  openPaper(texts.ROHSTOFFNICHT, false, gameData);
   Guy.AkNummer = 0;
   Guy.Aktion = AKABBRUCH;
   Bmp[BUTTSTOP].Phase = -1;
@@ -3009,7 +3010,7 @@ const AkIntro = () => {
       addShipWreck(tile);
       gameData.guy.tile.x += 1;
       goToEastOfTile(gameData);
-      discoverTerrain(gameData, minimapCanvasContext);
+      discoverTerrain(gameData);
       gameData.guy.sprite = spriteTypes.GUY_SWIMMING;
       sounds.SWIMMING.instance.play(true);
       break;
@@ -3019,11 +3020,11 @@ const AkIntro = () => {
       goToCenterOfTile(gameData);
       break;
     case 5:
-      updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, false);
+      updateCamera(gameData.camera, gameData.guy.position, false);
       gameData.guy.storedPosition = { ...gameData.guy.position };
       Spielzustand = GAME_PLAY;
       Guy.Aktion = AKNICHTS;
-      openPaper(texts.INTROTEXT, false, gameData, textCanvasContext);
+      openPaper(texts.INTROTEXT, false, gameData);
       SaveGame();
       break;
   }
@@ -3037,7 +3038,7 @@ const AkNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.NEUBEGINNEN, true, gameData, textCanvasContext);
+      openPaper(texts.NEUBEGINNEN, true, gameData);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
@@ -3045,7 +3046,7 @@ const AkNeubeginnen = () => {
         startGame(true);
         return;
       }
-      closePaper(gameData, textCanvasContext);
+      closePaper(gameData);
       break;
   }
 }
@@ -3058,7 +3059,7 @@ const AkTagNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.TAGNEU, true, gameData, textCanvasContext);
+      openPaper(texts.TAGNEU, true, gameData);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
@@ -3066,7 +3067,7 @@ const AkTagNeubeginnen = () => {
         startGame(false);
         return;
       }
-      closePaper(gameData, textCanvasContext);
+      closePaper(gameData);
       break;
   }
 }
@@ -3079,7 +3080,7 @@ const AkSpielverlassen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.SPIELVERLASSEN, true, gameData, textCanvasContext);
+      openPaper(texts.SPIELVERLASSEN, true, gameData);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
@@ -3090,7 +3091,7 @@ const AkSpielverlassen = () => {
         audio.stopAll();
         Spielzustand = GAME_CREDITS;
       }
-      closePaper(gameData, textCanvasContext);
+      closePaper(gameData);
       break;
   }
 }
@@ -3099,7 +3100,7 @@ const AkTod = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      openPaper(texts.TOD, false, gameData, textCanvasContext);
+      openPaper(texts.TOD, false, gameData);
       break;
     case 2:
       if (!isOnSea(gameData)) {
@@ -3113,7 +3114,7 @@ const AkTod = () => {
       break;
     case 4:
       Nacht = true;
-      openPaper(texts.TAGNEU, true, gameData, textCanvasContext);
+      openPaper(texts.TAGNEU, true, gameData);
       break;
     case 5:
       Nacht = false;
@@ -3124,7 +3125,7 @@ const AkTod = () => {
         audio.stopAll();
         Spielzustand = GAME_CREDITS;
       };
-      closePaper(gameData, textCanvasContext);
+      closePaper(gameData);
       break;
   }
 }
@@ -3248,28 +3249,28 @@ const AkSuchen = () => {
       //Auf Strand und Fluss
       if (tile.ground === grounds.BEACH || isRiver(tile.object)) {
         if (gameData.guy.inventory[items.STONE] < 10) {
-          openPaper(texts.ROHSTEINGEFUNDEN, false, gameData, textCanvasContext);
+          openPaper(texts.ROHSTEINGEFUNDEN, false, gameData);
           changeItem(gameData, items.STONE, 3);
         } else {
-          openPaper(texts.ROHSTEINZUVIEL, false, gameData, textCanvasContext);
+          openPaper(texts.ROHSTEINZUVIEL, false, gameData);
         }
       } else if (tile.object?.sprite === spriteTypes.BUSH) {
         i = Math.floor(Math.random() * 2);
         switch (i) {
           case 0:
             if (gameData.guy.inventory[items.BRANCH] < 10) {
-              openPaper(texts.ROHASTGEFUNDEN, false, gameData, textCanvasContext);
+              openPaper(texts.ROHASTGEFUNDEN, false, gameData);
               changeItem(gameData, items.BRANCH, 1);
             } else {
-              openPaper(texts.ROHASTZUVIEL, false, gameData, textCanvasContext);
+              openPaper(texts.ROHASTZUVIEL, false, gameData);
             }
             break;
           case 1:
             if (gameData.guy.inventory[items.LEAF] < 10) {
-              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData, textCanvasContext);
+              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData);
               changeItem(gameData, items.LEAF, 1);
             } else {
-              openPaper(texts.ROHBLATTZUVIEL, false, gameData, textCanvasContext);
+              openPaper(texts.ROHBLATTZUVIEL, false, gameData);
             }
             break;
         }
@@ -3278,33 +3279,33 @@ const AkSuchen = () => {
         switch (i) {
           case 0:
             if (gameData.guy.inventory[items.BRANCH] < 10) {
-              openPaper(texts.ROHASTGEFUNDEN, false, gameData, textCanvasContext);
+              openPaper(texts.ROHASTGEFUNDEN, false, gameData);
               changeItem(gameData, items.BRANCH, 1);
             } else {
-              openPaper(texts.ROHASTZUVIEL, false, gameData, textCanvasContext);
+              openPaper(texts.ROHASTZUVIEL, false, gameData);
             }
             break;
           case 1:
             if (gameData.guy.inventory[items.LEAF] < 10) {
-              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData, textCanvasContext);
+              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData);
               changeItem(gameData, items.LEAF, 1);
             } else {
-              openPaper(texts.ROHBLATTZUVIEL, false, gameData, textCanvasContext);
+              openPaper(texts.ROHBLATTZUVIEL, false, gameData);
             }
             break;
           case 2:
             if (gameData.guy.inventory[items.LIANA] < 10) {
-              openPaper(texts.ROHLIANEGEFUNDEN, false, gameData, textCanvasContext);
+              openPaper(texts.ROHLIANEGEFUNDEN, false, gameData);
               changeItem(gameData, items.LIANA, 1);
             } else {
-              openPaper(texts.ROHLIANEZUVIEL, false, gameData, textCanvasContext);
+              openPaper(texts.ROHLIANEZUVIEL, false, gameData);
             }
             break;
         }
       } else if (isOnSea(gameData)) {
         if (tile.object?.sprite === spriteTypes.SHIP_WRECK) {
           if (!gameData.guy.inventory[items.SPYGLASS]) {
-            openPaper(texts.FERNROHRGEFUNDEN, false, gameData, textCanvasContext);
+            openPaper(texts.FERNROHRGEFUNDEN, false, gameData);
             changeItem(gameData, items.SPYGLASS, 1);
             Bmp[BUTTAUSSCHAU].Phase = 0;
             changeItem(gameData, items.HAMMER, 1);
@@ -3312,23 +3313,23 @@ const AkSuchen = () => {
             Bmp[BUTTHAUS2].Phase = 0;
             Bmp[BUTTHAUS3].Phase = 0;
           } else {
-            openPaper(texts.NICHTSGEFUNDEN2, false, gameData, textCanvasContext);
+            openPaper(texts.NICHTSGEFUNDEN2, false, gameData);
           }
         } else if (tile.object?.sprite === spriteTypes.PIRATE_WRECK) {
           if (!gameData.guy.inventory[items.MAP]) {
-            openPaper(texts.KARTEGEFUNDEN, false, gameData, textCanvasContext);
+            openPaper(texts.KARTEGEFUNDEN, false, gameData);
             changeItem(gameData, items.MAP, 1);
             Bmp[BUTTSCHATZKARTE].Phase = 0;
             changeItem(gameData, items.SHOVEL, 1);
             Bmp[BUTTSCHATZ].Phase = 0;
           } else {
-            openPaper(texts.NICHTSGEFUNDEN2, false, gameData, textCanvasContext);
+            openPaper(texts.NICHTSGEFUNDEN2, false, gameData);
           }
         } else {
-          openPaper(texts.NICHTSGEFUNDEN2, false, gameData, textCanvasContext);
+          openPaper(texts.NICHTSGEFUNDEN2, false, gameData);
         }
       } else {
-        openPaper(texts.NICHTSGEFUNDEN, false, gameData, textCanvasContext);
+        openPaper(texts.NICHTSGEFUNDEN, false, gameData);
       }
       break;
     case 12:
@@ -3738,12 +3739,12 @@ const AkSchatz = () => {
       changeWaterAndFood(gameData, -10, -10);
       goToStoredPosition(gameData);
       if (gameData.guy.tile.x === gameData.treasure.x && gameData.guy.tile.y === gameData.treasure.y && !gameData.treasure.found) {
-        openPaper(texts.SCHATZGEFUNDEN, false, gameData, textCanvasContext);
+        openPaper(texts.SCHATZGEFUNDEN, false, gameData);
         changeItem(gameData, items.MATCHES, 1);
         Bmp[BUTTANZUENDEN].Phase = 0;
         gameData.treasure.found = true;
       } else {
-        openPaper(texts.KEINSCHATZ, false, gameData, textCanvasContext);
+        openPaper(texts.KEINSCHATZ, false, gameData);
       }
       break;
     case 3:
@@ -3837,7 +3838,7 @@ const AkFeld = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.FIELD]) {
-        openPaper(texts.FELDHILFE, false, gameData, textCanvasContext);
+        openPaper(texts.FELDHILFE, false, gameData);
         gameData.constructionHints[constructionTypes.FIELD] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -3934,30 +3935,30 @@ const AkTagEnde = () => {
       if (tent) {
         changeHealth(gameData, -5);
         if (gameData.guy.health <= 0) {
-          openPaper(texts.TAGENDE5, false, gameData, textCanvasContext);
+          openPaper(texts.TAGENDE5, false, gameData);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
           gameData.calendar.minutes = 0;
         } else {
-          openPaper(texts.TAGENDE2, false, gameData, textCanvasContext);
+          openPaper(texts.TAGENDE2, false, gameData);
         }
       } else if (house) {
         changeHealth(gameData, 20);
-        openPaper(texts.TAGENDE4, false, gameData, textCanvasContext);
+        openPaper(texts.TAGENDE4, false, gameData);
       } else if (isOnSea(gameData)) {
-        openPaper(texts.TAGENDE3, false, gameData, textCanvasContext);
+        openPaper(texts.TAGENDE3, false, gameData);
         Guy.AkNummer = 2;
         Guy.Aktion = AKTOD;
         gameData.calendar.minutes = 0;
       } else {
         changeHealth(gameData, -20);
         if (gameData.guy.health <= 0) {
-          openPaper(texts.TAGENDE5, false, gameData, textCanvasContext);
+          openPaper(texts.TAGENDE5, false, gameData);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
           gameData.calendar.minutes = 0;
         } else {
-          openPaper(texts.TAGENDE1, false, gameData, textCanvasContext);
+          openPaper(texts.TAGENDE1, false, gameData);
         }
       }
       break;
@@ -4016,7 +4017,7 @@ const AkGerettet = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.GERETTET, true, gameData, textCanvasContext);
+      openPaper(texts.GERETTET, true, gameData);
       break;
     case 3:
       if (gameData.paper.question.answer) {
@@ -4024,7 +4025,7 @@ const AkGerettet = () => {
       } else {
         Guy.Aktion = AKNICHTS;
       }
-      closePaper(gameData, textCanvasContext);
+      closePaper(gameData);
       break;
     case 4:
       // Route herstellen
@@ -4048,7 +4049,7 @@ const AkGerettet = () => {
       break;
     case 6:
       gameData.guy.tile.x += 2;
-      discoverTerrain(gameData, minimapCanvasContext);
+      discoverTerrain(gameData);
       gameData.guy.sprite = spriteTypes.GUY_SWIMMING;
       sounds.SWIMMING.instance.play(true);
       goToCenterOfTile(gameData);
@@ -4146,7 +4147,7 @@ const AkZelt = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.TENT]) {
-        openPaper(texts.ZELTHILFE, false, gameData, textCanvasContext);
+        openPaper(texts.ZELTHILFE, false, gameData);
         gameData.constructionHints[constructionTypes.TENT] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4226,7 +4227,7 @@ const AkBoot = () => {
       }
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.BOAT]) {
-        openPaper(texts.BOOTHILFE, false, gameData, textCanvasContext);
+        openPaper(texts.BOOTHILFE, false, gameData);
         gameData.constructionHints[constructionTypes.BOAT] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4290,7 +4291,7 @@ const AkRohr = () => {
       updatePipes(gameData.terrain);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.PIPE]) {
-        openPaper(texts.ROHRHILFE, false, gameData, textCanvasContext);
+        openPaper(texts.ROHRHILFE, false, gameData);
         gameData.constructionHints[constructionTypes.PIPE] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4386,7 +4387,7 @@ const AkSOS = () => {
       gameData.guy.chance += tile.object.chance;
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.SOS]) {
-        openPaper(texts.SOSHILFE, false, gameData, textCanvasContext);
+        openPaper(texts.SOSHILFE, false, gameData);
         gameData.constructionHints[constructionTypes.SOS] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4446,7 +4447,7 @@ const AkFeuerstelle = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.FIREPLACE]) {
-        openPaper(texts.FEUERSTELLEHILFE, false, gameData, textCanvasContext);
+        openPaper(texts.FEUERSTELLEHILFE, false, gameData);
         gameData.constructionHints[constructionTypes.FIREPLACE] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4674,7 +4675,7 @@ const AkHaus3 = () => {
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
       if (!gameData.constructionHints[constructionTypes.TREE_HOUSE]) {
-        openPaper(texts.HAUS3HILFE, false, gameData, textCanvasContext);
+        openPaper(texts.HAUS3HILFE, false, gameData);
         gameData.constructionHints[constructionTypes.TREE_HOUSE] = true;
       }
       Guy.Aktion = AKNICHTS;
@@ -4813,8 +4814,8 @@ const AkAnlegen = () => {
 }
 
 const Fade = (intensity, smooth) => {
-  primaryCanvasContext.canvas.style.transition = `${smooth}s filter ease-in-out`;
-  primaryCanvasContext.canvas.style.filter = `brightness(${intensity}%) saturate(${intensity}%)`;
+  canvases.PRIMARY.canvas.style.transition = `${smooth}s filter ease-in-out`;
+  canvases.PRIMARY.canvas.style.filter = `brightness(${intensity}%) saturate(${intensity}%)`;
 }
 
 const CheckBenutze = (item) => {
@@ -4827,17 +4828,17 @@ const CheckBenutze = (item) => {
       Bmp[BUTTFAELLEN].Phase = 0;
       Bmp[BUTTBOOT].Phase = 0;
       Bmp[BUTTROHR].Phase = 0;
-      openPaper(texts.BAUEAXT, false, gameData, textCanvasContext);
+      openPaper(texts.BAUEAXT, false, gameData);
       sounds.INVENTION.instance.play();
     } else if (!gameData.guy.inventory[items.HARROW]) {
       changeItem(gameData, items.STONE, -1);
       changeItem(gameData, items.BRANCH, -1);
       changeItem(gameData, items.HARROW, 1);
       Bmp[BUTTFELD].Phase = 0;
-      openPaper(texts.BAUEEGGE, false, gameData, textCanvasContext);
+      openPaper(texts.BAUEEGGE, false, gameData);
       sounds.INVENTION.instance.play();
     } else {
-      openPaper(texts.STEINPLUSASTNICHTS, false, gameData, textCanvasContext);
+      openPaper(texts.STEINPLUSASTNICHTS, false, gameData);
     }
   } else if ((item === items.LIANA && TwoClicks === items.BRANCH) ||
     (item === items.BRANCH && TwoClicks === items.LIANA)) {
@@ -4846,10 +4847,10 @@ const CheckBenutze = (item) => {
       changeItem(gameData, items.BRANCH, -1);
       changeItem(gameData, items.FISHING_ROD, 1);
       Bmp[BUTTANGELN].Phase = 0;
-      openPaper(texts.BAUEANGEL, false, gameData, textCanvasContext);
+      openPaper(texts.BAUEANGEL, false, gameData);
       sounds.INVENTION.instance.play();
     } else {
-      openPaper(texts.ASTPLUSLIANENICHTS, false, gameData, textCanvasContext);
+      openPaper(texts.ASTPLUSLIANENICHTS, false, gameData);
     }
   } else if (((item === items.LIANA) && (TwoClicks === items.STONE)) ||
     ((item === items.STONE) && (TwoClicks === items.LIANA))) {
@@ -4858,13 +4859,13 @@ const CheckBenutze = (item) => {
       changeItem(gameData, items.STONE, -1);
       changeItem(gameData, items.SLING, 1);
       Bmp[BUTTSCHLEUDER].Phase = 0;
-      openPaper(texts.BAUESCHLEUDER, false, gameData, textCanvasContext);
+      openPaper(texts.BAUESCHLEUDER, false, gameData);
       sounds.INVENTION.instance.play();
     } else {
-      openPaper(texts.STEINPLUSLIANENICHTS, false, gameData, textCanvasContext);
+      openPaper(texts.STEINPLUSLIANENICHTS, false, gameData);
     }
   } else {
-    openPaper(texts.NICHTBASTELN, false, gameData, textCanvasContext);
+    openPaper(texts.NICHTBASTELN, false, gameData);
   }
   TwoClicks = -1;
 }
@@ -4908,13 +4909,13 @@ const refresh = (timestamp) => {
   } else if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) {
     if (CheckKey() === 2) return true;    //Das Keyboard abfragen
     Animationen();  //Animationen weiterschalten
-    discoverTerrain(gameData, minimapCanvasContext);
+    discoverTerrain(gameData);
     playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
-    updateCamera(gameData.camera, gameData.guy.position, primaryCanvasContext, true);
+    updateCamera(gameData.camera, gameData.guy.position, true);
 
     if (!gameData.guy.active) Event(Guy.Aktion); //Aktionen starten
 
-    drawTerrain(gameData, gameData.camera, false, primaryCanvasContext);
+    drawTerrain(gameData, gameData.camera, false);
 
   } else if (Spielzustand === GAME_PLAY) {
     if (gameData.calendar.minutes > (12 * 60) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
@@ -4930,7 +4931,7 @@ const refresh = (timestamp) => {
     CheckKey();
     restrictCamera(gameData.camera, gameData.terrain);            //Das Scrollen an die Grenzen der Landschaft anpassen
     Animationen();            //Die Animationsphasen weiterschalten
-    discoverTerrain(gameData, minimapCanvasContext);
+    discoverTerrain(gameData);
     playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
     if (!gameData.guy.active) Event(Guy.Aktion);  //Die Aktionen starten
     Zeige();//Das Bild zeichnen

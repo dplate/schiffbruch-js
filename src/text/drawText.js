@@ -6,8 +6,8 @@ import textAreas from './textAreas.js';
 const blank = ' ';
 const slash = '/';
 
-const drawText = (text, textArea, gameData, canvasContext) => {
-  clearText(textArea, canvasContext); 
+const drawText = (text, textArea, gameData) => {
+  clearText(textArea); 
 
   const position = {
     x: textArea.x,
@@ -19,7 +19,7 @@ const drawText = (text, textArea, gameData, canvasContext) => {
     if (word.startsWith(slash)) {
       Object.assign(
         position,
-        drawPlaceholder(word, position, textArea, gameData, canvasContext)
+        drawPlaceholder(word, position, textArea, gameData)
       );
     } else {
       const wordWidth = word.length * textArea.font.distance;
@@ -27,7 +27,7 @@ const drawText = (text, textArea, gameData, canvasContext) => {
         position.x = textArea.x;
         position.y += textArea.font.height + 3;
       }
-      position.x += drawString(word + ' ', position, textArea.font, canvasContext);
+      position.x += drawString(word + ' ', position, textArea.font);
     }
   });
 

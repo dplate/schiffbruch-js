@@ -1,12 +1,11 @@
+import canvases from '../images/canvases.js';
 import images from '../images/images.js';
 import drawTerrain from '../terrain/drawTerrain.js';
 import tileEdges from '../terrain/tiles/tileEdges.js';
-import getTreasureMapCanvasContext from './getTreasureMapCanvasContext.js';
 
 const drawTreasureMap = (gameData) => {
   const tile = gameData.terrain[gameData.treasure.x][gameData.treasure.y];
-  const canvasContext = getTreasureMapCanvasContext();
-  const canvas = canvasContext.canvas;
+   const canvas = canvases.TREASURE_MAP.canvas;
 
   const tileCenter = tileEdges[tile.type].center;
   const area = {
@@ -15,14 +14,14 @@ const drawTreasureMap = (gameData) => {
     width: canvas.width,
     height: canvas.height
   };
-  drawTerrain(gameData, area, true, canvasContext);
+  drawTerrain(gameData, area, true, canvases.TREASURE_MAP);
   
-  canvasContext.filter = 'blur(2px) sepia(1)';
-  canvasContext.drawImage(canvas, 0, 0);
+  canvases.TREASURE_MAP.filter = 'blur(2px) sepia(1)';
+  canvases.TREASURE_MAP.drawImage(canvas, 0, 0);
   
   const crossWidth = 40;
   const crossHeight = 22;
-  canvasContext.drawImage(
+  canvases.TREASURE_MAP.drawImage(
     images.PANEL.instance, 
     205,
     360, 
@@ -33,14 +32,14 @@ const drawTreasureMap = (gameData) => {
     crossWidth, 
     crossHeight
   );
-  canvasContext.filter = 'none';
+  canvases.TREASURE_MAP.filter = 'none';
  
-  canvasContext.fillStyle = 'rgba(255, 255, 255, 1)';
-  canvasContext.globalCompositeOperation = 'destination-atop';
-  canvasContext.filter = 'blur(20px)';
-  canvasContext.fillRect(40, 40, canvas.width - 80, canvas.height - 80);
-  canvasContext.globalCompositeOperation = 'source-over';
-  canvasContext.filter = 'none';
+  canvases.TREASURE_MAP.fillStyle = 'rgba(255, 255, 255, 1)';
+  canvases.TREASURE_MAP.globalCompositeOperation = 'destination-atop';
+  canvases.TREASURE_MAP.filter = 'blur(20px)';
+  canvases.TREASURE_MAP.fillRect(40, 40, canvas.width - 80, canvas.height - 80);
+  canvases.TREASURE_MAP.globalCompositeOperation = 'source-over';
+  canvases.TREASURE_MAP.filter = 'none';
 };
 
 export default drawTreasureMap;
