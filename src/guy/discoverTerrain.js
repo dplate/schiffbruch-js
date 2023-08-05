@@ -1,4 +1,4 @@
-import updateMinimap from '../terrain/updateMinimap.js';
+import updateMinimap from '../minimap/updateMinimap.js';
 
 const discoverTerrain = (gameData) => {
   let newDiscovery = false;

@@ -1,7 +1,7 @@
 import tileTypes from './tiles/tileTypes.js';
-import tileEdges from './tiles/tileEdges.js';
 import directions from './directions.js';
 import allowedNeighbors from './tiles/allowedNeighbors.js';
+import positionTransformer from './positionTransformer.js';
 
 // Min and max size of the island in amount of tiles
 const MIN_ISLAND_TILES = 200;
@@ -177,18 +177,9 @@ const validateTerrain = (terrain) => {
 };
 
 const calculateTilePositions = (terrain) => {
-  const flatTileEdges = tileEdges[tileTypes.FLAT];
-  const flatHalfWidth = flatTileEdges.top.x + 2;
-  const flatHalfHeight = flatTileEdges.left.y - flatTileEdges.top.y ;
-  const heightMultiplier = flatTileEdges.top.y + 1;
-  const offsetX = Math.floor(flatHalfWidth * (terrain.length - 1));
-
   terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
-      terrain[x][y].position = {
-        x: offsetX + flatHalfWidth * (x - y),
-        y: flatHalfHeight * (x + y) - heightMultiplier * tile.height
-      };
+      terrain[x][y].position = positionTransformer.toPixel(terrain, x, y, tile.height);
     });
   });
 };

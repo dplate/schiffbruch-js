@@ -1,12 +1,7 @@
 import clearText from './clearText.js';
-import drawPlaceholder from './drawPlaceholder.js';
 import drawString from './drawString.js';
-import textAreas from './textAreas.js';
 
-const blank = ' ';
-const slash = '/';
-
-const drawText = (text, textArea, gameData) => {
+const drawText = (text, textArea) => {
   clearText(textArea); 
 
   const position = {
@@ -14,13 +9,11 @@ const drawText = (text, textArea, gameData) => {
     y: textArea.y
   };
 
-  const words = text.split(blank);
+  const words = text.split(' ');
   words.forEach(word => {
-    if (word.startsWith(slash)) {
-      Object.assign(
-        position,
-        drawPlaceholder(word, position, textArea, gameData)
-      );
+    if (word === '/z') {
+      position.x = textArea.x;
+      position.y += textArea.font.height + 5
     } else {
       const wordWidth = word.length * textArea.font.distance;
       if ((position.x + wordWidth) > (textArea.x + textArea.width)) {

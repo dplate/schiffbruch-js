@@ -1,4 +1,3 @@
-import texts from './texts-de.js';
 import setupAudio from './sounds/setupAudio.js';
 import generateIsland from './terrain/generateIsland.js';
 import setGrounds from './terrain/setGrounds.js';
@@ -49,7 +48,7 @@ import itemTextIds from './guy/inventory/itemTextIds.js';
 import drawItems from './guy/inventory/drawItems.js';
 import itemSprites from './guy/inventory/itemSprites.js';
 import drawItem from './guy/inventory/drawItem.js';
-import updateMinimap from './terrain/updateMinimap.js';
+import updateMinimap from './minimap/updateMinimap.js';
 import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
 import sounds from './sounds/sounds.js';
@@ -81,9 +80,14 @@ import openPaper from './text/openPaper.js';
 import canvases from './images/canvases.js';
 import getTileByPosition from './terrain/getTileByPosition.js';
 import calculatePositionInTile from './terrain/tiles/calculatePositionInTile.js';
+import texts from './text/texts.js';
+import drawStartConstructionText from './construction/drawStartConstructionText.js';
+import openDayEndPaper from './text/openDayEndPaper.js';
+import drawStatusText from './text/drawStatusText.js';
+import drawTileText from './terrain/tiles/drawTileText.js';
+import drawMinimap from './minimap/drawMinimap.js';
+import moveCameraFromMinimap from './minimap/moveCameraFromMinimap.js';
 
-const KXPIXEL = 54 //Breite der Kacheln
-const KYPIXEL = 44; //Hoehe der Kacheln
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
 const MAXX = 800; //Bildschirmauflösung
@@ -224,7 +228,6 @@ let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let StdString = '';    //Standard string
-let RohString = '';    //Darin wird gespeichert, wieviel Rohstoffe noch benötigt werden
 let HauptMenue;            //Welches Menü?
 let TwoClicks;                //Für Aktionen mit zwei Mausklicks
 let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
@@ -1594,95 +1597,10 @@ const AddTime = (m) => {
   }
 }
 
-const MakeRohString = (x, y, constructionType = null) => {
-  RohString = '';
-  const neededItems = Object.entries(
-    (constructionType) ?
-      constructions[constructionType].items :
-      gameData.terrain[x][y].construction.neededItems
-  ).filter(([, amount]) => amount);
-  if (neededItems.length) {
-    RohString += ': ';
-    neededItems.forEach(([item, amount]) => {
-      RohString += `${texts[itemTextIds[item]]}=${amount} `;
-    });
-  }
-};
-
 const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
-  let Text = ''; //Text für Infoleiste
-  let TextTmp = ''; //Text für Infoleiste
-
-  //Info anzeigen
   const tilePosition = getTileByPosition(gameData.terrain, { x: MousePosition.x + gameData.camera.x, y: MousePosition.y + gameData.camera.y });
   if (tilePosition && gameData.terrain[tilePosition.x][tilePosition.y].discovered) {
-    const tile = gameData.terrain[tilePosition.x][tilePosition.y];
-    switch (tile.ground) {
-      case grounds.GRASS:
-        Text = texts.GROUND_GRASS;
-        break;
-      case grounds.SEA:
-        Text = texts.GROUND_SEA;
-        break;
-      case grounds.BEACH:
-        Text = texts.GROUND_BEACH;
-        break;
-      case grounds.QUICKSAND:
-        Text = texts.GROUND_QUICKSAND;
-        break;
-      case grounds.WETLAND:
-        Text = texts.GROUND_WETLAND;
-        break;
-      default:
-        Text = '?';
-    }
-    if (tile.object && tile.object?.sprite !== spriteTypes.WAVES) {
-      Text += ' ' + texts.MIT + ' ';
-
-      if (isNormalTree(tile.object))
-        TextTmp = texts.BAUMTEXT;
-      else if (isRiver(tile.object))
-        TextTmp = texts.FLUSSTEXT;
-      else if (tile.object?.sprite === spriteTypes.BUSH)
-        TextTmp = texts.BUSCHTEXT;
-      else if (tile.object?.sprite === spriteTypes.TENT)
-        TextTmp = texts.ZELTTEXT;
-      else if (tile.object?.sprite === spriteTypes.FIELD)
-        TextTmp = texts.FELDTEXT;
-      else if (tile.object?.sprite === spriteTypes.BOAT)
-        TextTmp = texts.BOOTTEXT;
-      else if (tile.object?.sprite === spriteTypes.PIPE)
-        TextTmp = texts.ROHRTEXT;
-      else if (tile.object?.sprite === spriteTypes.SOS)
-        TextTmp = texts.SOSTEXT;
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER)
-        TextTmp = texts.HAUS1TEXT;
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM)
-        TextTmp = texts.HAUS2TEXT;
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_TREE_HOUSE)
-        TextTmp = texts.HAUS3TEXT;
-      else if (tile.object?.sprite === spriteTypes.BIG_TREE)
-        TextTmp = texts.BAUMGROSSTEXT;
-      else if (tile.object?.sprite === spriteTypes.FIREPLACE)
-        TextTmp = texts.FEUERSTELLETEXT;
-      else if (tile.object?.sprite === spriteTypes.FIRE)
-        TextTmp = texts.FEUERTEXT;
-      else if ((tile.object?.sprite === spriteTypes.SHIP_WRECK) || (tile.object?.sprite === spriteTypes.PIRATE_WRECK))
-        TextTmp = texts.WRACKTEXT;
-      Text += TextTmp;
-
-      if (tile.construction) {
-        //Baufortschrittanzeigen
-        Text += ' (';
-        TextTmp = Math.floor(tile.construction.actionStep * 100 / constructions[tile.construction.type].actionSteps);
-        Text += TextTmp + '%)';
-        //benötigte Rohstoffe anzeigen
-        MakeRohString(tilePosition.x, tilePosition.y);
-        Text += RohString;
-      }
-
-    }
-    drawText(Text, textAreas.STATUS, gameData);
+    drawTileText(gameData.terrain[tilePosition.x][tilePosition.y]);
 
     //Wenn Maustaste gedrückt wird
     if ((Button === 0) && (Push === 1)) {
@@ -1691,7 +1609,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         (tilePosition.x > 0) && (tilePosition.x < MAXXKACH - 1) &&
         (tilePosition.y > 0) && (tilePosition.y < MAXYKACH - 1)) {
 
-        console.log(tile);
+        console.log(gameData, gameData.terrain[tilePosition.x][tilePosition.y]);
         sounds.CLICK2.instance.play();
         if (gameData.guy.route.length &&
           (tilePosition.x === gameData.guy.route[gameData.guy.route.length - 1].x) &&
@@ -1724,21 +1642,16 @@ const ButtAniAus = () => {
 }
 
 const MouseInPanel = (Button, Push) => {
-  let mx, my;  //Mauskoordinaten in Minimap
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   //wenn die Maus in der Minimap ist .
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
-    mx = MousePosition.x - rcKarte.left;
-    my = MousePosition.y - rcKarte.top;
-    gameData.camera.x = Math.floor(((KXPIXEL / 4) * (mx - my) + MAXXKACH * KXPIXEL / 2) - gameData.camera.width / 2);
-    gameData.camera.y = Math.floor(((KXPIXEL / 7) * (my + mx)) - gameData.camera.height / 2);
+    moveCameraFromMinimap({ x: MousePosition.x - rcKarte.left, y: MousePosition.y - rcKarte.top }, gameData);
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTGITTER].rcDes)) {
     if (gameData.options.grid) {
-      drawText(texts.GITTERAUS, textAreas.STATUS, gameData);
+      drawStatusText(texts.GITTERAUS);
     } else {
-      drawText(texts.GITTERAN, textAreas.STATUS, gameData);
+      drawStatusText(texts.GITTERAN);
     }
 
     if ((Button === 0) && (Push === 1)) {
@@ -1747,9 +1660,9 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOUND].rcDes)) {
     if (audio.isRunning()) {
-      drawText(texts.SOUNDAUS, textAreas.STATUS, gameData);
+      drawStatusText(texts.SOUNDAUS);
     } else {
-      drawText(texts.SOUNDAN, textAreas.STATUS, gameData);
+      drawStatusText(texts.SOUNDAN);
     }
 
     if ((Button === 0) && (Push === 1)) {
@@ -1761,7 +1674,7 @@ const MouseInPanel = (Button, Push) => {
       }
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBEENDEN].rcDes)) {
-    drawText(texts.BEENDEN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEENDEN);
     Bmp[BUTTBEENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1770,7 +1683,7 @@ const MouseInPanel = (Button, Push) => {
       Guy.Aktion = AKSPIELVERLASSEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTNEU].rcDes)) {
-    drawText(texts.NEU, textAreas.STATUS, gameData);
+    drawStatusText(texts.NEU);
     Bmp[BUTTNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1779,7 +1692,7 @@ const MouseInPanel = (Button, Push) => {
       Guy.Aktion = AKNEUBEGINNEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTTAGNEU].rcDes)) {
-    drawText(texts.TAGNEU2, textAreas.STATUS, gameData);
+    drawStatusText(texts.TAGNEU2);
     Bmp[BUTTTAGNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1789,9 +1702,9 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAKTION].rcDes)) {
     if (HauptMenue === MEAKTION) {
-      drawText(texts.MEAKTIONZU, textAreas.STATUS, gameData);
+      drawStatusText(texts.MEAKTIONZU);
     } else {
-      drawText(texts.MEAKTIONAUF, textAreas.STATUS, gameData);
+      drawStatusText(texts.MEAKTIONAUF);
     }
     Bmp[BUTTAKTION].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1802,9 +1715,9 @@ const MouseInPanel = (Button, Push) => {
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBAUEN].rcDes) &&
     (Bmp[BUTTBAUEN].Phase !== -1)) {
     if (HauptMenue === MEBAUEN) {
-      drawText(texts.MEBAUENZU, textAreas.STATUS, gameData);
+      drawStatusText(texts.MEBAUENZU);
     } else {
-      drawText(texts.MEBAUENAUF, textAreas.STATUS, gameData);
+      drawStatusText(texts.MEBAUENAUF);
     }
     Bmp[BUTTBAUEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1814,9 +1727,9 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTINVENTAR].rcDes)) {
     if (HauptMenue === MEINVENTAR) {
-      drawText(texts.MEINVENTARZU, textAreas.STATUS, gameData);
+      drawStatusText(texts.MEINVENTARZU);
     } else {
-      drawText(texts.MEINVENTARAUF, textAreas.STATUS, gameData);
+      drawStatusText(texts.MEINVENTARAUF);
     }
     Bmp[BUTTINVENTAR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1826,7 +1739,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTWEITER].rcDes)) &&
     (Bmp[BUTTWEITER].Phase !== -1)) {
-    drawText(texts.WEITER, textAreas.STATUS, gameData);
+    drawStatusText(texts.WEITER);
 
     Bmp[BUTTWEITER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1865,7 +1778,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes)) &&
     (Bmp[BUTTSTOP].Phase !== -1)) {
-    drawText(texts.STOP, textAreas.STATUS, gameData);
+    drawStatusText(texts.STOP);
 
     Bmp[BUTTSTOP].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -1876,7 +1789,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTABLEGEN].rcDes)) &&
     (Bmp[BUTTABLEGEN].Phase !== -1)) {
-    drawText(texts.BEGINNABLEGEN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNABLEGEN);
     Bmp[BUTTABLEGEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1887,7 +1800,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSUCHEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSUCHEN].Phase !== -1)) {
-    drawText(texts.BEGINNSUCHEN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNSUCHEN);
     Bmp[BUTTSUCHEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1896,7 +1809,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTESSEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTESSEN].Phase !== -1)) {
-    drawText(texts.BEGINNESSEN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNESSEN);
     Bmp[BUTTESSEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1911,7 +1824,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLAFEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLAFEN].Phase !== -1)) {
-    drawText(texts.BEGINNSCHLAFEN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNSCHLAFEN);
     Bmp[BUTTSCHLAFEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1924,7 +1837,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFAELLEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTFAELLEN].Phase !== -1)) {
-    drawText(texts.BEGINNFAELLEN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNFAELLEN);
     Bmp[BUTTFAELLEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1943,7 +1856,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANGELN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTANGELN].Phase !== -1)) {
-    drawText(texts.BEGINNANGELN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNANGELN);
     Bmp[BUTTANGELN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1956,7 +1869,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANZUENDEN].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTANZUENDEN].Phase !== -1)) {
-    drawText(texts.BEGINNANZUENDEN, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNANZUENDEN);
     Bmp[BUTTANZUENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1969,7 +1882,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAUSSCHAU].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTAUSSCHAU].Phase !== -1)) {
-    drawText(texts.BEGINNAUSSCHAU, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNAUSSCHAU);
     Bmp[BUTTAUSSCHAU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1978,12 +1891,12 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKAUSSCHAU;
       } else {
-        openPaper(texts.WELLENZUHOCH, false, gameData);
+        drawStatusText(texts.WELLENZUHOCH, false, gameData);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZ].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZ].Phase !== -1)) {
-    drawText(texts.BEGINNSCHATZ, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNSCHATZ);
     Bmp[BUTTSCHATZ].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -1999,7 +1912,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLEUDER].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLEUDER].Phase !== -1)) {
-    drawText(texts.BEGINNSCHLEUDER, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNSCHLEUDER);
     Bmp[BUTTSCHLEUDER].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2015,7 +1928,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZKARTE].rcDes)) &&
     (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZKARTE].Phase !== -1)) {
-    drawText(texts.BEGINNSCHATZKARTE, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNSCHATZKARTE);
     Bmp[BUTTSCHATZKARTE].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2023,10 +1936,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFELD].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTFELD].Phase !== -1)) {
-    StdString = texts.BEGINNFELD;
-    MakeRohString(-1, -1, constructionTypes.FIELD);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.FIELD);
 
     Bmp[BUTTFELD].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2046,11 +1956,8 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTZELT].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTZELT].Phase !== -1)) {
-    StdString = texts.BEGINNZELT;
-    MakeRohString(-1, -1, constructionTypes.TENT);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
-
+    drawStartConstructionText(constructionTypes.TENT);
+    
     Bmp[BUTTZELT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2068,10 +1975,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBOOT].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTBOOT].Phase !== -1)) {
-    StdString = texts.BEGINNBOOT;
-    MakeRohString(-1, -1, constructionTypes.BOAT);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.BOAT);
 
     Bmp[BUTTBOOT].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2094,10 +1998,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTROHR].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTROHR].Phase !== -1)) {
-    StdString = texts.BEGINNROHR;
-    MakeRohString(-1, -1, constructionTypes.PIPE);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.PIPE);
 
     Bmp[BUTTROHR].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2116,10 +2017,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOS].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTSOS].Phase !== -1)) {
-    StdString = texts.BEGINNSOS;
-    MakeRohString(-1, -1, constructionTypes.SOS);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.SOS);
 
     Bmp[BUTTSOS].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2138,10 +2036,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS1].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS1].Phase !== -1)) {
-    StdString = texts.BEGINNHAUS1;
-    MakeRohString(-1, -1, constructionTypes.LADDER);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.LADDER);
 
     Bmp[BUTTHAUS1].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2161,10 +2056,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS2].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS2].Phase !== -1)) {
-    StdString = texts.BEGINNHAUS2;
-    MakeRohString(-1, -1, constructionTypes.PLATFORM);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.PLATFORM);
 
     Bmp[BUTTHAUS2].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2186,10 +2078,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS3].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS3].Phase !== -1)) {
-    StdString = texts.BEGINNHAUS3;
-    MakeRohString(-1, -1, constructionTypes.TREE_HOUSE);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.TREE_HOUSE);
 
     Bmp[BUTTHAUS3].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2211,10 +2100,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFEUERST].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTFEUERST].Phase !== -1)) {
-    StdString = texts.BEGINNFEUERSTELLE;
-    MakeRohString(-1, -1, constructionTypes.FIREPLACE);
-    StdString += RohString;
-    drawText(StdString, textAreas.STATUS, gameData);
+    drawStartConstructionText(constructionTypes.FIREPLACE);
 
     Bmp[BUTTFEUERST].Animation = true;
     if ((Button === 0) && (Push === 1)) {
@@ -2233,7 +2119,7 @@ const MouseInPanel = (Button, Push) => {
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTDESTROY].rcDes)) &&
     (HauptMenue === MEBAUEN) && (Bmp[BUTTDESTROY].Phase !== -1)) {
-    drawText(texts.BEGINNDESTROY, textAreas.STATUS, gameData);
+    drawStatusText(texts.BEGINNDESTROY);
     Bmp[BUTTDESTROY].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
@@ -2253,7 +2139,7 @@ const MouseInPanel = (Button, Push) => {
           TwoClicks = item;
         } else CheckBenutze(item);
       }
-      drawText(texts[itemTextIds[item]], textAreas.STATUS, gameData);
+      drawStatusText(texts[itemTextIds[item]]);
     };
   } else if (InRect(
     MousePosition.x, 
@@ -2265,7 +2151,7 @@ const MouseInPanel = (Button, Push) => {
       bottom: textAreas.TIME.y + textAreas.TIME.height
     }
   )) {
-    drawText(texts.SOSPAET, textAreas.STATUS, gameData);
+    drawStatusText(texts.SOSPAET);
   } else if (InRect(
     MousePosition.x, 
     MousePosition.y, 
@@ -2276,7 +2162,7 @@ const MouseInPanel = (Button, Push) => {
       bottom: textAreas.CHANCE.y + textAreas.CHANCE.height
     }
   )) {
-    drawText(texts.CHANCETEXT, textAreas.STATUS, gameData);
+    drawStatusText(texts.CHANCETEXT);
   } else {
     if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
     TwoClicks = -1;
@@ -2362,7 +2248,7 @@ const Zeige = () => {
   StdString += ':';
   if (minute < 10) StdString += '0';
   StdString += Stringsave2;
-  drawText(StdString, textAreas.TIME, gameData);
+  drawText(StdString, textAreas.TIME);
 
   if (gameData.paper) {
     drawPaper(gameData.paper);
@@ -2575,37 +2461,9 @@ const ZeichneBilder = (x, y, i, Ziel) => {
 }
 
 const ZeichnePanel = () => {
-  let diffx, diffy, i, j, Ringtmp;  //für die Sonnenanzeige
+  let diffx, diffy, i, Ringtmp;  //für die Sonnenanzeige
 
-  //Karte
-  rcRectsrc.left = 0;
-  rcRectsrc.top = 0;
-  rcRectsrc.right = 2 * MAXXKACH;
-  rcRectsrc.bottom = 2 * MAXYKACH;
-  rcRectdes.left = rcKarte.left;
-  rcRectdes.top = rcKarte.top;
-  rcRectdes.right = rcKarte.right;
-  rcRectdes.bottom = rcKarte.bottom;
-  drawImage(canvases.MINIMAP.canvas, canvases.PRIMARY);
-
-  //Spielfigur
-  rcRectdes.left = rcKarte.left + 2 * gameData.guy.tile.x;
-  rcRectdes.top = rcKarte.top + 2 * gameData.guy.tile.y;
-  rcRectdes.right = rcRectdes.left + 2;
-  rcRectdes.bottom = rcRectdes.top + 2;
-  fillCanvas(rcRectdes, 255, 0, 0, 1, canvases.PRIMARY);
-
-  //Position einmalen
-  rcRectsrc.left = 205;
-  rcRectsrc.top = 0;
-  rcRectsrc.right = 205 + 65;
-  rcRectsrc.bottom = 65;
-  rcRectdes.left = rcKarte.left + (gameData.camera.x + 2 * gameData.camera.y) / (KXPIXEL / 2) - MAXXKACH - 2;
-  rcRectdes.top = rcKarte.top + (2 * gameData.camera.y - gameData.camera.x) / (KXPIXEL / 2) + MAXYKACH - 21 - 2;
-  rcRectdes.right = rcRectdes.left + 65;
-  rcRectdes.bottom = rcRectdes.top + 65;
-  CalcRect(rcKarte);
-  drawImage(panelImage, canvases.PRIMARY);
+  drawMinimap({ x: rcKarte.left, y: rcKarte.top }, gameData);
 
   //Panel malen
   rcRectsrc.left = 0;
@@ -2730,7 +2588,7 @@ const ZeichnePanel = () => {
   clearText(textAreas.CHANCE);
   textAreas.CHANCE.y = Math.floor(Bmp[RING].rcDes.top + Ringtmp + Bmp[RING].Hoehe - 25);
   StdString = gameData.guy.chance.toFixed(0);
-  drawText(StdString, textAreas.CHANCE, gameData);
+  drawText(StdString, textAreas.CHANCE);
 
   //TextFeld malen
   rcRectsrc.left = 0;
@@ -3885,7 +3743,7 @@ const AkTagEnde = () => {
       if (tent) {
         changeHealth(gameData, -5);
         if (gameData.guy.health <= 0) {
-          openPaper(texts.TAGENDE5, false, gameData);
+          openDayEndPaper(texts.TAGENDE5, gameData);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
           gameData.calendar.minutes = 0;
@@ -3894,21 +3752,21 @@ const AkTagEnde = () => {
         }
       } else if (house) {
         changeHealth(gameData, 20);
-        openPaper(texts.TAGENDE4, false, gameData);
+        openDayEndPaper(texts.TAGENDE4, gameData);
       } else if (isOnSea(gameData)) {
-        openPaper(texts.TAGENDE3, false, gameData);
+        openDayEndPaper(texts.TAGENDE3, gameData);
         Guy.AkNummer = 2;
         Guy.Aktion = AKTOD;
         gameData.calendar.minutes = 0;
       } else {
         changeHealth(gameData, -20);
         if (gameData.guy.health <= 0) {
-          openPaper(texts.TAGENDE5, false, gameData);
+          openDayEndPaper(texts.TAGENDE5, gameData);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
           gameData.calendar.minutes = 0;
         } else {
-          openPaper(texts.TAGENDE1, false, gameData);
+          openDayEndPaper(texts.TAGENDE1, gameData);
         }
       }
       break;
@@ -4901,6 +4759,7 @@ const run = async (window) => {
   initAudio();
   await loadSounds(audio);
   initInput(window);
+  texts.init('de');
 
   await InitStructs();
 

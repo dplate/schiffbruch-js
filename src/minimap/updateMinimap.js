@@ -1,7 +1,7 @@
 import canvases from '../images/canvases.js';
-import grounds from './tiles/grounds.js';
+import grounds from '../terrain/tiles/grounds.js';
+import minimapScaling from './minimapScaling.js';
 
-const scaling = 2;
 const undiscoveredColor = 'rgba(247, 222, 191, 1)';
 const waterColor = 'rgba(228, 207, 182, 1)';
 const sandColor = 'rgba(112, 103, 93, 1)';
@@ -22,12 +22,12 @@ const getColor = (tile) => {
 
 const updateMinimap = (terrain) => {
   canvases.MINIMAP.fillStyle = undiscoveredColor
-  canvases.MINIMAP.fillRect(0, 0, terrain.length * scaling, terrain[0].length * scaling);
+  canvases.MINIMAP.fillRect(0, 0, terrain.length * minimapScaling, terrain[0].length * minimapScaling);
 
   terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
       canvases.MINIMAP.fillStyle = getColor(tile);
-      canvases.MINIMAP.fillRect(x * scaling, y * scaling, scaling, scaling);
+      canvases.MINIMAP.fillRect(x * minimapScaling, y * minimapScaling, minimapScaling, minimapScaling);
     });
   });
 };

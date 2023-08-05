@@ -35,7 +35,7 @@ const drawNo = (no) => {
 };
 
 const openPaper = (text, question, gameData) => {
-  const textHeight = drawText(text, textAreas.PAPER, gameData)
+  const textHeight = drawText(text, textAreas.PAPER)
 
   gameData.paper = {
     height: textHeight
