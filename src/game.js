@@ -79,6 +79,8 @@ import drawPaper from './text/drawPaper.js';
 import blitText from './text/blitText.js';
 import openPaper from './text/openPaper.js';
 import canvases from './images/canvases.js';
+import getTileByPosition from './terrain/getTileByPosition.js';
+import calculatePositionInTile from './terrain/tiles/calculatePositionInTile.js';
 
 const KXPIXEL = 54 //Breite der Kacheln
 const KYPIXEL = 44; //Hoehe der Kacheln
@@ -1592,36 +1594,6 @@ const AddTime = (m) => {
   }
 }
 
-const GetKachel = (PosX, PosY) => {
-  let x, y;
-
-  for (y = 0; y < MAXYKACH; y++)
-    for (x = 0; x < MAXXKACH; x++) {    //Die in Betracht kommenden Kacheln rausfinden
-      const tile = gameData.terrain[x][y];
-      if ((PosX > tile.position.x) && (PosX < tile.position.x + KXPIXEL) &&
-        (PosY > tile.position.y) && (PosY < tile.position.y + KYPIXEL)) {
-        const tileEdge = tileEdges[tile.type];
-        if ((InDreieck(PosX, PosY,
-          tile.position.x + tileEdge.left.x,
-          tile.position.y + tileEdge.left.y,
-          tile.position.x + tileEdge.top.x,
-          tile.position.y + tileEdge.top.y,
-          tile.position.x + tileEdge.bottom.x,
-          tile.position.y + tileEdge.bottom.y)) ||
-          (InDreieck(PosX, PosY,
-            tile.position.x + tileEdge.right.x,
-            tile.position.y + tileEdge.right.y,
-            tile.position.x + tileEdge.top.x,
-            tile.position.y + tileEdge.top.y,
-            tile.position.x + tileEdge.bottom.x,
-            tile.position.y + tileEdge.bottom.y))) {
-          return { x, y };
-        }
-      }
-    }
-  return null;
-}
-
 const MakeRohString = (x, y, constructionType = null) => {
   RohString = '';
   const neededItems = Object.entries(
@@ -1638,14 +1610,13 @@ const MakeRohString = (x, y, constructionType = null) => {
 };
 
 const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
-  let Erg; //Die angeklickte Kachel
   let Text = ''; //Text für Infoleiste
   let TextTmp = ''; //Text für Infoleiste
 
   //Info anzeigen
-  Erg = GetKachel((MousePosition.x + gameData.camera.x), (MousePosition.y + gameData.camera.y));
-  if (Erg && gameData.terrain[Erg.x][Erg.y].discovered) {
-    const tile = gameData.terrain[Erg.x][Erg.y];
+  const tilePosition = getTileByPosition(gameData.terrain, { x: MousePosition.x + gameData.camera.x, y: MousePosition.y + gameData.camera.y });
+  if (tilePosition && gameData.terrain[tilePosition.x][tilePosition.y].discovered) {
+    const tile = gameData.terrain[tilePosition.x][tilePosition.y];
     switch (tile.ground) {
       case grounds.GRASS:
         Text = texts.GROUND_GRASS;
@@ -1706,12 +1677,34 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         TextTmp = Math.floor(tile.construction.actionStep * 100 / constructions[tile.construction.type].actionSteps);
         Text += TextTmp + '%)';
         //benötigte Rohstoffe anzeigen
-        MakeRohString(Erg.x, Erg.y);
+        MakeRohString(tilePosition.x, tilePosition.y);
         Text += RohString;
       }
 
     }
     drawText(Text, textAreas.STATUS, gameData);
+
+    //Wenn Maustaste gedrückt wird
+    if ((Button === 0) && (Push === 1)) {
+      if (!gameData.guy.active &&
+        (tilePosition.x !== gameData.guy.tile.x || tilePosition.y !== gameData.guy.tile.y) &&
+        (tilePosition.x > 0) && (tilePosition.x < MAXXKACH - 1) &&
+        (tilePosition.y > 0) && (tilePosition.y < MAXYKACH - 1)) {
+
+        console.log(tile);
+        sounds.CLICK2.instance.play();
+        if (gameData.guy.route.length &&
+          (tilePosition.x === gameData.guy.route[gameData.guy.route.length - 1].x) &&
+          (tilePosition.y === gameData.guy.route[gameData.guy.route.length - 1].y)) {
+          Bmp[BUTTSTOP].Phase = 0;
+          gameData.guy.active = true;
+        } else {
+          gameData.guy.route = findRoute(gameData, tilePosition);
+        }
+      } else {
+        sounds.CLICK.instance.play();
+      }
+    }
   }
 
   //rechte Maustastescrollen
@@ -1719,27 +1712,6 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
     gameData.camera.x += xDiff;
     gameData.camera.y += yDiff;
     CursorTyp = CURICHTUNG;
-  }
-
-  //Wenn Maustaste gedrückt wird
-  if ((Button === 0) && (Push === 1)) {
-    if (Erg &&
-      (gameData.terrain[Erg.x][Erg.y].discovered) && !gameData.guy.active &&
-      ((Erg.x !== gameData.guy.tile.x) || (Erg.y !== gameData.guy.tile.y)) &&
-      (Erg.x > 0) && (Erg.x < MAXXKACH - 1) &&
-      (Erg.y > 0) && (Erg.y < MAXYKACH - 1)) {
-
-      console.log(gameData.terrain[Erg.x][Erg.y]);
-      sounds.CLICK2.instance.play();
-      if (gameData.guy.route.length &&
-        (Erg.x === gameData.guy.route[gameData.guy.route.length - 1].x) &&
-        (Erg.y === gameData.guy.route[gameData.guy.route.length - 1].y)) {
-        Bmp[BUTTSTOP].Phase = 0;
-        gameData.guy.active = true;
-      } else {
-        gameData.guy.route = findRoute(gameData, Erg);
-      }
-    } else sounds.CLICK.instance.play();
   }
 }
 
@@ -2309,16 +2281,6 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
     TwoClicks = -1;
   }
-}
-const InDreieck = (x, y, x0, y0, x1, y1, x3, y3) => {
-  const c = (x - x1) / (x0 - x1);
-  if (c < 0) return false;
-  const d = ((y - y3) * (x0 - x1) - (x - x1) * (y0 - y3)) / ((y1 - y3) * (x0 - x1));
-  if (d < 0) return false;
-  const b = ((y - y0) * (x1 - x0) - (x - x0) * (y1 - y0)) / ((x1 - x0) * (y3 - y1));
-  if (b < 0) return false;
-  const a = (x - x0) / (x1 - x0) - b;
-  return a >= 0;
 }
 
 const InRect = (x, y, rcRect) => {
@@ -2975,14 +2937,13 @@ const Event = (Eventnr) => {
 }
 
 const goToInitialPosition = () => {
-  const Erg = GetKachel(gameData.guy.storedPosition.x, gameData.guy.storedPosition.y);
-  if (Erg && Erg.x === gameData.guy.tile.x && Erg.y === gameData.guy.tile.y) {
+  const tilePosition = getTileByPosition(gameData.terrain, gameData.guy.storedPosition);
+  if (tilePosition && tilePosition.x === gameData.guy.tile.x && tilePosition.y === gameData.guy.tile.y) {
     goTo(gameData, gameData.guy.storedPosition);
   } else {
-    const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
     goToCenterOfTile(gameData);
   }
-}
+};
 
 const AkIntro = () => {
   let x;
@@ -3194,20 +3155,10 @@ const AkDestroy = () => {
 }
 
 const AkSuchen = () => {
-  const Ziel = { x: null, y: null };
-  let Erg;
-  let i;
-
   const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
 
   if (Guy.AkNummer === 0) {
     gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
-  }
-  while (1) {
-    Ziel.x = tile.position.x + Math.floor(Math.random() * KXPIXEL);
-    Ziel.y = tile.position.y + Math.floor(Math.random() * KYPIXEL);
-    Erg = GetKachel(Ziel.x, Ziel.y);
-    if (Erg && Erg.x === gameData.guy.tile.x && Erg.y === gameData.guy.tile.y) break; //Wenn das gefundene Ziel in der Kachel, dann fertig
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
@@ -3221,7 +3172,8 @@ const AkSuchen = () => {
           sounds.SPLASH.instance.play();
         }
       } else {
-        goTo(gameData, Ziel);
+        const targetPosition = calculatePositionInTile(tile, Math.random(), Math.random());
+        goTo(gameData, { x: tile.position.x + targetPosition.x, y: tile.position.y + targetPosition.y });
       }
       break;
     case 2:
@@ -3255,8 +3207,7 @@ const AkSuchen = () => {
           openPaper(texts.ROHSTEINZUVIEL, false, gameData);
         }
       } else if (tile.object?.sprite === spriteTypes.BUSH) {
-        i = Math.floor(Math.random() * 2);
-        switch (i) {
+        switch (Math.floor(Math.random() * 2)) {
           case 0:
             if (gameData.guy.inventory[items.BRANCH] < 10) {
               openPaper(texts.ROHASTGEFUNDEN, false, gameData);
@@ -3275,8 +3226,7 @@ const AkSuchen = () => {
             break;
         }
       } else if (isNormalTree(tile.object) || isBigTree(tile.object)) {
-        i = Math.floor(Math.random() * 3);
-        switch (i) {
+        switch (Math.floor(Math.random() * 3)) {
           case 0:
             if (gameData.guy.inventory[items.BRANCH] < 10) {
               openPaper(texts.ROHASTGEFUNDEN, false, gameData);
