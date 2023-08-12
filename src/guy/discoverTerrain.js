@@ -1,11 +1,12 @@
 import updateMinimap from '../minimap/updateMinimap.js';
+import state from '../state/state.js';
 
-const discoverTerrain = (gameData) => {
+const discoverTerrain = () => {
   let newDiscovery = false;
   
-  for (let x = gameData.guy.tile.x - 1; x <= gameData.guy.tile.x + 1; x++) {
-    for (let y = gameData.guy.tile.y - 1; y <= gameData.guy.tile.y + 1; y++) {
-      const tile = gameData.terrain[x]?.[y];
+  for (let x = state.guy.tile.x - 1; x <= state.guy.tile.x + 1; x++) {
+    for (let y = state.guy.tile.y - 1; y <= state.guy.tile.y + 1; y++) {
+      const tile = state.terrain[x]?.[y];
       if (tile && !tile.discovered) {
         tile.discovered = true;
         newDiscovery = true;
@@ -14,7 +15,7 @@ const discoverTerrain = (gameData) => {
   }
 
   if (newDiscovery) {
-    updateMinimap(gameData.terrain);
+    updateMinimap();
   }
 }
 

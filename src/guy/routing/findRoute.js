@@ -2,6 +2,7 @@ import directions from '../../terrain/directions.js';
 import tileEdges from '../../terrain/tiles/tileEdges.js';
 import canGoOnTile from './canGoOnTile.js';
 import getCostsOfTile from './getCostsOfTile.js';
+import state from '../../state/state.js';
 
 const estimateCosts = (start, destination) => {
   return Math.sqrt(Math.pow(destination.x - start.x, 2) + Math.pow(destination.y - start.y, 2));
@@ -24,11 +25,11 @@ const getDirection = (tile, nextTile) => {
   return directions.NORTH;
 }
 
-const createRoute = (gameData, lastTile) => {
+const createRoute = (lastTile) => {
   let tile = lastTile;
   const route = [];
   while (tile) {
-    const terrainTile = gameData.terrain[tile.x][tile.y];
+    const terrainTile = state.terrain[tile.x][tile.y];
     const currentTileEdges = tileEdges[terrainTile.type];
     const routeTile = {
       x: tile.x,
@@ -38,7 +39,7 @@ const createRoute = (gameData, lastTile) => {
     const nextTile = route[0];
     if (nextTile) {
       const direction = getDirection(tile, nextTile);
-      const nextTerrainTile = gameData.terrain[nextTile.x][nextTile.y];
+      const nextTerrainTile = state.terrain[nextTile.x][nextTile.y];
       nextTile.wayPoints.unshift(createWaypoint(nextTerrainTile, tileEdges[nextTerrainTile.type].center, direction));
       routeTile.wayPoints.push(createWaypoint(terrainTile, currentTileEdges[direction], direction));
     }
@@ -49,8 +50,8 @@ const createRoute = (gameData, lastTile) => {
   return route;
 };
 
-const findRoute = (gameData, destination) => {
-  const start = gameData.guy.tile;
+const findRoute = (destination) => {
+  const start = state.guy.tile;
   const startTile = { 
     ...start,
     estimatedCosts: estimateCosts(start, destination),
@@ -69,15 +70,15 @@ const findRoute = (gameData, destination) => {
     }
 
     if (nearest.x === destination.x && nearest.y === destination.y) {
-      return createRoute(gameData, nearest);
+      return createRoute(nearest);
     }    
     
     directions.list.forEach(direction => {
       const neighborX = nearest.x + directions.xDiff[direction];
       const neighborY = nearest.y + directions.yDiff[direction];
-      const neighborTile = gameData.terrain[neighborX]?.[neighborY];
+      const neighborTile = state.terrain[neighborX]?.[neighborY];
       const visitedTile = visitedTiles.find(tile => tile.x === neighborX && tile.y === neighborY);
-      if (!visitedTile && neighborTile && canGoOnTile(gameData, neighborTile)) {
+      if (!visitedTile && neighborTile && canGoOnTile(neighborTile)) {
         const tileCosts = getCostsOfTile(neighborTile);
         const costs = nearest.costs + tileCosts;
         const tileToCheck = tilesToCheck.find(tile => tile.x === neighborX && tile.y === neighborY);
@@ -101,7 +102,7 @@ const findRoute = (gameData, destination) => {
 
     tilesToCheck.sort((tile1, tile2) => (tile1.costs + tile1.estimatedCosts) - (tile2.costs + tile2.estimatedCosts));
   }
-  return createRoute(gameData, bestAlternateDestination);
+  return createRoute(bestAlternateDestination);
 }
 
 export default findRoute;

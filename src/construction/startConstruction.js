@@ -1,7 +1,8 @@
+import state from '../state/state.js';
 import constructions from './constructions.js';
 
-const startConstruction = (gameData, constructionType, x, y) => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+const startConstruction = (constructionType, x, y) => {
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const construction = constructions[constructionType];
 
   tile.originalObject = tile.object;
@@ -21,7 +22,7 @@ const startConstruction = (gameData, constructionType, x, y) => {
     lastGuyPosition: null
   };
 
-  gameData.guy.storedPosition = { ...gameData.guy.position };
+  state.guy.storedPosition = { ...state.guy.position };
 };
 
 export default startConstruction;

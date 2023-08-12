@@ -1,5 +1,6 @@
 import sprites from '../images/sprites.js';
 import spriteTypes from '../images/spriteTypes.js';
+import state from '../state/state.js';
 import calculatePositionInTile from './tiles/calculatePositionInTile.js';
 import grounds from './tiles/grounds.js';
 
@@ -36,10 +37,10 @@ const getSpriteType = (tile, bigTreePlanted) => {
   return getRandomTree();
 };
 
-const addTrees = (terrain) => {
+const addTrees = () => {
   let bigTreePlanted = false; 
 
-  terrain.forEach((terrainColumn) => {
+  state.terrain.forEach((terrainColumn) => {
     terrainColumn.forEach((tile) => {
       if (tile.object || tile.ground === grounds.QUICKSAND || Math.random() > 0.3) {
         return;

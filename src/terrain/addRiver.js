@@ -1,4 +1,4 @@
-import spriteTypes from '../images/spriteTypes.js';
+import state from '../state/state.js';
 import directions from './directions.js';
 import createRiverObject from './objects/createRiverObject.js';
 import grounds from './tiles/grounds.js';
@@ -19,9 +19,9 @@ const yDiff = {
   [directions.WEST]: 0,
 };
 
-const collectPossibleStarts = (terrain) => {
+const collectPossibleStarts = () => {
   const possibleStarts = [];
-  terrain.forEach((terrainColumn, x) => {
+  state.terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
       if (tile.type === tileTypes.FLAT && tile.height >= 2) {
         possibleStarts.push({ x, y });
@@ -31,7 +31,7 @@ const collectPossibleStarts = (terrain) => {
   return possibleStarts;
 };
 
-const hasEndReached = (terrain, tile, position, fromDirection) => {
+const hasEndReached = (tile, position, fromDirection) => {
   if (!fromDirection || tile?.ground !== grounds.BEACH) {
     return false;
   };
@@ -40,19 +40,19 @@ const hasEndReached = (terrain, tile, position, fromDirection) => {
     x: position.x + xDiff[toDirection],
     y: position.y + yDiff[toDirection],
   };
-  return terrain[nextPosition.x]?.[nextPosition.y].ground === grounds.SEA;
+  return state.terrain[nextPosition.x]?.[nextPosition.y].ground === grounds.SEA;
 };
 
 const isAlreadyRiver = (river, position) => river.some((step) => step.position.x === position.x && step.position.y === position.y);
 
-const findRiver = (terrain, river, position, visitedPositions, fromDirection = null) => {
+const findRiver = (river, position, visitedPositions, fromDirection = null) => {
   if (visitedPositions.some((visitedPosition) => visitedPosition.x === position.x && visitedPosition.y === position.y)) {
     return null;
   }
   visitedPositions.push(position);
 
-  const tile = terrain[position.x]?.[position.y];
-  if (hasEndReached(terrain, tile, position, fromDirection)) {
+  const tile = state.terrain[position.x]?.[position.y];
+  if (hasEndReached(tile, position, fromDirection)) {
     const object = createRiverObject(tile, fromDirection);
     return [ ...river, { object, position } ];
   }
@@ -68,7 +68,7 @@ const findRiver = (terrain, river, position, visitedPositions, fromDirection = n
     const object = createRiverObject(tile, fromDirection, toDirection);
     if (object && !isAlreadyRiver(river, nextPosition)) {
       const extendedRiver = [ ...river, { object, position } ];
-      const foundRiver = findRiver(terrain, extendedRiver, nextPosition, visitedPositions, directions.opposite[toDirection]);
+      const foundRiver = findRiver(extendedRiver, nextPosition, visitedPositions, directions.opposite[toDirection]);
       if (foundRiver) {
         return foundRiver;
       }
@@ -86,22 +86,22 @@ const calculateRiverScore = (river) => {
   return distance;
 };
 
-const addRiver = (terrain) => {
-  const possibleStarts = collectPossibleStarts(terrain);
+const addRiver = () => {
+  const possibleStarts = collectPossibleStarts();
   const possibleRivers = [];
   while (possibleRivers.length < 100) {
     const start = possibleStarts[Math.floor(Math.random() * possibleStarts.length)];
     const visitedPositions = [];
-    const river = findRiver(terrain, [], start, visitedPositions);
+    const river = findRiver([], start, visitedPositions);
     if (river) {
       possibleRivers.push(river);
     }
   };
   
   const bestRiver = possibleRivers.sort((river1, river2) => calculateRiverScore(river2) - calculateRiverScore(river1))[0];
-  bestRiver.forEach((riverStep) => terrain[riverStep.position.x][riverStep.position.y].object = riverStep.object);
+  bestRiver.forEach((riverStep) => state.terrain[riverStep.position.x][riverStep.position.y].object = riverStep.object);
 
-  updateWetlands(terrain);
+  updateWetlands();
 };
 
 export default addRiver;

@@ -1,15 +1,15 @@
 import positionTransformer from '../terrain/positionTransformer.js';
 import minimapScaling from './minimapScaling.js';
+import state from '../state/state.js';
 
-const moveCameraFromMinimap = (positionInMinimap, gameData) => {
+const moveCameraFromMinimap = (positionInMinimap) => {
   const position = positionTransformer.toPixel(
-    gameData.terrain, 
     positionInMinimap.x / minimapScaling,
     positionInMinimap.y / minimapScaling
   )
 
-  gameData.camera.x = Math.round(position.x - gameData.camera.width / 2);
-  gameData.camera.y = Math.round(position.y - gameData.camera.height / 2);
+  state.camera.x = Math.round(position.x - state.camera.width / 2);
+  state.camera.y = Math.round(position.y - state.camera.height / 2);
 };
 
 export default moveCameraFromMinimap

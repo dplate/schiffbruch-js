@@ -1,6 +1,8 @@
 import sprites from '../images/sprites.js';
+import state from '../state/state.js';
 
-const playTerrainSounds = (terrain, guy) => {
+const playTerrainSounds = () => {
+  const terrain = state.terrain;
   const terrainSounds = [];
   for (let x in terrain) {
     for (let y in terrain[x]) {
@@ -8,8 +10,8 @@ const playTerrainSounds = (terrain, guy) => {
       if (object) {
         const sound = sprites[object.sprite].sound;
         if (sound) {
-          const xDiff = guy.tile.x - x;
-          const yDiff = guy.tile.y - y;
+          const xDiff = state.guy.tile.x - x;
+          const yDiff = state.guy.tile.y - y;
           const distance = Math.sqrt(xDiff * xDiff + yDiff * yDiff);
           const gain = 1 / (2 ** distance);
           const terrainSound = terrainSounds.find(terrainSound => terrainSound.sound === sound);

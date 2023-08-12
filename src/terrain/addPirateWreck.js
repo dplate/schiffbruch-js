@@ -1,8 +1,11 @@
 import spriteTypes from '../images/spriteTypes.js';
+import state from '../state/state.js';
 import grounds from './tiles/grounds.js';
 import tileEdges from './tiles/tileEdges.js';
 
-const isGoodPosition = (terrain, x, y) => {
+const isGoodPosition = (x, y) => {
+  const terrain = state.terrain;
+
   if (terrain[x][y].ground !== grounds.SEA) {
     return false;
   }
@@ -25,11 +28,13 @@ const isGoodPosition = (terrain, x, y) => {
   return false;
 }
 
-const addPirateWreck = (terrain) => {
+const addPirateWreck = () => {
+  const terrain = state.terrain;
+  
   while(true) {
     const x = Math.floor(Math.random() * terrain.length);
     const y = Math.floor(Math.random() * terrain[0].length);
-    if (isGoodPosition(terrain, x, y)) {
+    if (isGoodPosition(x, y)) {
       const tile = terrain[x][y];
       const center = tileEdges[tile.type].center;
       tile.object = {

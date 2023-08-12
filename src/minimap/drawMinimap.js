@@ -2,10 +2,11 @@ import canvases from '../images/canvases.js';
 import images from '../images/images.js';
 import positionTransformer from '../terrain/positionTransformer.js';
 import minimapScaling from './minimapScaling.js';
+import state from '../state/state.js';
 
-const drawMinimap = (position, gameData) => {
-  const minimapWidth = minimapScaling * gameData.terrain.length;
-  const minimapHeight = minimapScaling * gameData.terrain[0].length;
+const drawMinimap = (position) => {
+  const minimapWidth = minimapScaling * state.terrain.length;
+  const minimapHeight = minimapScaling * state.terrain[0].length;
   canvases.PRIMARY.drawImage(
     canvases.MINIMAP.canvas,
     0, 0, minimapWidth, minimapHeight,
@@ -14,15 +15,15 @@ const drawMinimap = (position, gameData) => {
 
   canvases.PRIMARY.fillStyle = `rgba(255, 0, 0, 1)`;
   canvases.PRIMARY.fillRect(
-    position.x + minimapScaling * gameData.guy.tile.x, 
-    position.y + minimapScaling * gameData.guy.tile.y, 
+    position.x + minimapScaling * state.guy.tile.x, 
+    position.y + minimapScaling * state.guy.tile.y, 
     minimapScaling, 
     minimapScaling
   );
 
   const viewRectangleWith = 65;
   const viewRectangleHeight = 65;
-  const tileIndex = positionTransformer.fromPixel(gameData.terrain, gameData.camera.x, gameData.camera.y);
+  const tileIndex = positionTransformer.fromPixel(state.camera.x, state.camera.y);
   canvases.PRIMARY.drawImage(
     images.PANEL.instance,
     205, 

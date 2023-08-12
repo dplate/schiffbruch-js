@@ -4,6 +4,7 @@ import directions from '../../terrain/directions.js';
 import changeWaterAndFood from '../changeWaterAndFood.js';
 import isOnSea from '../isOnSea.js';
 import getCostsOfTile from './getCostsOfTile.js';
+import state from '../../state/state.js';
 
 const getDirection = (wayPoint, distance) => {
   if (wayPoint.direction) {
@@ -21,10 +22,10 @@ const getDirection = (wayPoint, distance) => {
   return directions.SOUTH;
 };
 
-const getSpriteForDirection = (gameData, direction) => {
-  const onSea = isOnSea(gameData);
-  if (onSea && (gameData.guy.sprite === spriteTypes.GUY_SAILING || gameData.guy.sprite === spriteTypes.GUY_SWIMMING)) {
-    return gameData.guy.sprite;
+const getSpriteForDirection = (direction) => {
+  const onSea = isOnSea();
+  if (onSea && (state.guy.sprite === spriteTypes.GUY_SAILING || state.guy.sprite === spriteTypes.GUY_SWIMMING)) {
+    return state.guy.sprite;
   }
   
   switch(direction) {
@@ -35,11 +36,11 @@ const getSpriteForDirection = (gameData, direction) => {
   }
 };
 
-const animateRoute = (gameData, frame, addTimeLegacy) => {
-  const guy = gameData.guy;
+const animateRoute = (frame, addTimeLegacy) => {
+  const guy = state.guy;
   let routePoint = guy.route[0];
   let wayPoint = routePoint?.wayPoints[0];
-  let tileCosts = getCostsOfTile(gameData.terrain[guy.tile.x][guy.tile.y]);
+  let tileCosts = getCostsOfTile(state.terrain[guy.tile.x][guy.tile.y]);
   if (!wayPoint) {
     guy.route.shift();
     if (!guy.route.length) {
@@ -49,12 +50,12 @@ const animateRoute = (gameData, frame, addTimeLegacy) => {
     }
     routePoint = guy.route[0];
     wayPoint = routePoint.wayPoints[0];
-    tileCosts = getCostsOfTile(gameData.terrain[routePoint.x][routePoint.y]);
+    tileCosts = getCostsOfTile(state.terrain[routePoint.x][routePoint.y]);
     guy.tile.x = routePoint.x;
     guy.tile.y = routePoint.y;
     
-    addTimeLegacy(tileCosts * (isOnSea(gameData) ? 3 : 5));
-    changeWaterAndFood(gameData, -1, -1);
+    addTimeLegacy(tileCosts * (isOnSea() ? 3 : 5));
+    changeWaterAndFood(-1, -1);
   }
   
   if (frame % tileCosts === 0) {
@@ -63,10 +64,10 @@ const animateRoute = (gameData, frame, addTimeLegacy) => {
       y: wayPoint.y - guy.position.y
     };
     const direction = getDirection(wayPoint, distance);
-    guy.sprite = getSpriteForDirection(gameData, direction);
+    guy.sprite = getSpriteForDirection(direction);
     const sprite = sprites[guy.sprite];
 
-    const speed = isOnSea(gameData) ? 2 : 1;
+    const speed = isOnSea() ? 2 : 1;
     if ((frame / tileCosts) % (speed * 2) === 0) {
       guy.frame++;
       if (guy.frame >= sprite.frameCount) {
@@ -76,8 +77,8 @@ const animateRoute = (gameData, frame, addTimeLegacy) => {
 
     const length = Math.sqrt(distance.x * distance.x + distance.y * distance.y);
     if (length > 0) {
-      gameData.guy.position.x += distance.x * speed / length;
-      gameData.guy.position.y += distance.y * speed / length;
+      state.guy.position.x += distance.x * speed / length;
+      state.guy.position.y += distance.y * speed / length;
     }
 
     if (speed > length) {

@@ -87,6 +87,7 @@ import drawStatusText from './text/drawStatusText.js';
 import drawTileText from './terrain/tiles/drawTileText.js';
 import drawMinimap from './minimap/drawMinimap.js';
 import moveCameraFromMinimap from './minimap/moveCameraFromMinimap.js';
+import state from './state/state.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -266,49 +267,6 @@ const AbspannListe = Array.from(Array(10), () => Array.from(Array(10), () => ({
   Bild: null,        //welches Bild
 })));    //Namenabfolge im Abspann
 
-const gameData = {
-  terrain: Array.from(
-    Array(MAXXKACH), () => Array.from(
-      Array(MAXYKACH), () => ({})
-    )
-  ),
-  camera: {
-    x: 0,
-    y: 0,
-    width: null,
-    height: null
-  },
-  options: {
-    grid: false
-  },
-  guy: {
-    active: false,
-    route: [],
-    sprite: null,
-    frame: null,
-    position: {
-      x: null,
-      y: null
-    },
-    prevPosition: null,
-    tile: {
-      x: null,
-      y: null
-    },
-    water: null,
-    food: null,
-    health: null,
-    inventory: null,
-    chance: null
-  },
-  constructionHints: {},
-  calendar: {
-    day: null,
-    minutes: null,
-  },
-  paper: null
-};
-
 //Bilder
 const loadImage = async (file) => {
   return new Promise((resolve) => {
@@ -397,8 +355,8 @@ const SaveGame = () => {
     });
   }
 
-  window.localStorage.setItem('gameDataV9', JSON.stringify({
-    ...gameData,
+  window.localStorage.setItem('stateV9', JSON.stringify({
+    ...state,
     Guy,
     HauptMenue,
     Spielzustand,
@@ -409,30 +367,30 @@ const SaveGame = () => {
 const LoadGame = () => {
   let i;
 
-  const rawGameData = window.localStorage.getItem('gameDataV9');
-  if (!rawGameData) {
+  const rawState = window.localStorage.getItem('stateV9');
+  if (!rawState) {
     return false;
   }
 
-  let parsedGameData = null;
+  let parsedState = null;
   try {
-    parsedGameData = JSON.parse(rawGameData);
+    parsedState = JSON.parse(rawState);
   } catch (error) {
     console.warn('Cannot parse saved gamed, ignoring...', error)
     return false;
   };
-  for (const key in parsedGameData) {
-    gameData[key] = parsedGameData[key];
+  for (const key in parsedState) {
+    state[key] = parsedState[key];
   }
-  gameData.paper = null;
+  state.paper = null;
 
-  Guy = gameData.Guy;
-  HauptMenue = gameData.HauptMenue;
-  Spielzustand = gameData.Spielzustand;
+  Guy = state.Guy;
+  HauptMenue = state.HauptMenue;
+  Spielzustand = state.Spielzustand;
 
   for (i = 0; i < BILDANZ; i++) {
-    Bmp[i].Animation = gameData.animations[i].Animation;
-    Bmp[i].Phase = gameData.animations[i].Phase;
+    Bmp[i].Animation = state.animations[i].Animation;
+    Bmp[i].Phase = state.animations[i].Phase;
   }
 
   return true;
@@ -1326,7 +1284,7 @@ const CheckMouse = () => {
   if (MousePosition.y > MAXY - 2) MousePosition.y = MAXY - 2;
 
   if (TwoClicks === -1) {
-    if (gameData.guy.active) {
+    if (state.guy.active) {
       if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes) &&
         (Bmp[BUTTSTOP].Phase !== -1)) CursorTyp = CUPFEIL;
       else CursorTyp = CUUHR;
@@ -1365,45 +1323,45 @@ const CheckMouse = () => {
   }
 
   //Wenn ein Text steht, dann bei Mausdruck Text weg
-  if (gameData.paper) {
-    if (gameData.paper.question) {
+  if (state.paper) {
+    if (state.paper.question) {
       if (InRect(
         MousePosition.x, 
         MousePosition.y, 
         { 
-          left: gameData.paper.question.yes.x,
-          top: gameData.paper.question.yes.y,
-          right: gameData.paper.question.yes.x + gameData.paper.question.yes.width,
-          bottom: gameData.paper.question.yes.y + gameData.paper.question.yes.height,
+          left: state.paper.question.yes.x,
+          top: state.paper.question.yes.y,
+          right: state.paper.question.yes.x + state.paper.question.yes.width,
+          bottom: state.paper.question.yes.y + state.paper.question.yes.height,
         }
       )) {
         CursorTyp = CUPFEIL;
         if ((Button === 0) && (Push === 1)) {
-          gameData.paper.question.answer = true;
-          gameData.guy.active = false;
+          state.paper.question.answer = true;
+          state.guy.active = false;
           sounds.CLICK2.instance.play();
         }
       } else if (InRect(
         MousePosition.x, 
         MousePosition.y, 
         { 
-          left: gameData.paper.question.no.x,
-          top: gameData.paper.question.no.y,
-          right: gameData.paper.question.no.x + gameData.paper.question.no.width,
-          bottom: gameData.paper.question.no.y + gameData.paper.question.no.height,
+          left: state.paper.question.no.x,
+          top: state.paper.question.no.y,
+          right: state.paper.question.no.x + state.paper.question.no.width,
+          bottom: state.paper.question.no.y + state.paper.question.no.height,
         }
       )) {
         CursorTyp = CUPFEIL;
         if ((Button === 0) && (Push === 1)) {
-          gameData.paper.question.answer = false;
-          gameData.guy.active = false;
+          state.paper.question.answer = false;
+          state.guy.active = false;
           sounds.CLICK2.instance.play();
         }
       } else if ((Button === 0) && (Push === 1)) {
         sounds.CLICK.instance.play();
       }
     } else if ((Button !== -1) && (Push === 1)) {
-      closePaper(gameData);
+      closePaper();
     }
     return;
   }
@@ -1413,7 +1371,7 @@ const CheckMouse = () => {
   ButtAniAus();
 
   //Wenn der Guy aktiv dann linke Mouse-Buttons ignorieren
-  if (gameData.guy.active && (Button === 0)) {
+  if (state.guy.active && (Button === 0)) {
     if (!((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes)) &&
       (Bmp[BUTTSTOP].Phase !== -1))) {
       Button = -1;
@@ -1421,7 +1379,7 @@ const CheckMouse = () => {
   }
 
   //die Maus ist in der Spielflaeche .
-  if (InRect(MousePosition.x, MousePosition.y, { left: 0, top: 0, right: gameData.camera.width, bottom: gameData.camera.height }))
+  if (InRect(MousePosition.x, MousePosition.y, { left: 0, top: 0, right: state.camera.width, bottom: state.camera.height }))
     MouseInSpielflaeche(Button, Push, xDiff, yDiff);
   //die Maus ist im Panel .
   if (InRect(MousePosition.x, MousePosition.y, rcPanel))
@@ -1454,24 +1412,24 @@ const CheckKey = () => {
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
       sounds.STORM.instance.stop();
       sounds.SWIMMING.instance.stop();
-      gameData.guy.active = false;
-      for (let x = gameData.guy.tile.x; x < MAXXKACH; x++) {
-        gameData.guy.tile.x = x;
-        discoverTerrain(gameData);
-        if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].ground !== grounds.SEA) break;
+      state.guy.active = false;
+      for (let x = state.guy.tile.x; x < MAXXKACH; x++) {
+        state.guy.tile.x = x;
+        discoverTerrain();
+        if (state.terrain[state.guy.tile.x][state.guy.tile.y].ground !== grounds.SEA) break;
       }
-      addShipWreck(gameData.terrain[gameData.guy.tile.x - 2][gameData.guy.tile.y]);
+      addShipWreck(state.terrain[state.guy.tile.x - 2][state.guy.tile.y]);
 
-      const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-      gameData.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
-      gameData.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
-      gameData.guy.route = [];
-      updateCamera(gameData.camera, gameData.guy.position, false);
+      const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
+      state.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
+      state.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
+      state.guy.route = [];
+      updateCamera(state.guy.position, false);
 
-      gameData.guy.sprite = spriteTypes.GUY_WAITING;
+      state.guy.sprite = spriteTypes.GUY_WAITING;
       Guy.Aktion = AKNICHTS;
       Spielzustand = GAME_PLAY;
-      gameData.guy.storedPosition = { ...gameData.guy.position };
+      state.guy.storedPosition = { ...state.guy.position };
       SaveGame();
       return (2);
     }
@@ -1482,22 +1440,22 @@ const CheckKey = () => {
       return (2);
     }
   } else if (Spielzustand === GAME_PLAY) {
-    if (pressedKeyCodes[DIK_RIGHT]) gameData.camera.x += 10;
-    if (pressedKeyCodes[DIK_LEFT]) gameData.camera.x -= 10;
-    if (pressedKeyCodes[DIK_DOWN]) gameData.camera.y += 10;
-    if (pressedKeyCodes[DIK_UP]) gameData.camera.y -= 10;
+    if (pressedKeyCodes[DIK_RIGHT]) state.camera.x += 10;
+    if (pressedKeyCodes[DIK_LEFT]) state.camera.x -= 10;
+    if (pressedKeyCodes[DIK_DOWN]) state.camera.y += 10;
+    if (pressedKeyCodes[DIK_UP]) state.camera.y -= 10;
     if (pressedKeyCodes[DIK_ESCAPE]) {
       Guy.AkNummer = 0;
-      gameData.guy.active = false;
+      state.guy.active = false;
       Guy.Aktion = AKSPIELVERLASSEN;
     }
     if (pressedKeyCodes[DIK_F11]) {
       Guy.AkNummer = 0;
-      gameData.guy.active = false;
+      state.guy.active = false;
       Guy.Aktion = AKNEUBEGINNEN;
     }
     if (pressedKeyCodes[DIK_G]) {
-      gameData.options.grid = !gameData.options.grid;
+      state.options.grid = !state.options.grid;
     }
 
     if (pressedKeyCodes[DIK_C])  //Zum testen
@@ -1505,29 +1463,29 @@ const CheckKey = () => {
       let x, y;
       for (y = 0; y < MAXYKACH; y++)
         for (x = 0; x < MAXXKACH; x++)
-          gameData.terrain[x][y].discovered = true;
-      updateMinimap(gameData.terrain);
+          state.terrain[x][y].discovered = true;
+      updateMinimap();
     }
 
     if (pressedKeyCodes[DIK_I])  //Zum testen
     {
-      changeItem(gameData, items.BRANCH, 10);
-      changeItem(gameData, items.STONE, 10);
-      changeItem(gameData, items.LEAF, 10);
-      changeItem(gameData, items.LIANA, 10);
-      changeItem(gameData, items.LOG, 10);
+      changeItem(items.BRANCH, 10);
+      changeItem(items.STONE, 10);
+      changeItem(items.LEAF, 10);
+      changeItem(items.LIANA, 10);
+      changeItem(items.LOG, 10);
     }
     if (pressedKeyCodes[DIK_W])  //Zum testen
     {
-      changeItem(gameData, items.AXE, 1);
-      changeItem(gameData, items.HARROW, 1);
-      changeItem(gameData, items.FISHING_ROD, 1);
-      changeItem(gameData, items.HAMMER, 1);
-      changeItem(gameData, items.SPYGLASS, 1);
-      changeItem(gameData, items.MATCHES, 1);
-      changeItem(gameData, items.SHOVEL, 1);
-      changeItem(gameData, items.MAP, 1);
-      changeItem(gameData, items.SLING, 1);
+      changeItem(items.AXE, 1);
+      changeItem(items.HARROW, 1);
+      changeItem(items.FISHING_ROD, 1);
+      changeItem(items.HAMMER, 1);
+      changeItem(items.SPYGLASS, 1);
+      changeItem(items.MATCHES, 1);
+      changeItem(items.SHOVEL, 1);
+      changeItem(items.MAP, 1);
+      changeItem(items.SLING, 1);
 
       Bmp[BUTTFAELLEN].Phase = 0;
       Bmp[BUTTANGELN].Phase = 0;
@@ -1543,7 +1501,7 @@ const CheckKey = () => {
       Bmp[BUTTHAUS2].Phase = 0;
       Bmp[BUTTHAUS3].Phase = 0;
 
-      gameData.guy.chance += 10;
+      state.guy.chance += 10;
     }
   } else if (Spielzustand === GAME_CREDITS) {
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
@@ -1556,18 +1514,18 @@ const CheckKey = () => {
 const AddTime = (m) => {
   let x, y;
 
-  gameData.calendar.minutes += m;
+  state.calendar.minutes += m;
 
   for (y = 0; y < MAXYKACH; y++)
     for (x = 0; x < MAXXKACH; x++) {
-      const tile = gameData.terrain[x][y];
+      const tile = state.terrain[x][y];
       //Feuer nach einer bestimmten Zeit ausgehen lassen
       const object = tile.object;
       if (object?.lifetime) {
         object.lifetime -= m;
         if (object.lifetime <= 0) {
           if (object.chance) {
-            gameData.guy.chance -= object.chance;
+            state.guy.chance -= object.chance;
           }
           tile.object = null;
         }
@@ -1581,16 +1539,16 @@ const AddTime = (m) => {
         tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
       }
     }
-  changeHealth(gameData, m * (gameData.guy.water - 50 + gameData.guy.food - 50) / 1000);
-  if (gameData.guy.health <= 0 && Guy.Aktion !== AKTOD && Guy.Aktion !== AKTAGENDE && Spielzustand === GAME_PLAY) {
-    gameData.guy.active = false;
+  changeHealth(m * (state.guy.water - 50 + state.guy.food - 50) / 1000);
+  if (state.guy.health <= 0 && Guy.Aktion !== AKTOD && Guy.Aktion !== AKTAGENDE && Spielzustand === GAME_PLAY) {
+    state.guy.active = false;
     Guy.AkNummer = 0;
     Guy.Aktion = AKTOD;
   }
 
-  if ((Spielzustand === GAME_PLAY) && (!isOnSea(gameData))) {
-    if (Math.random() < (gameData.guy.chance / 100) * (m / 720)) {
-      gameData.guy.active = false;
+  if ((Spielzustand === GAME_PLAY) && (!isOnSea())) {
+    if (Math.random() < (state.guy.chance / 100) * (m / 720)) {
+      state.guy.active = false;
       Guy.AkNummer = 0;
       Guy.Aktion = AKGERETTET;
     }
@@ -1598,26 +1556,26 @@ const AddTime = (m) => {
 }
 
 const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
-  const tilePosition = getTileByPosition(gameData.terrain, { x: MousePosition.x + gameData.camera.x, y: MousePosition.y + gameData.camera.y });
-  if (tilePosition && gameData.terrain[tilePosition.x][tilePosition.y].discovered) {
-    drawTileText(gameData.terrain[tilePosition.x][tilePosition.y]);
+  const tilePosition = getTileByPosition({ x: MousePosition.x + state.camera.x, y: MousePosition.y + state.camera.y });
+  if (tilePosition && state.terrain[tilePosition.x][tilePosition.y].discovered) {
+    drawTileText(state.terrain[tilePosition.x][tilePosition.y]);
 
     //Wenn Maustaste gedrückt wird
     if ((Button === 0) && (Push === 1)) {
-      if (!gameData.guy.active &&
-        (tilePosition.x !== gameData.guy.tile.x || tilePosition.y !== gameData.guy.tile.y) &&
+      if (!state.guy.active &&
+        (tilePosition.x !== state.guy.tile.x || tilePosition.y !== state.guy.tile.y) &&
         (tilePosition.x > 0) && (tilePosition.x < MAXXKACH - 1) &&
         (tilePosition.y > 0) && (tilePosition.y < MAXYKACH - 1)) {
 
-        console.log(gameData, gameData.terrain[tilePosition.x][tilePosition.y]);
+        console.log(state, state.terrain[tilePosition.x][tilePosition.y]);
         sounds.CLICK2.instance.play();
-        if (gameData.guy.route.length &&
-          (tilePosition.x === gameData.guy.route[gameData.guy.route.length - 1].x) &&
-          (tilePosition.y === gameData.guy.route[gameData.guy.route.length - 1].y)) {
+        if (state.guy.route.length &&
+          (tilePosition.x === state.guy.route[state.guy.route.length - 1].x) &&
+          (tilePosition.y === state.guy.route[state.guy.route.length - 1].y)) {
           Bmp[BUTTSTOP].Phase = 0;
-          gameData.guy.active = true;
+          state.guy.active = true;
         } else {
-          gameData.guy.route = findRoute(gameData, tilePosition);
+          state.guy.route = findRoute(tilePosition);
         }
       } else {
         sounds.CLICK.instance.play();
@@ -1627,8 +1585,8 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
 
   //rechte Maustastescrollen
   if ((Button === 1) && (Push === 0)) {
-    gameData.camera.x += xDiff;
-    gameData.camera.y += yDiff;
+    state.camera.x += xDiff;
+    state.camera.y += yDiff;
     CursorTyp = CURICHTUNG;
   }
 }
@@ -1642,13 +1600,13 @@ const ButtAniAus = () => {
 }
 
 const MouseInPanel = (Button, Push) => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   //wenn die Maus in der Minimap ist .
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
-    moveCameraFromMinimap({ x: MousePosition.x - rcKarte.left, y: MousePosition.y - rcKarte.top }, gameData);
+    moveCameraFromMinimap({ x: MousePosition.x - rcKarte.left, y: MousePosition.y - rcKarte.top });
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTGITTER].rcDes)) {
-    if (gameData.options.grid) {
+    if (state.options.grid) {
       drawStatusText(texts.GITTERAUS);
     } else {
       drawStatusText(texts.GITTERAN);
@@ -1656,7 +1614,7 @@ const MouseInPanel = (Button, Push) => {
 
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      gameData.options.grid = !gameData.options.grid;
+      state.options.grid = !state.options.grid;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOUND].rcDes)) {
     if (audio.isRunning()) {
@@ -1679,7 +1637,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      gameData.guy.active = false;
+      state.guy.active = false;
       Guy.Aktion = AKSPIELVERLASSEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTNEU].rcDes)) {
@@ -1688,7 +1646,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      gameData.guy.active = false;
+      state.guy.active = false;
       Guy.Aktion = AKNEUBEGINNEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTTAGNEU].rcDes)) {
@@ -1697,7 +1655,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      gameData.guy.active = false;
+      state.guy.active = false;
       Guy.Aktion = AKTAGNEUBEGINNEN;
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAKTION].rcDes)) {
@@ -1745,7 +1703,7 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Bmp[BUTTSTOP].Phase = 0;
-      const construction = continueConstruction(gameData);
+      const construction = continueConstruction();
       switch (construction.type) {
         case constructionTypes.TENT:
           Guy.Aktion = AKZELT;
@@ -1819,7 +1777,7 @@ const MouseInPanel = (Button, Push) => {
       } else if (isDrinkable(tile.object))
         Guy.Aktion = AKTRINKEN;
       else {
-        openPaper(texts.KEINESSENTRINKEN, false, gameData);
+        openPaper(texts.KEINESSENTRINKEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLAFEN].rcDes)) &&
@@ -1832,7 +1790,7 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLAFEN;
       } else {
-        openPaper(texts.NICHTAUFWASSERSCHLAFEN, false, gameData);
+        openPaper(texts.NICHTAUFWASSERSCHLAFEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFAELLEN].rcDes)) &&
@@ -1842,16 +1800,16 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       Guy.AkNummer = 0;
-      if (gameData.guy.inventory[items.LOG] <= 10) {
+      if (state.guy.inventory[items.LOG] <= 10) {
         if (isNormalTree(tile.object)) {
           Guy.Aktion = AKFAELLEN;
         } else if (isBigTree(tile.object)) {
-          openPaper(texts.BAUMZUGROSS, false, gameData);
+          openPaper(texts.BAUMZUGROSS, false);
         } else {
-          openPaper(texts.KEINBAUM, false, gameData);
+          openPaper(texts.KEINBAUM, false);
         }
       } else {
-        openPaper(texts.ROHSTAMMZUVIEL, false, gameData);
+        openPaper(texts.ROHSTAMMZUVIEL, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANGELN].rcDes)) &&
@@ -1864,7 +1822,7 @@ const MouseInPanel = (Button, Push) => {
       if (isFishable(tile)) {
         Guy.Aktion = AKANGELN;
       } else {
-        openPaper(texts.KEINWASSER, false, gameData);
+        openPaper(texts.KEINWASSER, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANZUENDEN].rcDes)) &&
@@ -1877,7 +1835,7 @@ const MouseInPanel = (Button, Push) => {
       if (isUsableFireplace(tile)) {
         Guy.Aktion = AKANZUENDEN;
       } else {
-        openPaper(texts.KEINEFEUERST, false, gameData);
+        openPaper(texts.KEINEFEUERST, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAUSSCHAU].rcDes)) &&
@@ -1891,7 +1849,7 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKAUSSCHAU;
       } else {
-        drawStatusText(texts.WELLENZUHOCH, false, gameData);
+        drawStatusText(texts.WELLENZUHOCH, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZ].rcDes)) &&
@@ -1907,7 +1865,7 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHATZ;
       } else {
-        openPaper(texts.GRABENBEDINGUNGEN, false, gameData);
+        openPaper(texts.GRABENBEDINGUNGEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLEUDER].rcDes)) &&
@@ -1921,9 +1879,9 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKSCHLEUDER;
       } else if (isBigTree(tile.object)) {
-        openPaper(texts.BAUMZUGROSS, false, gameData);
+        openPaper(texts.BAUMZUGROSS, false);
       } else {
-        openPaper(texts.KEINVOGEL, false, gameData);
+        openPaper(texts.KEINVOGEL, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZKARTE].rcDes)) &&
@@ -1948,10 +1906,10 @@ const MouseInPanel = (Button, Push) => {
         Guy.Aktion = AKFELD;
       } else if (tile.construction?.type === constructionTypes.FIELD) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKFELD;
       } else {
-        openPaper(texts.FELDBEDINGUNGEN, false, gameData);
+        openPaper(texts.FELDBEDINGUNGEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTZELT].rcDes)) &&
@@ -1967,10 +1925,10 @@ const MouseInPanel = (Button, Push) => {
         Guy.Aktion = AKZELT;
       } else if (tile.construction?.type === constructionTypes.TENT) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKZELT;
       } else {
-        openPaper(texts.ZELTBEDINGUNGEN, false, gameData);
+        openPaper(texts.ZELTBEDINGUNGEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBOOT].rcDes)) &&
@@ -1982,18 +1940,18 @@ const MouseInPanel = (Button, Push) => {
       sounds.CLICK2.instance.play();
       if (!tile.object &&
         (tile.ground === grounds.BEACH) &&
-        ((gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) ||
-          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) ||
-          (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) ||
-          (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA))) {
+        ((state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground === grounds.SEA) ||
+          (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground === grounds.SEA) ||
+          (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground === grounds.SEA) ||
+          (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground === grounds.SEA))) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKBOOT;
       } else if (tile.construction?.type === constructionTypes.BOAT) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKBOOT;
       } else {
-        openPaper(texts.BOOTBEDINGUNGEN, false, gameData);
+        openPaper(texts.BOOTBEDINGUNGEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTROHR].rcDes)) &&
@@ -2009,10 +1967,10 @@ const MouseInPanel = (Button, Push) => {
         Guy.Aktion = AKROHR;
       } else if (tile.construction?.type === constructionTypes.PIPE) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKROHR;
       } else {
-        openPaper(texts.ROHRBEDINGUNGEN, false, gameData);
+        openPaper(texts.ROHRBEDINGUNGEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOS].rcDes)) &&
@@ -2028,10 +1986,10 @@ const MouseInPanel = (Button, Push) => {
         Guy.Aktion = AKSOS;
       } else if (tile.construction?.type === constructionTypes.SOS) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKSOS;
       } else {
-        openPaper(texts.SOSBEDINGUNGEN, false, gameData);
+        openPaper(texts.SOSBEDINGUNGEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS1].rcDes)) &&
@@ -2042,16 +2000,16 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false, gameData);
+        openPaper(texts.BAUMZUKLEIN, false);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS1;
       } else if (tile.construction?.type === constructionTypes.LADDER) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKHAUS1;
       } else {
-        openPaper(texts.GEGENDNICHT, false, gameData);
+        openPaper(texts.GEGENDNICHT, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS2].rcDes)) &&
@@ -2062,18 +2020,18 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false, gameData);
+        openPaper(texts.BAUMZUKLEIN, false);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
-        openPaper(texts.NICHTOHNELEITER, false, gameData);
+        openPaper(texts.NICHTOHNELEITER, false);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS2;
       } else if (tile.construction?.type === constructionTypes.PLATFORM) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKHAUS2;
       } else {
-        openPaper(texts.GEGENDNICHT, false, gameData);
+        openPaper(texts.GEGENDNICHT, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS3].rcDes)) &&
@@ -2084,18 +2042,18 @@ const MouseInPanel = (Button, Push) => {
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
       if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false, gameData);
+        openPaper(texts.BAUMZUKLEIN, false);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE || tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
-        openPaper(texts.NICHTOHNEPLATTFORM, false, gameData);
+        openPaper(texts.NICHTOHNEPLATTFORM, false);
       } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM) {
         Bmp[BUTTSTOP].Phase = 0;
         Guy.Aktion = AKHAUS3;
       } else if (tile.construction?.type === constructionTypes.TREE_HOUSE) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKHAUS3;
       } else {
-        openPaper(texts.GEGENDNICHT, false, gameData);
+        openPaper(texts.GEGENDNICHT, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFEUERST].rcDes)) &&
@@ -2111,10 +2069,10 @@ const MouseInPanel = (Button, Push) => {
         Guy.Aktion = AKFEUERSTELLE;
       } else if (tile.construction?.type === constructionTypes.FIREPLACE) {
         Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction(gameData)
+        continueConstruction()
         Guy.Aktion = AKFEUERSTELLE;
       } else {
-        openPaper(texts.FEUERSTELLENBEDINGUNGEN, false, gameData);
+        openPaper(texts.FEUERSTELLENBEDINGUNGEN, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTDESTROY].rcDes)) &&
@@ -2127,11 +2085,11 @@ const MouseInPanel = (Button, Push) => {
         Guy.AkNummer = 0;
         Guy.Aktion = AKDESTROY;
       } else {
-        openPaper(texts.KEINBAUWERK, false, gameData);
+        openPaper(texts.KEINBAUWERK, false);
       }
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (HauptMenue === MEINVENTAR)) {
-    const item = findItemUnderCursor(gameData, MousePosition);
+    const item = findItemUnderCursor(MousePosition);
     if (item) {
       if ((Button === 0) && (Push === 1)) {
         if (TwoClicks === -1) {
@@ -2189,57 +2147,57 @@ const startGame = async (newGame) => {
     clearCanvas(rcRectdes, canvases.TEXT);
 
     //Landschaft erzeugen
-    generateIsland(gameData.terrain);
-    setGrounds(gameData.terrain);
-    addRiver(gameData.terrain);
-    addTrees(gameData.terrain);
+    generateIsland();
+    setGrounds();
+    addRiver();
+    addTrees();
 
-    gameData.treasure = hideTreasure(gameData);
-    addPirateWreck(gameData.terrain);
+    state.treasure = hideTreasure();
+    addPirateWreck();
 
     //Guy Position
-    gameData.guy.tile.x = 1;
-    gameData.guy.tile.y = Math.floor(MAXYKACH / 2);
-    const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-    gameData.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
-    gameData.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
+    state.guy.tile.x = 1;
+    state.guy.tile.y = Math.floor(MAXYKACH / 2);
+    const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
+    state.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
+    state.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
 
-    gameData.guy.water = 100;
-    gameData.guy.food = 100;
-    gameData.guy.health = 100;
-    gameData.guy.inventory = createInventory();
+    state.guy.water = 100;
+    state.guy.food = 100;
+    state.guy.health = 100;
+    state.guy.inventory = createInventory();
 
-    gameData.guy.chance = 0;
+    state.guy.chance = 0;
 
-    gameData.calendar.day = 1;
-    gameData.calendar.minutes = 0;
+    state.calendar.day = 1;
+    state.calendar.minutes = 0;
 
     Spielzustand = GAME_INTRO;
-    gameData.guy.active = false;
-    gameData.guy.sprite = spriteTypes.GUY_SAILING;
+    state.guy.active = false;
+    state.guy.sprite = spriteTypes.GUY_SAILING;
     Guy.AkNummer = 0;
     Guy.Aktion = AKINTRO;
   }
 
-  closePaper(gameData);
+  closePaper();
 
-  drawTreasureMap(gameData);
+  drawTreasureMap();
 
-  updateMinimap(gameData.terrain);
-  gameData.guy.storedPosition = { ...gameData.guy.position };
+  updateMinimap();
+  state.guy.storedPosition = { ...state.guy.position };
 }
 
 const Zeige = () => {
   let Stringsave1 = '';
   let Stringsave2 = ''; //Für die Zeitausgabe
 
-  drawTerrain(gameData, gameData.camera, false);
+  drawTerrain(state.camera, false);
 
   ZeichnePanel();
 
   //Die TagesZeit ausgeben
-  const hour = 6 + Math.floor(gameData.calendar.minutes / 60);
-  const minute = gameData.calendar.minutes % 60;
+  const hour = 6 + Math.floor(state.calendar.minutes / 60);
+  const minute = state.calendar.minutes % 60;
   Stringsave1 = hour;
   Stringsave2 = minute;
   StdString = '';
@@ -2250,8 +2208,8 @@ const Zeige = () => {
   StdString += Stringsave2;
   drawText(StdString, textAreas.TIME);
 
-  if (gameData.paper) {
-    drawPaper(gameData.paper);
+  if (state.paper) {
+    drawPaper();
   };
 
   blitText(textAreas.CHANCE);
@@ -2266,8 +2224,8 @@ const Zeige = () => {
     rcRectdes.bottom = MAXY;
     fillCanvas(rcRectdes, 0, 0, 0, 1, canvases.PRIMARY);
 
-    if (gameData.paper) {
-      drawPaper(gameData.paper);
+    if (state.paper) {
+      drawPaper();
     };
   
     Fade(100, 0);
@@ -2463,7 +2421,7 @@ const ZeichneBilder = (x, y, i, Ziel) => {
 const ZeichnePanel = () => {
   let diffx, diffy, i, Ringtmp;  //für die Sonnenanzeige
 
-  drawMinimap({ x: rcKarte.left, y: rcKarte.top }, gameData);
+  drawMinimap({ x: rcKarte.left, y: rcKarte.top });
 
   //Panel malen
   rcRectsrc.left = 0;
@@ -2477,7 +2435,7 @@ const ZeichnePanel = () => {
   drawImage(panelImage, canvases.PRIMARY);
 
   //Gitternetzknopf
-  if (gameData.options.grid) Bmp[BUTTGITTER].Phase = 1; else Bmp[BUTTGITTER].Phase = 0;
+  if (state.options.grid) Bmp[BUTTGITTER].Phase = 1; else Bmp[BUTTGITTER].Phase = 0;
   ZeichneBilder(Bmp[BUTTGITTER].rcDes.left, Bmp[BUTTGITTER].rcDes.top, BUTTGITTER, rcPanel);
 
   //SOUNDknopf
@@ -2539,12 +2497,12 @@ const ZeichnePanel = () => {
       break;
     case MEINVENTAR:
       ZeichneBilder(Bmp[INVPAPIER].rcDes.left, Bmp[INVPAPIER].rcDes.top, INVPAPIER, rcPanel);
-      drawItems(gameData);
+      drawItems();
       break;
   }
 
   //Säule1
-  i = Bmp[SAEULE1].Hoehe - gameData.guy.water * Bmp[SAEULE1].Hoehe / 100;
+  i = Bmp[SAEULE1].Hoehe - state.guy.water * Bmp[SAEULE1].Hoehe / 100;
   rcRectsrc = { ...Bmp[SAEULE1].rcSrc };
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE1].rcDes };
@@ -2552,7 +2510,7 @@ const ZeichnePanel = () => {
   drawImage(Bmp[SAEULE1].Surface, canvases.PRIMARY);
 
   //Säule2
-  i = Bmp[SAEULE2].Hoehe - gameData.guy.food * Bmp[SAEULE2].Hoehe / 100;
+  i = Bmp[SAEULE2].Hoehe - state.guy.food * Bmp[SAEULE2].Hoehe / 100;
   rcRectsrc = { ...Bmp[SAEULE2].rcSrc };
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE2].rcDes };
@@ -2560,7 +2518,7 @@ const ZeichnePanel = () => {
   drawImage(Bmp[SAEULE2].Surface, canvases.PRIMARY);
 
   //Säule3
-  i = Bmp[SAEULE3].Hoehe - gameData.guy.health * Bmp[SAEULE3].Hoehe / 100;
+  i = Bmp[SAEULE3].Hoehe - state.guy.health * Bmp[SAEULE3].Hoehe / 100;
   rcRectsrc = { ...Bmp[SAEULE3].rcSrc };
   rcRectsrc.top += i;
   rcRectdes = { ...Bmp[SAEULE3].rcDes };
@@ -2572,12 +2530,12 @@ const ZeichnePanel = () => {
   diffy = Bmp[SONNE].rcDes.bottom - Bmp[SONNE].rcDes.top - Bmp[SONNE].Hoehe / 2;
   
   
-  ZeichneBilder(Math.floor(Bmp[SONNE].rcDes.left + diffx * Math.cos(pi - pi * gameData.calendar.minutes / 720) + diffx),
-    Math.floor(Bmp[SONNE].rcDes.top + (-diffy * Math.sin(pi - pi * gameData.calendar.minutes / 720) + diffy)),
+  ZeichneBilder(Math.floor(Bmp[SONNE].rcDes.left + diffx * Math.cos(pi - pi * state.calendar.minutes / 720) + diffx),
+    Math.floor(Bmp[SONNE].rcDes.top + (-diffy * Math.sin(pi - pi * state.calendar.minutes / 720) + diffy)),
     SONNE, Bmp[SONNE].rcDes);
 
   //Rettungsring
-  if (gameData.guy.chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * gameData.guy.chance));
+  if (state.guy.chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * state.guy.chance));
   else Ringtmp = 100;
   if (Ringtmp > 100) Ringtmp = 100;
   ZeichneBilder(Math.floor(Bmp[RING].rcDes.left),
@@ -2587,7 +2545,7 @@ const ZeichnePanel = () => {
   //Die ChanceZahl ausgeben
   clearText(textAreas.CHANCE);
   textAreas.CHANCE.y = Math.floor(Bmp[RING].rcDes.top + Ringtmp + Bmp[RING].Hoehe - 25);
-  StdString = gameData.guy.chance.toFixed(0);
+  StdString = state.guy.chance.toFixed(0);
   drawText(StdString, textAreas.CHANCE);
 
   //TextFeld malen
@@ -2602,7 +2560,7 @@ const ZeichnePanel = () => {
 const DrawSchatzkarte = () => {
   const treasureMapCanvas = canvases.TREASURE_MAP.canvas;
 
-  gameData.paper = {
+  state.paper = {
     height: treasureMapCanvas.height
   };
 
@@ -2640,17 +2598,17 @@ const CalcRect = (rcBereich) => {
 }
 
 const CheckSpzButton = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  const tileWest = gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y];
-  const tileNorth = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1];
-  const tileEast = gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y];
-  const tileSouth = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
+  const tileWest = state.terrain[state.guy.tile.x - 1][state.guy.tile.y];
+  const tileNorth = state.terrain[state.guy.tile.x][state.guy.tile.y - 1];
+  const tileEast = state.terrain[state.guy.tile.x + 1][state.guy.tile.y];
+  const tileSouth = state.terrain[state.guy.tile.x][state.guy.tile.y + 1];
   if (tile.construction && Bmp[BUTTSTOP].Phase === -1) {
     if (Bmp[BUTTWEITER].Phase === -1) Bmp[BUTTWEITER].Phase = 0;
   } else Bmp[BUTTWEITER].Phase = -1;
 
   if (Bmp[BUTTSTOP].Phase === -1 && (isUsableBoat(tile) ||
-    (isOnSea(gameData) &&
+    (isOnSea() &&
       ((tileWest.ground !== grounds.SEA && !tileWest.object) ||
         (tileNorth.ground !== grounds.SEA && !tileNorth.object) ||
         (tileEast.ground !== grounds.SEA && !tileEast.object) ||
@@ -2664,7 +2622,7 @@ const CheckRohstoff = () => {
   let GebrauchtTmp; //Soviel Rohstoffe werden für diesen Schritt benötigt
   let Gebraucht; //Soviel Rohstoffe werden für diesen Schritt benötigt
   let Check;     //Wenn kein Rohstoff mehr vorhanden nur noch einmal die While-Schleife
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   Benoetigt = 0;
   Object.entries(constructions[tile.construction.type].items).forEach(([, amount]) => Benoetigt += amount);
@@ -2677,8 +2635,8 @@ const CheckRohstoff = () => {
     Check = false;
     const neededItems = Object.entries(tile.construction.neededItems).filter(([, amount]) => amount).map(([item]) => item);
     for (const neededItem of neededItems) {
-      if (gameData.guy.inventory[neededItem] > 0) {
-        changeItem(gameData, neededItem, -1);
+      if (state.guy.inventory[neededItem] > 0) {
+        changeItem(neededItem, -1);
         tile.construction.neededItems[neededItem]--;
         Gebraucht--;
         if (Gebraucht === 0) return true;
@@ -2687,7 +2645,7 @@ const CheckRohstoff = () => {
     }
     if (Check === false) break;
   }
-  openPaper(texts.ROHSTOFFNICHT, false, gameData);
+  openPaper(texts.ROHSTOFFNICHT, false);
   Guy.AkNummer = 0;
   Guy.Aktion = AKABBRUCH;
   Bmp[BUTTSTOP].Phase = -1;
@@ -2696,7 +2654,7 @@ const CheckRohstoff = () => {
 
 const Event = (Eventnr) => {
   if (Eventnr !== AKNICHTS) {
-    gameData.guy.route = [];
+    state.guy.route = [];
   }
   switch (Eventnr) {
     case AKNICHTS:
@@ -2795,55 +2753,55 @@ const Event = (Eventnr) => {
 }
 
 const goToInitialPosition = () => {
-  const tilePosition = getTileByPosition(gameData.terrain, gameData.guy.storedPosition);
-  if (tilePosition && tilePosition.x === gameData.guy.tile.x && tilePosition.y === gameData.guy.tile.y) {
-    goTo(gameData, gameData.guy.storedPosition);
+  const tilePosition = getTileByPosition(state.guy.storedPosition);
+  if (tilePosition && tilePosition.x === state.guy.tile.x && tilePosition.y === state.guy.tile.y) {
+    goTo(state.guy.storedPosition);
   } else {
-    goToCenterOfTile(gameData);
+    goToCenterOfTile();
   }
 };
 
 const AkIntro = () => {
   let x;
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       //Intro Route herstellen
-      gameData.guy.active = true;
-      for (x = gameData.guy.tile.x; x < MAXXKACH; x++)//Zielkoordinate für Introroute finden
+      state.guy.active = true;
+      for (x = state.guy.tile.x; x < MAXXKACH; x++)//Zielkoordinate für Introroute finden
       {
-        if (gameData.terrain[x][gameData.guy.tile.y].ground !== grounds.SEA) break;
+        if (state.terrain[x][state.guy.tile.y].ground !== grounds.SEA) break;
       }
-      gameData.guy.route = findRoute(gameData, { x: x - 2, y: gameData.guy.tile.y });
+      state.guy.route = findRoute({ x: x - 2, y: state.guy.tile.y });
       sounds.STORM.instance.play(true);
       break;
     case 2:
-      startGuyAnimation(gameData, spriteTypes.GUY_TANKING);
+      startGuyAnimation(spriteTypes.GUY_TANKING);
       sounds.STORM.instance.stop();
       sounds.SPLASH.instance.play();
       sounds.CRASHING.instance.play();
       break;
     case 3:
       addShipWreck(tile);
-      gameData.guy.tile.x += 1;
-      goToEastOfTile(gameData);
-      discoverTerrain(gameData);
-      gameData.guy.sprite = spriteTypes.GUY_SWIMMING;
+      state.guy.tile.x += 1;
+      goToEastOfTile();
+      discoverTerrain();
+      state.guy.sprite = spriteTypes.GUY_SWIMMING;
       sounds.SWIMMING.instance.play(true);
       break;
     case 4:
-      gameData.guy.tile.x += 1;
+      state.guy.tile.x += 1;
       sounds.SWIMMING.instance.stop();
-      goToCenterOfTile(gameData);
+      goToCenterOfTile();
       break;
     case 5:
-      updateCamera(gameData.camera, gameData.guy.position, false);
-      gameData.guy.storedPosition = { ...gameData.guy.position };
+      updateCamera(state.guy.position, false);
+      state.guy.storedPosition = { ...state.guy.position };
       Spielzustand = GAME_PLAY;
       Guy.Aktion = AKNICHTS;
-      openPaper(texts.INTROTEXT, false, gameData);
+      openPaper(texts.INTROTEXT, false);
       SaveGame();
       break;
   }
@@ -2857,15 +2815,15 @@ const AkNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.NEUBEGINNEN, true, gameData);
+      openPaper(texts.NEUBEGINNEN, true);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (gameData.paper.question.answer) {
+      if (state.paper.question.answer) {
         startGame(true);
         return;
       }
-      closePaper(gameData);
+      closePaper();
       break;
   }
 }
@@ -2878,15 +2836,15 @@ const AkTagNeubeginnen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.TAGNEU, true, gameData);
+      openPaper(texts.TAGNEU, true);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (gameData.paper.question.answer) {
+      if (state.paper.question.answer) {
         startGame(false);
         return;
       }
-      closePaper(gameData);
+      closePaper();
       break;
   }
 }
@@ -2899,18 +2857,18 @@ const AkSpielverlassen = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.SPIELVERLASSEN, true, gameData);
+      openPaper(texts.SPIELVERLASSEN, true);
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      if (gameData.paper.question.answer) {
-        if (gameData.guy.health > 10) {
+      if (state.paper.question.answer) {
+        if (state.guy.health > 10) {
           SaveGame();
         }
         audio.stopAll();
         Spielzustand = GAME_CREDITS;
       }
-      closePaper(gameData);
+      closePaper();
       break;
   }
 }
@@ -2919,32 +2877,32 @@ const AkTod = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      openPaper(texts.TOD, false, gameData);
+      openPaper(texts.TOD, false);
       break;
     case 2:
-      if (!isOnSea(gameData)) {
-        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
+      if (!isOnSea()) {
+        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
       }
       break;
     case 3:
       Nacht = false;
       Fade(100, 1);
-      startGuyAnimation(gameData, isOnSea(gameData) ? spriteTypes.GUY_DYING_BOAT : spriteTypes.GUY_DYING);
+      startGuyAnimation(isOnSea() ? spriteTypes.GUY_DYING_BOAT : spriteTypes.GUY_DYING);
       break;
     case 4:
       Nacht = true;
-      openPaper(texts.TAGNEU, true, gameData);
+      openPaper(texts.TAGNEU, true);
       break;
     case 5:
       Nacht = false;
       Guy.Aktion = AKNICHTS;
-      if (gameData.paper.question.answer) {
+      if (state.paper.question.answer) {
         startGame(false)
       } else {
         audio.stopAll();
         Spielzustand = GAME_CREDITS;
       };
-      closePaper(gameData);
+      closePaper();
       break;
   }
 }
@@ -2953,7 +2911,7 @@ const AkAbbruch = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      pauseConstruction(gameData);
+      pauseConstruction();
       break;
     case 2:
       Guy.Aktion = AKNICHTS;
@@ -2963,31 +2921,31 @@ const AkAbbruch = () => {
 
 
 const AkDestroy = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 4,
         y: tile.object.y + 2
       });
       break;
     case 2:
     case 4:
-      startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
+      startGuyAnimation(spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
-      changeWaterAndFood(gameData, -1, -1);
+      changeWaterAndFood(-1, -1);
       AddTime(5);
       break;
     case 3:
     case 5:
-      startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
+      startGuyAnimation(spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
-      changeWaterAndFood(gameData, -1, -1);
+      changeWaterAndFood(-1, -1);
       AddTime(5);
       break;
     case 6:
@@ -2998,13 +2956,13 @@ const AkDestroy = () => {
         tile.construction = null;
       } else {
         if (object.chance) {
-          gameData.guy.chance -= object.chance;
+          state.guy.chance -= object.chance;
         }
         if (object.sprite === spriteTypes.PIPE) {
-          updatePipes(gameData.terrain);
+          updatePipes();
         }
       }
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 7:
       Guy.Aktion = AKNICHTS;
@@ -3013,10 +2971,10 @@ const AkDestroy = () => {
 }
 
 const AkSuchen = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
@@ -3024,120 +2982,120 @@ const AkSuchen = () => {
     case 3:
     case 5:
     case 7:
-      if (isOnSea(gameData)) {
+      if (isOnSea()) {
         if (Guy.AkNummer === 1) {
-          startGuyAnimation(gameData, spriteTypes.GUY_DIVING_JUMPING);
+          startGuyAnimation(spriteTypes.GUY_DIVING_JUMPING);
           sounds.SPLASH.instance.play();
         }
       } else {
         const targetPosition = calculatePositionInTile(tile, Math.random(), Math.random());
-        goTo(gameData, { x: tile.position.x + targetPosition.x, y: tile.position.y + targetPosition.y });
+        goTo({ x: tile.position.x + targetPosition.x, y: tile.position.y + targetPosition.y });
       }
       break;
     case 2:
     case 4:
     case 6:
     case 8:
-      if (isOnSea(gameData)) {
-        startGuyAnimation(gameData, spriteTypes.GUY_DIVING);
+      if (isOnSea()) {
+        startGuyAnimation(spriteTypes.GUY_DIVING);
       } else {
-        startGuyAnimation(gameData, spriteTypes.GUY_SEARCHING);
+        startGuyAnimation(spriteTypes.GUY_SEARCHING);
         sounds.CRACKLING.instance.play();
       }
       AddTime(4);
       break;
     case 9:
-      if (isOnSea(gameData)) {
-        startGuyAnimation(gameData, spriteTypes.GUY_DIVING_CLIMBING);
+      if (isOnSea()) {
+        startGuyAnimation(spriteTypes.GUY_DIVING_CLIMBING);
         sounds.SPLASH.instance.play();
       }
       break;
     case 10:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 11:
       //Auf Strand und Fluss
       if (tile.ground === grounds.BEACH || isRiver(tile.object)) {
-        if (gameData.guy.inventory[items.STONE] < 10) {
-          openPaper(texts.ROHSTEINGEFUNDEN, false, gameData);
-          changeItem(gameData, items.STONE, 3);
+        if (state.guy.inventory[items.STONE] < 10) {
+          openPaper(texts.ROHSTEINGEFUNDEN, false);
+          changeItem(items.STONE, 3);
         } else {
-          openPaper(texts.ROHSTEINZUVIEL, false, gameData);
+          openPaper(texts.ROHSTEINZUVIEL, false);
         }
       } else if (tile.object?.sprite === spriteTypes.BUSH) {
         switch (Math.floor(Math.random() * 2)) {
           case 0:
-            if (gameData.guy.inventory[items.BRANCH] < 10) {
-              openPaper(texts.ROHASTGEFUNDEN, false, gameData);
-              changeItem(gameData, items.BRANCH, 1);
+            if (state.guy.inventory[items.BRANCH] < 10) {
+              openPaper(texts.ROHASTGEFUNDEN, false);
+              changeItem(items.BRANCH, 1);
             } else {
-              openPaper(texts.ROHASTZUVIEL, false, gameData);
+              openPaper(texts.ROHASTZUVIEL, false);
             }
             break;
           case 1:
-            if (gameData.guy.inventory[items.LEAF] < 10) {
-              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData);
-              changeItem(gameData, items.LEAF, 1);
+            if (state.guy.inventory[items.LEAF] < 10) {
+              openPaper(texts.ROHBLATTGEFUNDEN, false);
+              changeItem(items.LEAF, 1);
             } else {
-              openPaper(texts.ROHBLATTZUVIEL, false, gameData);
+              openPaper(texts.ROHBLATTZUVIEL, false);
             }
             break;
         }
       } else if (isNormalTree(tile.object) || isBigTree(tile.object)) {
         switch (Math.floor(Math.random() * 3)) {
           case 0:
-            if (gameData.guy.inventory[items.BRANCH] < 10) {
-              openPaper(texts.ROHASTGEFUNDEN, false, gameData);
-              changeItem(gameData, items.BRANCH, 1);
+            if (state.guy.inventory[items.BRANCH] < 10) {
+              openPaper(texts.ROHASTGEFUNDEN, false);
+              changeItem(items.BRANCH, 1);
             } else {
-              openPaper(texts.ROHASTZUVIEL, false, gameData);
+              openPaper(texts.ROHASTZUVIEL, false);
             }
             break;
           case 1:
-            if (gameData.guy.inventory[items.LEAF] < 10) {
-              openPaper(texts.ROHBLATTGEFUNDEN, false, gameData);
-              changeItem(gameData, items.LEAF, 1);
+            if (state.guy.inventory[items.LEAF] < 10) {
+              openPaper(texts.ROHBLATTGEFUNDEN, false);
+              changeItem(items.LEAF, 1);
             } else {
-              openPaper(texts.ROHBLATTZUVIEL, false, gameData);
+              openPaper(texts.ROHBLATTZUVIEL, false);
             }
             break;
           case 2:
-            if (gameData.guy.inventory[items.LIANA] < 10) {
-              openPaper(texts.ROHLIANEGEFUNDEN, false, gameData);
-              changeItem(gameData, items.LIANA, 1);
+            if (state.guy.inventory[items.LIANA] < 10) {
+              openPaper(texts.ROHLIANEGEFUNDEN, false);
+              changeItem(items.LIANA, 1);
             } else {
-              openPaper(texts.ROHLIANEZUVIEL, false, gameData);
+              openPaper(texts.ROHLIANEZUVIEL, false);
             }
             break;
         }
-      } else if (isOnSea(gameData)) {
+      } else if (isOnSea()) {
         if (tile.object?.sprite === spriteTypes.SHIP_WRECK) {
-          if (!gameData.guy.inventory[items.SPYGLASS]) {
-            openPaper(texts.FERNROHRGEFUNDEN, false, gameData);
-            changeItem(gameData, items.SPYGLASS, 1);
+          if (!state.guy.inventory[items.SPYGLASS]) {
+            openPaper(texts.FERNROHRGEFUNDEN, false);
+            changeItem(items.SPYGLASS, 1);
             Bmp[BUTTAUSSCHAU].Phase = 0;
-            changeItem(gameData, items.HAMMER, 1);
+            changeItem(items.HAMMER, 1);
             Bmp[BUTTHAUS1].Phase = 0;
             Bmp[BUTTHAUS2].Phase = 0;
             Bmp[BUTTHAUS3].Phase = 0;
           } else {
-            openPaper(texts.NICHTSGEFUNDEN2, false, gameData);
+            openPaper(texts.NICHTSGEFUNDEN2, false);
           }
         } else if (tile.object?.sprite === spriteTypes.PIRATE_WRECK) {
-          if (!gameData.guy.inventory[items.MAP]) {
-            openPaper(texts.KARTEGEFUNDEN, false, gameData);
-            changeItem(gameData, items.MAP, 1);
+          if (!state.guy.inventory[items.MAP]) {
+            openPaper(texts.KARTEGEFUNDEN, false);
+            changeItem(items.MAP, 1);
             Bmp[BUTTSCHATZKARTE].Phase = 0;
-            changeItem(gameData, items.SHOVEL, 1);
+            changeItem(items.SHOVEL, 1);
             Bmp[BUTTSCHATZ].Phase = 0;
           } else {
-            openPaper(texts.NICHTSGEFUNDEN2, false, gameData);
+            openPaper(texts.NICHTSGEFUNDEN2, false);
           }
         } else {
-          openPaper(texts.NICHTSGEFUNDEN2, false, gameData);
+          openPaper(texts.NICHTSGEFUNDEN2, false);
         }
       } else {
-        openPaper(texts.NICHTSGEFUNDEN, false, gameData);
+        openPaper(texts.NICHTSGEFUNDEN, false);
       }
       break;
     case 12:
@@ -3148,26 +3106,26 @@ const AkSuchen = () => {
 
 const AkEssen = () => {
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       if (tile.object) {
-        goToObject(gameData, 0, 2);
+        goToObject(0, 2);
       }
       break;
     case 2:
     case 3:
-      startGuyAnimation(gameData, spriteTypes.GUY_EATING);
+      startGuyAnimation(spriteTypes.GUY_EATING);
       sounds.CRACKLING.instance.play();
-      changeWaterAndFood(gameData, 0, 15);
+      changeWaterAndFood(0, 15);
       AddTime(2);
       break;
     case 4:
       tile.object.frame = 0;
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 5:
       Guy.Aktion = AKNICHTS;
@@ -3177,29 +3135,29 @@ const AkEssen = () => {
 
 const AkSchleuder = () => {
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      goToObject(gameData, -14, 9);
+      goToObject(-14, 9);
       break;
     case 2:
-      startGuyAnimation(gameData, spriteTypes.GUY_SLINGING);
+      startGuyAnimation(spriteTypes.GUY_SLINGING);
       AddTime(2);
       sounds.SLINGING.instance.play();
       break;
     case 3:
-      goToObject(gameData, 6, 2);
+      goToObject(6, 2);
       break;
     case 4:
-      startGuyAnimation(gameData, spriteTypes.GUY_SEARCHING);
+      startGuyAnimation(spriteTypes.GUY_SEARCHING);
       sounds.CRACKLING.instance.play();
-      changeWaterAndFood(gameData, 0, 5);
+      changeWaterAndFood(0, 5);
       AddTime(20);
       break;
     case 5:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 6:
       Guy.Aktion = AKNICHTS;
@@ -3209,22 +3167,22 @@ const AkSchleuder = () => {
 
 const AkTrinken = () => {
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      goToOffset(gameData, -4, -2);
+      goToOffset(-4, -2);
       break;
     case 2:
     case 3:
-      startGuyAnimation(gameData, spriteTypes.GUY_DRINKING);
+      startGuyAnimation(spriteTypes.GUY_DRINKING);
       sounds.DRINKING.instance.play();
-      changeWaterAndFood(gameData, 30, 0);
+      changeWaterAndFood(30, 0);
       AddTime(3);
       break;
     case 4:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 5:
       Guy.Aktion = AKNICHTS;
@@ -3236,36 +3194,36 @@ const AkFaellen = () => {
   let i;
 
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const tree = tile.object;
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      goToObject(gameData, 9, 3);
+      goToObject(9, 3);
       break;
     case 2:
     case 3:
     case 4:
     case 5:
     case 6:
-      startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
+      startGuyAnimation(spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
-      changeWaterAndFood(gameData, -2, -2);
+      changeWaterAndFood(-2, -2);
       AddTime(10);
       break;
     case 7:
-      startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
+      startGuyAnimation(spriteTypes.GUY_WAITING);
       createTreeFallObject(tile);
       sounds.TREEFALL.instance.play();
-      changeItem(gameData, items.LOG, 1);
-      changeItem(gameData, items.BRANCH, 5);
-      changeItem(gameData, items.LEAF, 5);
-      changeItem(gameData, items.LIANA, 2);
+      changeItem(items.LOG, 1);
+      changeItem(items.BRANCH, 5);
+      changeItem(items.LEAF, 5);
+      changeItem(items.LIANA, 2);
       break;
     case 8:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 9:
       Guy.Aktion = AKNICHTS;
@@ -3275,25 +3233,25 @@ const AkFaellen = () => {
 
 const AkAngeln = () => {
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       if (tile.object) {
         switch (tile.object.sprite) {
           case spriteTypes.RIVER_SLOPE_NORTH:
-            goToOnTile(gameData, { x: 35, y: 26 });
+            goToOnTile({ x: 35, y: 26 });
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
-            goToOnTile(gameData, { x: 19, y: 26 });
+            goToOnTile({ x: 19, y: 26 });
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
-            goToOnTile(gameData, { x: 22, y: 20 });
+            goToOnTile({ x: 22, y: 20 });
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
-            goToOnTile(gameData, { x: 34, y: 23 });
+            goToOnTile({ x: 34, y: 23 });
             break;
           case spriteTypes.RIVER_NORTH_SOUTH:
           case spriteTypes.RIVER_WEST_SOUTH:
@@ -3301,7 +3259,7 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_SOUTH:
           case spriteTypes.RIVER_DAM_NORTH_SOUTH:
           case spriteTypes.RIVER_DAM_WEST_SOUTH:
-            goToOnTile(gameData, { x: 34, y: 33 });
+            goToOnTile({ x: 34, y: 33 });
             break;
           case spriteTypes.RIVER_WEST_EAST:
           case spriteTypes.RIVER_WEST_NORTH:
@@ -3309,27 +3267,27 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_EAST:
           case spriteTypes.RIVER_DAM_WEST_EAST:
           case spriteTypes.RIVER_DAM_WEST_NORTH:    
-            goToOnTile(gameData, { x: 20, y: 33 });
+            goToOnTile({ x: 20, y: 33 });
             break;
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
           case spriteTypes.RIVER_DAM_NORTH_EAST:  
-            goToOnTile(gameData, { x: 22, y: 26 });
+            goToOnTile({ x: 22, y: 26 });
             break;
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
           case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            goToOnTile(gameData, { x: 32, y: 26 });
+            goToOnTile({ x: 32, y: 26 });
             break;
         }
       }
       break;
     case 2:
       sounds.FISHING.instance.play();
-      if (isOnSea(gameData)) {
-        startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_BOAT);
+      if (isOnSea()) {
+        startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_BOAT);
       }
       if (tile.object) {
         switch (tile.object.sprite) {
@@ -3340,7 +3298,7 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_SOUTH:
           case spriteTypes.RIVER_DAM_NORTH_SOUTH:
           case spriteTypes.RIVER_DAM_WEST_SOUTH:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_WEST);
+            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
           case spriteTypes.RIVER_WEST_EAST:
@@ -3349,21 +3307,21 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_EAST:
           case spriteTypes.RIVER_DAM_WEST_EAST:
           case spriteTypes.RIVER_DAM_WEST_NORTH:  
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_NORTH);
+            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
           case spriteTypes.RIVER_DAM_NORTH_EAST:  
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_EAST);
+            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
           case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SWINGING_SOUTH);
+            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_SOUTH);
             break;
         }
       }
@@ -3372,8 +3330,8 @@ const AkAngeln = () => {
     case 4:
     case 5:
     case 6:
-      if (isOnSea(gameData)) {
-        startGuyAnimation(gameData, spriteTypes.GUY_FISHING_BOAT);
+      if (isOnSea()) {
+        startGuyAnimation(spriteTypes.GUY_FISHING_BOAT);
       }
 
       if (tile.object) {
@@ -3385,7 +3343,7 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_SOUTH:
           case spriteTypes.RIVER_DAM_NORTH_SOUTH:
           case spriteTypes.RIVER_DAM_WEST_SOUTH:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_WEST);
+            startGuyAnimation(spriteTypes.GUY_FISHING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
           case spriteTypes.RIVER_WEST_EAST:
@@ -3394,30 +3352,30 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_EAST:
           case spriteTypes.RIVER_DAM_WEST_EAST:
           case spriteTypes.RIVER_DAM_WEST_NORTH:  
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_NORTH);
+            startGuyAnimation(spriteTypes.GUY_FISHING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
           case spriteTypes.RIVER_DAM_NORTH_EAST:  
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_EAST);
+            startGuyAnimation(spriteTypes.GUY_FISHING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
           case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_SOUTH);
+            startGuyAnimation(spriteTypes.GUY_FISHING_SOUTH);
             break;
         }
       }
-      changeHealth(gameData, 2);
+      changeHealth(2);
       AddTime(20);
       break;
     case 7:
-      if (isOnSea(gameData)) {
-        startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_BOAT);
+      if (isOnSea()) {
+        startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_BOAT);
       }
 
       if (tile.object) {
@@ -3429,7 +3387,7 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_SOUTH:
           case spriteTypes.RIVER_DAM_NORTH_SOUTH:
           case spriteTypes.RIVER_DAM_WEST_SOUTH:  
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_WEST);
+            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_WEST);
             break;
           case spriteTypes.RIVER_SLOPE_WEST:
           case spriteTypes.RIVER_WEST_EAST:
@@ -3438,63 +3396,63 @@ const AkAngeln = () => {
           case spriteTypes.RIVER_SPRING_EAST:
           case spriteTypes.RIVER_DAM_WEST_EAST:
           case spriteTypes.RIVER_DAM_WEST_NORTH:  
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_NORTH);
+            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_NORTH);
             break;
           case spriteTypes.RIVER_SLOPE_SOUTH:
           case spriteTypes.RIVER_NORTH_EAST:
           case spriteTypes.RIVER_MOUTH_SOUTH:
           case spriteTypes.RIVER_SPRING_NORTH:
           case spriteTypes.RIVER_DAM_NORTH_EAST: 
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_EAST);
+            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_EAST);
             break;
           case spriteTypes.RIVER_SLOPE_EAST:
           case spriteTypes.RIVER_SOUTH_EAST:
           case spriteTypes.RIVER_MOUTH_EAST:
           case spriteTypes.RIVER_SPRING_WEST:
           case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            startGuyAnimation(gameData, spriteTypes.GUY_FISHING_CATCHING_SOUTH);
+            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_SOUTH);
             break;
         }
       }
       break;
     case 8:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 9:
-      changeWaterAndFood(gameData, 0, 20);
+      changeWaterAndFood(0, 20);
       Guy.Aktion = AKNICHTS;
       break;
   }
 }
 
 const AkAnzuenden = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 12,
         y: tile.object.y + 5
       });
       break;
     case 2:
-      startGuyAnimation(gameData, spriteTypes.GUY_LIGHTNING);
+      startGuyAnimation(spriteTypes.GUY_LIGHTNING);
       AddTime(1);
       break;
     case 3:
-      startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
+      startGuyAnimation(spriteTypes.GUY_WAITING);
       tile.object.sprite = spriteTypes.FIRE;
       tile.object.chance = 2 + 2 * tile.height;
       tile.object.lifetime = 35 * 60;
-      gameData.guy.chance += tile.object.chance;
+      state.guy.chance += tile.object.chance;
       AddTime(2);
       break;
     case 4:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 5:
       Guy.Aktion = AKNICHTS;
@@ -3504,28 +3462,28 @@ const AkAnzuenden = () => {
 
 const AkAusschau = () => {
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      startGuyAnimation(gameData, spriteTypes.GUY_LOOKING);
+      startGuyAnimation(spriteTypes.GUY_LOOKING);
       AddTime(40);
-      gameData.guy.chance += 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
+      state.guy.chance += 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
       break;
     case 2:
-      startGuyAnimation(gameData, spriteTypes.GUY_WAITING);
+      startGuyAnimation(spriteTypes.GUY_WAITING);
       AddTime(40);
       break;
     case 3:
-      startGuyAnimation(gameData, spriteTypes.GUY_LOOKING);
+      startGuyAnimation(spriteTypes.GUY_LOOKING);
       AddTime(40);
       break;
     case 4:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 5:
-      gameData.guy.chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
+      state.guy.chance -= 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
       Guy.Aktion = AKNICHTS;
       break;
   }
@@ -3533,26 +3491,26 @@ const AkAusschau = () => {
 
 const AkSchatz = () => {
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };
+    state.guy.storedPosition = { ...state.guy.position };
   }
   Guy.AkNummer++;
 
   switch (Guy.AkNummer) {
     case 1:
-      startGuyAnimation(gameData, spriteTypes.GUY_SHOVELING);
+      startGuyAnimation(spriteTypes.GUY_SHOVELING);
       sounds.SHOVELING.instance.play();
       break;
     case 2:
       AddTime(20);
-      changeWaterAndFood(gameData, -10, -10);
-      goToStoredPosition(gameData);
-      if (gameData.guy.tile.x === gameData.treasure.x && gameData.guy.tile.y === gameData.treasure.y && !gameData.treasure.found) {
-        openPaper(texts.SCHATZGEFUNDEN, false, gameData);
-        changeItem(gameData, items.MATCHES, 1);
+      changeWaterAndFood(-10, -10);
+      goToStoredPosition();
+      if (state.guy.tile.x === state.treasure.x && state.guy.tile.y === state.treasure.y && !state.treasure.found) {
+        openPaper(texts.SCHATZGEFUNDEN, false);
+        changeItem(items.MATCHES, 1);
         Bmp[BUTTANZUENDEN].Phase = 0;
-        gameData.treasure.found = true;
+        state.treasure.found = true;
       } else {
-        openPaper(texts.KEINSCHATZ, false, gameData);
+        openPaper(texts.KEINSCHATZ, false);
       }
       break;
     case 3:
@@ -3562,11 +3520,11 @@ const AkSchatz = () => {
 }
 
 const AkFeld = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   if (!tile.construction) {
     const center = tileEdges[tile.type].center;
-    startConstruction(gameData, constructionTypes.FIELD, center.x, center.y);
+    startConstruction(constructionTypes.FIELD, center.x, center.y);
   }
   if (!CheckRohstoff()) {
     return;
@@ -3575,54 +3533,54 @@ const AkFeld = () => {
 
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 6,
         y: tile.object.y + 7
       });
       break;
     case 4:
       construct(tile, 1);
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 9,
         y: tile.object.y + 5
       });
-      changeWaterAndFood(gameData, -2, -2);
+      changeWaterAndFood(-2, -2);
       AddTime(30);
       break;
     case 7:
       construct(tile, 2);
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 12,
         y: tile.object.y + 3
       });
-      changeWaterAndFood(gameData, -2, -2);
+      changeWaterAndFood(-2, -2);
       AddTime(30);
       break;
     case 10:
       construct(tile, 3);
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 15,
         y: tile.object.y + 1
       });
-      changeWaterAndFood(gameData, -2, -2);
+      changeWaterAndFood(-2, -2);
       AddTime(30);
       break;
     case 13:
       construct(tile, 4);
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 18,
         y: tile.object.y - 1
       });
-      changeWaterAndFood(gameData, -2, -2);
+      changeWaterAndFood(-2, -2);
       AddTime(30);
       break;
     case 16:
       construct(tile, 5);
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 20,
         y: tile.object.y - 3
       });
-      changeWaterAndFood(gameData, -2, -2);
+      changeWaterAndFood(-2, -2);
       AddTime(30);
       break;
     case 2:
@@ -3637,17 +3595,17 @@ const AkFeld = () => {
     case 15:
     case 17:
     case 18:
-      startGuyAnimation(gameData, spriteTypes.GUY_HARROWING);
+      startGuyAnimation(spriteTypes.GUY_HARROWING);
       break;
     case 19:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 20:
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (!gameData.constructionHints[constructionTypes.FIELD]) {
-        openPaper(texts.FELDHILFE, false, gameData);
-        gameData.constructionHints[constructionTypes.FIELD] = true;
+      if (!state.constructionHints[constructionTypes.FIELD]) {
+        openPaper(texts.FELDHILFE, false);
+        state.constructionHints[constructionTypes.FIELD] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -3655,40 +3613,40 @@ const AkFeld = () => {
 }
 
 const AkTagEnde = () => {
-  const alreadyAtSleepPosition = gameData.guy.sprite === spriteTypes.GUY_SLEEPING_TENT ||
-    gameData.guy.sprite === spriteTypes.GUY_SLEEPING ||
-    gameData.guy.sprite === spriteTypes.GUY_SLEEPING_HOUSE ||
-    isOnSea(gameData);
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const alreadyAtSleepPosition = state.guy.sprite === spriteTypes.GUY_SLEEPING_TENT ||
+    state.guy.sprite === spriteTypes.GUY_SLEEPING ||
+    state.guy.sprite === spriteTypes.GUY_SLEEPING_HOUSE ||
+    isOnSea();
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const tent = isUsableTent(tile);
   const house = isUsableTreeHouse(tile);
 
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      gameData.calendar.minutes = 12 * 60;
+      state.calendar.minutes = 12 * 60;
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       Bmp[BUTTSTOP].Phase = -1;
       if (alreadyAtSleepPosition) break;
-      pauseConstruction(gameData);
+      pauseConstruction();
       break;
     case 2:
-      gameData.calendar.minutes = 12 * 60;
+      state.calendar.minutes = 12 * 60;
       if (alreadyAtSleepPosition) break;
-      const neighborWithHouse = findNeighbor(gameData, isUsableTreeHouse, false);
-      const neighborWithTent = findNeighbor(gameData, isUsableTent, false);
+      const neighborWithHouse = findNeighbor(isUsableTreeHouse, false);
+      const neighborWithTent = findNeighbor(isUsableTent, false);
       const neighbor = neighborWithHouse || neighborWithTent;
       if (neighbor) {
-        gameData.guy.tile.x = neighbor.x;
-        gameData.guy.tile.y = neighbor.y;
-        const tile = gameData.terrain[neighbor.x][neighbor.y];
+        state.guy.tile.x = neighbor.x;
+        state.guy.tile.y = neighbor.y;
+        const tile = state.terrain[neighbor.x][neighbor.y];
         if (neighborWithHouse) {
-          goToOnTile(gameData, {
+          goToOnTile({
             x: tile.object.x + 1,
             y: tile.object.y + 1
           });
         } else {
-          goToOnTile(gameData, {
+          goToOnTile({
             x: tile.object.x - 10,
             y: tile.object.y + 5
           });
@@ -3696,121 +3654,121 @@ const AkTagEnde = () => {
       }
       break;
     case 3:
-      gameData.calendar.minutes = 12 * 60;
+      state.calendar.minutes = 12 * 60;
       if (alreadyAtSleepPosition) break;
       if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
+        startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
       }
       break;
     case 4:
       Fade(0, 3);
-      gameData.calendar.minutes = 12 * 60;
+      state.calendar.minutes = 12 * 60;
       if (alreadyAtSleepPosition) break;
       if (tent) {
-        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_TENT);
+        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_TENT);
       } else if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_HOUSE);
+        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_HOUSE);
       } else {
-        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
+        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
       }
       break;
     case 5:
-      gameData.calendar.minutes = 12 * 60;
-      if (isOnSea(gameData)) break;
+      state.calendar.minutes = 12 * 60;
+      if (isOnSea()) break;
       if (tent) {
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
       } else if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
-      } else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
+      } else startGuyAnimation(spriteTypes.GUY_SLEEPING);
       sounds.SNORING.instance.play();
       break;
     case 6:
-      gameData.calendar.minutes = 12 * 60;
-      if (isOnSea(gameData)) break;
+      state.calendar.minutes = 12 * 60;
+      if (isOnSea()) break;
       if (tent)
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
       else if (house)
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
-      else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
+      else startGuyAnimation(spriteTypes.GUY_SLEEPING);
       sounds.SNORING.instance.play();
       break;
     case 7:
       Nacht = true;
-      gameData.calendar.minutes = 12 * 60;
+      state.calendar.minutes = 12 * 60;
       sounds.WOLF.instance.play();
 
       //Je nach Schlafort Zustand verändern
       if (tent) {
-        changeHealth(gameData, -5);
-        if (gameData.guy.health <= 0) {
-          openDayEndPaper(texts.TAGENDE5, gameData);
+        changeHealth(-5);
+        if (state.guy.health <= 0) {
+          openDayEndPaper(texts.TAGENDE5);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
-          gameData.calendar.minutes = 0;
+          state.calendar.minutes = 0;
         } else {
-          openPaper(texts.TAGENDE2, false, gameData);
+          openPaper(texts.TAGENDE2, false);
         }
       } else if (house) {
-        changeHealth(gameData, 20);
-        openDayEndPaper(texts.TAGENDE4, gameData);
-      } else if (isOnSea(gameData)) {
-        openDayEndPaper(texts.TAGENDE3, gameData);
+        changeHealth(20);
+        openDayEndPaper(texts.TAGENDE4);
+      } else if (isOnSea()) {
+        openDayEndPaper(texts.TAGENDE3);
         Guy.AkNummer = 2;
         Guy.Aktion = AKTOD;
-        gameData.calendar.minutes = 0;
+        state.calendar.minutes = 0;
       } else {
-        changeHealth(gameData, -20);
-        if (gameData.guy.health <= 0) {
-          openDayEndPaper(texts.TAGENDE5, gameData);
+        changeHealth(-20);
+        if (state.guy.health <= 0) {
+          openDayEndPaper(texts.TAGENDE5);
           Guy.AkNummer = 2;
           Guy.Aktion = AKTOD;
-          gameData.calendar.minutes = 0;
+          state.calendar.minutes = 0;
         } else {
-          openDayEndPaper(texts.TAGENDE1, gameData);
+          openDayEndPaper(texts.TAGENDE1);
         }
       }
       break;
     case 8:
       Fade(0, 0);
       Nacht = false;
-      gameData.calendar.day++;
-      gameData.calendar.minutes = 0;
+      state.calendar.day++;
+      state.calendar.minutes = 0;
       if (tent)
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
       else if (house)
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
-      else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
+      else startGuyAnimation(spriteTypes.GUY_SLEEPING);
       sounds.SNORING.instance.play();
       break;
     case 9:
       Fade(100, 2);
-      gameData.calendar.minutes = 0;
+      state.calendar.minutes = 0;
       if (tent)
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
       else if (house)
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
-      else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
+      else startGuyAnimation(spriteTypes.GUY_SLEEPING);
       sounds.SNORING.instance.play();
       break;
     case 10:
-      gameData.calendar.minutes = 0;
+      state.calendar.minutes = 0;
       sounds.SNORING.instance.stop();
       if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP_HOUSE);
-      } else startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
+        startGuyAnimation(spriteTypes.GUY_STANDING_UP_HOUSE);
+      } else startGuyAnimation(spriteTypes.GUY_STANDING_UP);
       break;
     case 11:
-      gameData.calendar.minutes = 0;
+      state.calendar.minutes = 0;
       if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
+        startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
       }
       break;
     case 12:
-      gameData.calendar.minutes = 0;
+      state.calendar.minutes = 0;
 
-      goToCenterOfTile(gameData);
+      goToCenterOfTile();
       Guy.Aktion = AKNICHTS;
-      if (gameData.guy.health > 10) SaveGame();
+      if (state.guy.health > 10) SaveGame();
       break;
   }
 }
@@ -3825,50 +3783,50 @@ const AkGerettet = () => {
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
-      openPaper(texts.GERETTET, true, gameData);
+      openPaper(texts.GERETTET, true);
       break;
     case 3:
-      if (gameData.paper.question.answer) {
+      if (state.paper.question.answer) {
         Spielzustand = GAME_OUTRO;
       } else {
         Guy.Aktion = AKNICHTS;
       }
-      closePaper(gameData);
+      closePaper();
       break;
     case 4:
       // Route herstellen
       for (x = MAXXKACH - 1; x > 1; x--)//Position des Rettungsschiffs festlegen
       {
-        if (gameData.terrain[x][gameData.guy.tile.y].ground !== grounds.SEA) break;
+        if (state.terrain[x][state.guy.tile.y].ground !== grounds.SEA) break;
       }
       //Schiff hinbauen
-      const shipTile = gameData.terrain[x + 2][gameData.guy.tile.y];
+      const shipTile = state.terrain[x + 2][state.guy.tile.y];
       shipTile.object = {
         sprite: spriteTypes.GUY_SAILING,
         x: tileEdges[shipTile.type].center.x,
         y: tileEdges[shipTile.type].center.y,
         frame: 0
       };
-      gameData.guy.route = findRoute(gameData, { x, y: gameData.guy.tile.y });
-      gameData.guy.active = true;
+      state.guy.route = findRoute({ x, y: state.guy.tile.y });
+      state.guy.active = true;
       break;
     case 5:
-      goToEastOfTile(gameData);
+      goToEastOfTile();
       break;
     case 6:
-      gameData.guy.tile.x += 2;
-      discoverTerrain(gameData);
-      gameData.guy.sprite = spriteTypes.GUY_SWIMMING;
+      state.guy.tile.x += 2;
+      discoverTerrain();
+      state.guy.sprite = spriteTypes.GUY_SWIMMING;
       sounds.SWIMMING.instance.play(true);
-      goToCenterOfTile(gameData);
+      goToCenterOfTile();
       break;
     case 7:
-      gameData.guy.sprite = spriteTypes.GUY_SAILING;
+      state.guy.sprite = spriteTypes.GUY_SAILING;
       sounds.SWIMMING.instance.stop();
       sounds.STORM.instance.play(true);
-      gameData.guy.route = findRoute(gameData, { x: gameData.terrain.length - 1, y: gameData.guy.tile.y });
-      gameData.guy.active = true;
-      gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].object = createWaves();
+      state.guy.route = findRoute({ x: state.terrain.length - 1, y: state.guy.tile.y });
+      state.guy.active = true;
+      state.terrain[state.guy.tile.x][state.guy.tile.y].object = createWaves();
       break;
     case 8:
       sounds.STORM.instance.stop();
@@ -3880,9 +3838,9 @@ const AkGerettet = () => {
 }
 
 const AkZelt = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   if (!tile.construction) {
-    startConstruction(gameData, constructionTypes.TENT, 28, 22);
+    startConstruction(constructionTypes.TENT, 28, 22);
   }
   if (!CheckRohstoff()) {
     return;
@@ -3891,7 +3849,7 @@ const AkZelt = () => {
 
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 9,
         y: tile.object.y - 4
       });
@@ -3900,63 +3858,63 @@ const AkZelt = () => {
     case 3:
     case 12:
     case 13:
-      startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_SOUTH);
-      changeWaterAndFood(gameData, -2, -2);
+      startGuyAnimation(spriteTypes.GUY_KNOTTING_SOUTH);
+      changeWaterAndFood(-2, -2);
       AddTime(15);
       break;
     case 4:
       construct(tile, 1);
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 18,
         y: tile.object.y + 4
       });
       break;
     case 5:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 6:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 10,
         y: tile.object.y + 4
       });
       break;
     case 7:
     case 8:
-      startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_NORTH);
-      changeWaterAndFood(gameData, -2, -2);
+      startGuyAnimation(spriteTypes.GUY_KNOTTING_NORTH);
+      changeWaterAndFood(-2, -2);
       AddTime(15);
       break;
     case 9:
       construct(tile, 2);
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 10:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 18,
         y: tile.object.y + 4
       });
       break;
     case 11:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 9,
         y: tile.object.y - 4
       });
       break;
     case 14:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 18,
         y: tile.object.y + 4
       });
       break;
     case 15:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 16:
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (!gameData.constructionHints[constructionTypes.TENT]) {
-        openPaper(texts.ZELTHILFE, false, gameData);
-        gameData.constructionHints[constructionTypes.TENT] = true;
+      if (!state.constructionHints[constructionTypes.TENT]) {
+        openPaper(texts.ZELTHILFE, false);
+        state.constructionHints[constructionTypes.TENT] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -3964,9 +3922,9 @@ const AkZelt = () => {
 }
 
 const AkBoot = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   if (!tile.construction) {
-    startConstruction(gameData, constructionTypes.BOAT, 20, 33);
+    startConstruction(constructionTypes.BOAT, 20, 33);
   }
   if (!CheckRohstoff()) {
     return;
@@ -3975,7 +3933,7 @@ const AkBoot = () => {
 
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 17,
         y: tile.object.y + 5
       });
@@ -3990,53 +3948,53 @@ const AkBoot = () => {
     case 10:
     case 11:
     case 12:
-      startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
+      startGuyAnimation(spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
-      changeWaterAndFood(gameData, -2, -2);
+      changeWaterAndFood(-2, -2);
       AddTime(15);
       break;
     case 5:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 9,
         y: tile.object.y
       });
       tile.object.frame++
       break;
     case 9:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 3,
         y: tile.object.y - 5
       });
       tile.object.frame++
       break;
     case 13:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 14:
       finishConstruction(tile);
-      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) {
+      if (state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground === grounds.SEA) {
         const west = tileEdges[tile.type].west;
         tile.object.x = west.x;
         tile.object.y = west.y;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) {
+      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground === grounds.SEA) {
         tile.object.frame = 1;
         const north = tileEdges[tile.type].north;
         tile.object.x = north.x;
         tile.object.y = north.y;
-      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) {
+      } else if (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground === grounds.SEA) {
         const east = tileEdges[tile.type].east;
         tile.object.x = east.x;
         tile.object.y = east.y;
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA) {
+      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground === grounds.SEA) {
         tile.object.frame = 1;
         const south = tileEdges[tile.type].south;
         tile.object.x = south.x;
         tile.object.y = south.y;
       }
       Bmp[BUTTSTOP].Phase = -1;
-      if (!gameData.constructionHints[constructionTypes.BOAT]) {
-        openPaper(texts.BOOTHILFE, false, gameData);
-        gameData.constructionHints[constructionTypes.BOAT] = true;
+      if (!state.constructionHints[constructionTypes.BOAT]) {
+        openPaper(texts.BOOTHILFE, false);
+        state.constructionHints[constructionTypes.BOAT] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -4044,10 +4002,10 @@ const AkBoot = () => {
 }
 
 const AkRohr = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   if (!tile.construction) {
     const center = tileEdges[tile.type].center;
-    startConstruction(gameData, constructionTypes.PIPE, center.x, center.y);
+    startConstruction(constructionTypes.PIPE, center.x, center.y);
   }
   if (!CheckRohstoff()) {
     return;
@@ -4056,7 +4014,7 @@ const AkRohr = () => {
 
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 21,
         y: tile.object.y + 4
       });
@@ -4068,9 +4026,9 @@ const AkRohr = () => {
     case 9:
     case 10:
     case 11:
-      startGuyAnimation(gameData, spriteTypes.GUY_HITTING);
+      startGuyAnimation(spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
-      changeWaterAndFood(gameData, -1, -1);
+      changeWaterAndFood(-1, -1);
       AddTime(5);
       break;
     case 5:
@@ -4079,28 +4037,28 @@ const AkRohr = () => {
     case 12:
     case 13:
     case 14:
-      startGuyAnimation(gameData, spriteTypes.GUY_CHOPPING);
+      startGuyAnimation(spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
-      changeWaterAndFood(gameData, -1, -1);
+      changeWaterAndFood(-1, -1);
       AddTime(5);
       break;
     case 8:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 8,
         y: tile.object.y - 4
       });
       construct(tile, 2);
       break;
     case 15:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 16:
       finishConstruction(tile);
-      updatePipes(gameData.terrain);
+      updatePipes();
       Bmp[BUTTSTOP].Phase = -1;
-      if (!gameData.constructionHints[constructionTypes.PIPE]) {
-        openPaper(texts.ROHRHILFE, false, gameData);
-        gameData.constructionHints[constructionTypes.PIPE] = true;
+      if (!state.constructionHints[constructionTypes.PIPE]) {
+        openPaper(texts.ROHRHILFE, false);
+        state.constructionHints[constructionTypes.PIPE] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -4108,10 +4066,10 @@ const AkRohr = () => {
 }
 
 const AkSOS = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   if (!tile.construction) {
     const center = tileEdges[tile.type].center;
-    startConstruction(gameData, constructionTypes.SOS, center.x, center.y);
+    startConstruction(constructionTypes.SOS, center.x, center.y);
   }
   if (!CheckRohstoff()) {
     return;
@@ -4120,41 +4078,41 @@ const AkSOS = () => {
 
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 12,
         y: tile.object.y + 4
       });
       break;
     case 4:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 4,
         y: tile.object.y + 8
       });
       construct(tile, 1);
       break;
     case 7:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 4,
         y: tile.object.y
       });
       construct(tile, 2);
       break;
     case 10:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 3,
         y: tile.object.y + 3
       });
       construct(tile, 3);
       break;
     case 13:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 5,
         y: tile.object.y - 4
       });
       construct(tile, 4);
       break;
     case 16:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x + 12,
         y: tile.object.y - 1
       });
@@ -4166,8 +4124,8 @@ const AkSOS = () => {
     case 11:
     case 14:
     case 17:
-      startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
-      changeWaterAndFood(gameData, -1, -1);
+      startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       break;
     case 3:
@@ -4176,12 +4134,12 @@ const AkSOS = () => {
     case 12:
     case 15:
     case 18:
-      startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
-      changeWaterAndFood(gameData, -1, -1);
+      startGuyAnimation(spriteTypes.GUY_STANDING_UP);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       break;
     case 19:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 20:
       finishConstruction(tile);
@@ -4192,11 +4150,11 @@ const AkSOS = () => {
         //Dürfte nur noch der Strand übrig sein
         tile.object.chance = 2;
       }
-      gameData.guy.chance += tile.object.chance;
+      state.guy.chance += tile.object.chance;
       Bmp[BUTTSTOP].Phase = -1;
-      if (!gameData.constructionHints[constructionTypes.SOS]) {
-        openPaper(texts.SOSHILFE, false, gameData);
-        gameData.constructionHints[constructionTypes.SOS] = true;
+      if (!state.constructionHints[constructionTypes.SOS]) {
+        openPaper(texts.SOSHILFE, false);
+        state.constructionHints[constructionTypes.SOS] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -4204,10 +4162,10 @@ const AkSOS = () => {
 }
 
 const AkFeuerstelle = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   if (!tile.construction) {
     const center = tileEdges[tile.type].center;
-    startConstruction(gameData, constructionTypes.FIREPLACE, center.x, center.y - 5);
+    startConstruction(constructionTypes.FIREPLACE, center.x, center.y - 5);
   }
   if (!CheckRohstoff()) {
     return;
@@ -4216,24 +4174,24 @@ const AkFeuerstelle = () => {
 
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 4,
         y: tile.object.y + 2
       });
       break;
     case 2:
-      startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
-      changeWaterAndFood(gameData, -1, -1);
+      startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       break;
     case 3:
-      startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
-      changeWaterAndFood(gameData, -1, -1);
+      startGuyAnimation(spriteTypes.GUY_STANDING_UP);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       construct(tile, 1);
       break;
     case 4:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 6,
         y: tile.object.y + 3
       });
@@ -4241,22 +4199,22 @@ const AkFeuerstelle = () => {
     case 5:
     case 6:
     case 7:
-      startGuyAnimation(gameData, spriteTypes.GUY_KNOTTING_NORTH);
-      changeWaterAndFood(gameData, -1, -1);
+      startGuyAnimation(spriteTypes.GUY_KNOTTING_NORTH);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       if (tile.construction.actionStep !== 5) {
         construct(tile, 2);
       }
       break;
     case 8:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 9:
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (!gameData.constructionHints[constructionTypes.FIREPLACE]) {
-        openPaper(texts.FEUERSTELLEHILFE, false, gameData);
-        gameData.constructionHints[constructionTypes.FIREPLACE] = true;
+      if (!state.constructionHints[constructionTypes.FIREPLACE]) {
+        openPaper(texts.FEUERSTELLEHILFE, false);
+        state.constructionHints[constructionTypes.FIREPLACE] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -4264,10 +4222,10 @@ const AkFeuerstelle = () => {
 }
 
 const AkHaus1 = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
   if (!tile.construction) {
-    startConstruction(gameData, constructionTypes.LADDER, tile.object.x, tile.object.y);
+    startConstruction(constructionTypes.LADDER, tile.object.x, tile.object.y);
   }
   if (!CheckRohstoff()) {
     return;
@@ -4276,7 +4234,7 @@ const AkHaus1 = () => {
   
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x - 2,
         y: tile.object.y + 2
       });
@@ -4285,43 +4243,43 @@ const AkHaus1 = () => {
     case 3:
     case 4:
     case 5:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 6:
     case 7:
     case 8:
     case 9:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
-      changeWaterAndFood(gameData, -0.5, 0.5);
+      changeWaterAndFood(-0.5, 0.5);
       AddTime(1);
       break;
     case 10:
     case 11:
     case 12:
     case 13:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 14:
     case 15:
     case 16:
     case 17:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 18:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 19:
       finishConstruction(tile);
@@ -4332,9 +4290,9 @@ const AkHaus1 = () => {
 }
 
 const AkHaus2 = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   if (!tile.construction) {
-    startConstruction(gameData, constructionTypes.PLATFORM, tile.object.x, tile.object.y);
+    startConstruction(constructionTypes.PLATFORM, tile.object.x, tile.object.y);
   }
   if (!CheckRohstoff()) {
     return;
@@ -4343,63 +4301,63 @@ const AkHaus2 = () => {
   
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x,
         y: tile.object.y + 1
       });
       break;
     case 2:
-      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
-      changeWaterAndFood(gameData, -1, -1);
+      startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       break;
     case 3:
     case 4:
     case 5:
     case 6:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 7:
     case 8:
     case 9:
     case 10:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 11:
     case 12:
     case 13:
     case 14:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 15:
     case 16:
     case 17:
     case 18:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 19:
-      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
+      startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
       construct(tile, 4);
-      changeWaterAndFood(gameData, -1, -1);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       break;
     case 20:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 21:
       finishConstruction(tile);
@@ -4410,9 +4368,9 @@ const AkHaus2 = () => {
 }
 
 const AkHaus3 = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   if (!tile.construction) {
-    startConstruction(gameData, constructionTypes.TREE_HOUSE, tile.object.x, tile.object.y);
+    startConstruction(constructionTypes.TREE_HOUSE, tile.object.x, tile.object.y);
   }
   if (!CheckRohstoff()) {
     return;
@@ -4421,70 +4379,70 @@ const AkHaus3 = () => {
 
   switch (tile.construction.actionStep) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x,
         y: tile.object.y + 1
       });
       break;
     case 2:
-      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
-      changeWaterAndFood(gameData, -1, -1);
+      startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       break;
     case 3:
     case 4:
     case 5:
     case 6:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 7:
     case 8:
     case 9:
     case 10:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 11:
     case 12:
     case 13:
     case 14:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 15:
     case 16:
     case 17:
     case 18:
-      startGuyAnimation(gameData, spriteTypes.GUY_HAMMERING_TOP);
+      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
-      changeWaterAndFood(gameData, -0.5, -0.5);
+      changeWaterAndFood(-0.5, -0.5);
       AddTime(1);
       break;
     case 19:
-      startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
+      startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
       construct(tile, 4);
-      changeWaterAndFood(gameData, -1, -1);
+      changeWaterAndFood(-1, -1);
       AddTime(1);
       break;
     case 20:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       break;
     case 21:
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      if (!gameData.constructionHints[constructionTypes.TREE_HOUSE]) {
-        openPaper(texts.HAUS3HILFE, false, gameData);
-        gameData.constructionHints[constructionTypes.TREE_HOUSE] = true;
+      if (!state.constructionHints[constructionTypes.TREE_HOUSE]) {
+        openPaper(texts.HAUS3HILFE, false);
+        state.constructionHints[constructionTypes.TREE_HOUSE] = true;
       }
       Guy.Aktion = AKNICHTS;
       break;
@@ -4492,95 +4450,95 @@ const AkHaus3 = () => {
 }
 
 const AkSchlafen = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const tent = isUsableTent(tile);
   const house = isUsableTreeHouse(tile);
   if (Guy.AkNummer === 0) {
-    gameData.guy.storedPosition = { ...gameData.guy.position };  //Die Originalposition merken
+    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
       if (tent)
-        goToOnTile(gameData, {
+        goToOnTile({
           x: tile.object.x - 10,
           y: tile.object.y + 5
         });
       else if (house)
-        goToOnTile(gameData, {
+        goToOnTile({
           x: tile.object.x + 1,
           y: tile.object.y + 1
         });
       break;
     case 2:
       if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_UP);
-        changeWaterAndFood(gameData, -1, -1);
+        startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
+        changeWaterAndFood(-1, -1);
       }
       break;
     case 3:
       if (tent) {
-        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_TENT);
+        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_TENT);
       } else if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN_HOUSE);
+        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_HOUSE);
       } else {
-        startGuyAnimation(gameData, spriteTypes.GUY_LAYING_DOWN);
+        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
       }
       break;
     case 4:
     case 5:
       if (tent) {
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_TENT);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
       } else if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING_HOUSE);
-      } else startGuyAnimation(gameData, spriteTypes.GUY_SLEEPING);
+        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
+      } else startGuyAnimation(spriteTypes.GUY_SLEEPING);
       sounds.SNORING.instance.play();
-      changeHealth(gameData, 5);
+      changeHealth(5);
       AddTime(30);
       break;
     case 6:
       sounds.SNORING.instance.stop();
       if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP_HOUSE);
-      } else startGuyAnimation(gameData, spriteTypes.GUY_STANDING_UP);
+        startGuyAnimation(spriteTypes.GUY_STANDING_UP_HOUSE);
+      } else startGuyAnimation(spriteTypes.GUY_STANDING_UP);
       break;
     case 7:
       if (house) {
-        startGuyAnimation(gameData, spriteTypes.GUY_CLIMBING_DOWN);
-        changeWaterAndFood(gameData, -1, -1);
+        startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
+        changeWaterAndFood(-1, -1);
       }
       break;
     case 8:
-      goToStoredPosition(gameData);
+      goToStoredPosition();
       Guy.Aktion = AKNICHTS;
       break;
   }
 }
 
 const AkAblegen = () => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      goToOnTile(gameData, {
+      goToOnTile({
         x: tile.object.x,
         y: tile.object.y
       });
       break;
     case 2:
-      gameData.guy.position.x = tile.position.x + tile.object.x;
-      gameData.guy.position.y = tile.position.y + tile.object.y;
+      state.guy.position.x = tile.position.x + tile.object.x;
+      state.guy.position.y = tile.position.y + tile.object.y;
       tile.object = null;
-      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x--;
-      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground === grounds.SEA) gameData.guy.tile.y--;
-      else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground === grounds.SEA) gameData.guy.tile.x++;
-      else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground === grounds.SEA) gameData.guy.tile.y++;
-      goToCenterOfTile(gameData);
+      if (state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground === grounds.SEA) state.guy.tile.x--;
+      else if (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground === grounds.SEA) state.guy.tile.y--;
+      else if (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground === grounds.SEA) state.guy.tile.x++;
+      else if (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground === grounds.SEA) state.guy.tile.y++;
+      goToCenterOfTile();
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      gameData.guy.storedPosition.x = gameData.guy.position.x;
-      gameData.guy.storedPosition.y = gameData.guy.position.y;
+      state.guy.storedPosition.x = state.guy.position.x;
+      state.guy.storedPosition.y = state.guy.position.y;
       break;
   }
 }
@@ -4589,34 +4547,34 @@ const AkAnlegen = () => {
   Guy.AkNummer++;
   switch (Guy.AkNummer) {
     case 1:
-      if (gameData.terrain[gameData.guy.tile.x - 1][gameData.guy.tile.y].ground !== grounds.SEA) {
-        goToWestOfTile(gameData);
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y - 1].ground !== grounds.SEA) {
-        goToNorthOfTile(gameData);
-      } else if (gameData.terrain[gameData.guy.tile.x + 1][gameData.guy.tile.y].ground !== grounds.SEA) {
-        goToEastOfTile(gameData);
-      } else if (gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y + 1].ground !== grounds.SEA) {
-        goToSouthOfTile(gameData);
+      if (state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground !== grounds.SEA) {
+        goToWestOfTile();
+      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground !== grounds.SEA) {
+        goToNorthOfTile();
+      } else if (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground !== grounds.SEA) {
+        goToEastOfTile();
+      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground !== grounds.SEA) {
+        goToSouthOfTile();
       }
       break;
     case 2:
-      const neighbor = findNeighbor(gameData, (tile) => tile.ground !== grounds.SEA);
+      const neighbor = findNeighbor((tile) => tile.ground !== grounds.SEA);
 
       neighbor.tile.object = {
         sprite: spriteTypes.BOAT,
-        x: Math.round(gameData.guy.position.x - neighbor.tile.position.x),
-        y: Math.round(gameData.guy.position.y - neighbor.tile.position.y),
+        x: Math.round(state.guy.position.x - neighbor.tile.position.x),
+        y: Math.round(state.guy.position.y - neighbor.tile.position.y),
         frame: (neighbor.direction === directions.WEST || neighbor.direction === directions.EAST) ? 0 : 1
       };
 
-      gameData.guy.tile.x = neighbor.x;
-      gameData.guy.tile.y = neighbor.y;
-      goToCenterOfTile(gameData);
+      state.guy.tile.x = neighbor.x;
+      state.guy.tile.y = neighbor.y;
+      goToCenterOfTile();
       break;
     case 3:
       Guy.Aktion = AKNICHTS;
-      gameData.guy.storedPosition.x = gameData.guy.position.x;
-      gameData.guy.storedPosition.y = gameData.guy.position.y;
+      state.guy.storedPosition.x = state.guy.position.x;
+      state.guy.storedPosition.y = state.guy.position.y;
       break;
   }
 }
@@ -4629,57 +4587,57 @@ const Fade = (intensity, smooth) => {
 const CheckBenutze = (item) => {
   if ((item === items.STONE && TwoClicks === items.BRANCH) ||
     (item === items.BRANCH && TwoClicks === items.STONE)) {
-    if (!gameData.guy.inventory[items.AXE]) {
-      changeItem(gameData, items.STONE, -1);
-      changeItem(gameData, items.BRANCH, -1);
-      changeItem(gameData, items.AXE, 1);
+    if (!state.guy.inventory[items.AXE]) {
+      changeItem(items.STONE, -1);
+      changeItem(items.BRANCH, -1);
+      changeItem(items.AXE, 1);
       Bmp[BUTTFAELLEN].Phase = 0;
       Bmp[BUTTBOOT].Phase = 0;
       Bmp[BUTTROHR].Phase = 0;
-      openPaper(texts.BAUEAXT, false, gameData);
+      openPaper(texts.BAUEAXT, false);
       sounds.INVENTION.instance.play();
-    } else if (!gameData.guy.inventory[items.HARROW]) {
-      changeItem(gameData, items.STONE, -1);
-      changeItem(gameData, items.BRANCH, -1);
-      changeItem(gameData, items.HARROW, 1);
+    } else if (!state.guy.inventory[items.HARROW]) {
+      changeItem(items.STONE, -1);
+      changeItem(items.BRANCH, -1);
+      changeItem(items.HARROW, 1);
       Bmp[BUTTFELD].Phase = 0;
-      openPaper(texts.BAUEEGGE, false, gameData);
+      openPaper(texts.BAUEEGGE, false);
       sounds.INVENTION.instance.play();
     } else {
-      openPaper(texts.STEINPLUSASTNICHTS, false, gameData);
+      openPaper(texts.STEINPLUSASTNICHTS, false);
     }
   } else if ((item === items.LIANA && TwoClicks === items.BRANCH) ||
     (item === items.BRANCH && TwoClicks === items.LIANA)) {
-    if (!gameData.guy.inventory[items.FISHING_ROD]) {
-      changeItem(gameData, items.LIANA, -1);
-      changeItem(gameData, items.BRANCH, -1);
-      changeItem(gameData, items.FISHING_ROD, 1);
+    if (!state.guy.inventory[items.FISHING_ROD]) {
+      changeItem(items.LIANA, -1);
+      changeItem(items.BRANCH, -1);
+      changeItem(items.FISHING_ROD, 1);
       Bmp[BUTTANGELN].Phase = 0;
-      openPaper(texts.BAUEANGEL, false, gameData);
+      openPaper(texts.BAUEANGEL, false);
       sounds.INVENTION.instance.play();
     } else {
-      openPaper(texts.ASTPLUSLIANENICHTS, false, gameData);
+      openPaper(texts.ASTPLUSLIANENICHTS, false);
     }
   } else if (((item === items.LIANA) && (TwoClicks === items.STONE)) ||
     ((item === items.STONE) && (TwoClicks === items.LIANA))) {
-    if (!gameData.guy.inventory[items.SLING]) {
-      changeItem(gameData, items.LIANA, -1);
-      changeItem(gameData, items.STONE, -1);
-      changeItem(gameData, items.SLING, 1);
+    if (!state.guy.inventory[items.SLING]) {
+      changeItem(items.LIANA, -1);
+      changeItem(items.STONE, -1);
+      changeItem(items.SLING, 1);
       Bmp[BUTTSCHLEUDER].Phase = 0;
-      openPaper(texts.BAUESCHLEUDER, false, gameData);
+      openPaper(texts.BAUESCHLEUDER, false);
       sounds.INVENTION.instance.play();
     } else {
-      openPaper(texts.STEINPLUSLIANENICHTS, false, gameData);
+      openPaper(texts.STEINPLUSLIANENICHTS, false);
     }
   } else {
-    openPaper(texts.NICHTBASTELN, false, gameData);
+    openPaper(texts.NICHTBASTELN, false);
   }
   TwoClicks = -1;
 }
 
 const Animationen = () => {
-  animateTerrain(gameData.terrain, frame, framesPerSecond);
+  animateTerrain(frame, framesPerSecond);
 
   let i, j; //Zwischenspeicher
 
@@ -4693,8 +4651,8 @@ const Animationen = () => {
     }
   }
 
-  if (!gameData.paper) {
-    animateGuy(gameData, frame, framesPerSecond, AddTime.bind(this));
+  if (!state.paper) {
+    animateGuy(frame, framesPerSecond, AddTime.bind(this));
   }
 }
 
@@ -4717,19 +4675,19 @@ const refresh = (timestamp) => {
   } else if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) {
     if (CheckKey() === 2) return true;    //Das Keyboard abfragen
     Animationen();  //Animationen weiterschalten
-    discoverTerrain(gameData);
-    playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
-    updateCamera(gameData.camera, gameData.guy.position, true);
+    discoverTerrain();
+    playTerrainSounds();
+    updateCamera(state.guy.position, true);
 
-    if (!gameData.guy.active) Event(Guy.Aktion); //Aktionen starten
+    if (!state.guy.active) Event(Guy.Aktion); //Aktionen starten
 
-    drawTerrain(gameData, gameData.camera, false);
+    drawTerrain(state.camera, false);
 
   } else if (Spielzustand === GAME_PLAY) {
-    if (gameData.calendar.minutes > (12 * 60) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
+    if (state.calendar.minutes > (12 * 60) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
     {
-      if (Guy.Aktion === AKAUSSCHAU) gameData.guy.chance -= 1 + gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].height;
-      gameData.guy.active = false;
+      if (Guy.Aktion === AKAUSSCHAU) state.guy.chance -= 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
+      state.guy.active = false;
       Guy.AkNummer = 0;
       Guy.Aktion = AKTAGENDE;
     }
@@ -4737,11 +4695,11 @@ const refresh = (timestamp) => {
     CheckSpzButton();          //Die Spezialknöpfe umschalten
     if (MouseAktiv) CheckMouse();    //Den MouseZustand abchecken
     CheckKey();
-    restrictCamera(gameData.camera, gameData.terrain);            //Das Scrollen an die Grenzen der Landschaft anpassen
+    restrictCamera();            //Das Scrollen an die Grenzen der Landschaft anpassen
     Animationen();            //Die Animationsphasen weiterschalten
-    discoverTerrain(gameData);
-    playTerrainSounds(gameData.terrain, { tile: gameData.guy.tile });
-    if (!gameData.guy.active) Event(Guy.Aktion);  //Die Aktionen starten
+    discoverTerrain();
+    playTerrainSounds();
+    if (!state.guy.active) Event(Guy.Aktion);  //Die Aktionen starten
     Zeige();//Das Bild zeichnen
     if (Spielbeenden) return false;
 

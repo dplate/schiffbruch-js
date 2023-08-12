@@ -1,10 +1,11 @@
 import clearText from './clearText.js';
 import textAreas from './textAreas.js';
+import state from '../state/state.js';
 
-const closePaper = (gameData) => {
+const closePaper = () => {
   clearText(textAreas.PAPER);
-  gameData.paper = null;
-  gameData.guy.active = false;
+  state.paper = null;
+  state.guy.active = false;
 };
 
 export default closePaper;

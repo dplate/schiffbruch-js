@@ -1,9 +1,10 @@
 import tileEdges from '../../terrain/tiles/tileEdges.js';
 import goToOnTile from './goToOnTile.js';
+import state from '../../state/state.js';
 
-const goToEastOfTile = (gameData) => {
-  const tile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
-  goToOnTile(gameData, tileEdges[tile.type].east);
+const goToEastOfTile = () => {
+  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
+  goToOnTile(tileEdges[tile.type].east);
 };
 
 export default goToEastOfTile;

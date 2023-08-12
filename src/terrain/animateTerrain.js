@@ -1,6 +1,8 @@
+import state from '../state/state.js';
 import animateObject from './objects/animateObject.js';
 
-const animateTerrain = (terrain, frame, framesPerSecond) => {
+const animateTerrain = (frame, framesPerSecond) => {
+  const terrain = state.terrain;
   for (let x in terrain) {
     for (let y in terrain[x]) {
       const tile = terrain[x][y];

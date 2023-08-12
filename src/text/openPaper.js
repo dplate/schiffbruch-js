@@ -5,6 +5,7 @@ import images from '../images/images.js';
 import spriteTypes from '../images/spriteTypes.js';
 import drawText from './drawText.js';
 import textAreas from './textAreas.js';
+import state from '../state/state.js';
 
 const drawYes = (yes) => {
   canvases.TEXT.drawImage(
@@ -34,37 +35,37 @@ const drawNo = (no) => {
   );
 };
 
-const openPaper = (text, question, gameData) => {
+const openPaper = (text, question) => {
   const textHeight = drawText(text, textAreas.PAPER)
 
-  gameData.paper = {
+  state.paper = {
     height: textHeight
   };
   
   if (question) {
-    gameData.paper.question = {
+    state.paper.question = {
       answer: null
     };
-    gameData.paper.question.yes = {
+    state.paper.question.yes = {
       x: textAreas.PAPER.x + 50,
       y: textAreas.PAPER.y + textHeight + 25,
       width: 41,
       height: 42
     }
-    drawYes(gameData.paper.question.yes);
+    drawYes(state.paper.question.yes);
 
-    gameData.paper.question.no = {
+    state.paper.question.no = {
       x: textAreas.PAPER.x + 220,
       y: textAreas.PAPER.y + textHeight + 25,
       width: 100,
       height: 39
     }
-    drawNo(gameData.paper.question.no);
+    drawNo(state.paper.question.no);
     
-    gameData.paper.height += 115;
+    state.paper.height += 115;
   }
 
-  startGuyAnimation(gameData, isOnSea(gameData) ? spriteTypes.GUY_WAITING_BOAT : spriteTypes.GUY_WAITING);
+  startGuyAnimation(isOnSea() ? spriteTypes.GUY_WAITING_BOAT : spriteTypes.GUY_WAITING);
 };
 
 export default openPaper;

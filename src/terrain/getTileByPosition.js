@@ -1,3 +1,4 @@
+import state from '../state/state.js';
 import tileEdges from './tiles/tileEdges.js';
 
 const isInTriangle = (position, edge1, edge2, edge3) => {
@@ -23,7 +24,8 @@ const isInTriangle = (position, edge1, edge2, edge3) => {
   return a >= 0;
 };
 
-const getTileByPosition = (terrain, position) => {
+const getTileByPosition = (position) => {
+  const terrain = state.terrain;
   for (let x = 0; x < terrain.length; x++) {
     for (let y = 0; y < terrain[x].length; y++) {
       const tile = terrain[x][y];

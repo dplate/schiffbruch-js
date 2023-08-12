@@ -1,4 +1,5 @@
 import canvases from '../images/canvases.js';
+import state from '../state/state.js';
 import grounds from '../terrain/tiles/grounds.js';
 import minimapScaling from './minimapScaling.js';
 
@@ -20,7 +21,8 @@ const getColor = (tile) => {
   return undiscoveredColor;
 };
 
-const updateMinimap = (terrain) => {
+const updateMinimap = () => {
+  const terrain = state.terrain;
   canvases.MINIMAP.fillStyle = undiscoveredColor
   canvases.MINIMAP.fillRect(0, 0, terrain.length * minimapScaling, terrain[0].length * minimapScaling);
 

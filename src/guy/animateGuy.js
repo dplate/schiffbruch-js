@@ -1,26 +1,27 @@
 import sprites from '../images/sprites.js';
+import state from '../state/state.js';
 import animateRoute from './routing/animateRoute.js';
 
-const animateGuy = (gameData, frame, framesPerSecond, addTimeLegacy) => {
-  if (!gameData.guy.active) {
+const animateGuy = (frame, framesPerSecond, addTimeLegacy) => {
+  if (!state.guy.active) {
     return;
   }
 
-  const sprite = sprites[gameData.guy.sprite];
+  const sprite = sprites[state.guy.sprite];
   const animateEveryThisFrame = Math.round(framesPerSecond / sprite.speed) || 1;
   if (frame % animateEveryThisFrame !== 0) {
     return;
   }
 
-  if (gameData.guy.route.length) {
-    animateRoute(gameData, frame, addTimeLegacy);
+  if (state.guy.route.length) {
+    animateRoute(frame, addTimeLegacy);
     return;
   }
    
-  gameData.guy.frame++;
-  if (gameData.guy.frame >= sprite.frameCount) {
-    gameData.guy.frame = sprite.frameCount - 1;
-    gameData.guy.active = false;
+  state.guy.frame++;
+  if (state.guy.frame >= sprite.frameCount) {
+    state.guy.frame = sprite.frameCount - 1;
+    state.guy.active = false;
   }
 };
 

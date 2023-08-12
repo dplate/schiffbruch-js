@@ -1,20 +1,21 @@
 import drawGuy from '../../guy/drawGuy.js';
 import drawSprite from '../../images/drawSprite.js';
 import isOnGround from './isOnGround.js';
+import state from '../../state/state.js';
 
-const drawObject = (gameData, area, tile, forTreasureMap, groundObjects, mustDrawGuy, canvasContext) => {
+const drawObject = (area, tile, forTreasureMap, groundObjects, mustDrawGuy, canvasContext) => {
   const object = forTreasureMap && tile.originalObject ? tile.originalObject : tile.object;
   if (!object || groundObjects !== isOnGround(object)) {
     if (mustDrawGuy) {
-      drawGuy(gameData, canvasContext);
+      drawGuy(canvasContext);
     }
     return;
   }
 
-  const guyBehindObject = tile.position.y + object.y > gameData.guy.position.y;
+  const guyBehindObject = tile.position.y + object.y > state.guy.position.y;
 
   if (mustDrawGuy && guyBehindObject) {
-    drawGuy(gameData, canvasContext);
+    drawGuy(canvasContext);
   }
   
   drawSprite(
@@ -27,7 +28,7 @@ const drawObject = (gameData, area, tile, forTreasureMap, groundObjects, mustDra
   );
 
   if (mustDrawGuy && !guyBehindObject) {
-    drawGuy(gameData, canvasContext);
+    drawGuy(canvasContext);
   }
 };
 

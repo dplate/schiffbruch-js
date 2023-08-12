@@ -1,7 +1,8 @@
 import grounds from '../terrain/tiles/grounds.js';
+import state from '../state/state.js';
 
-const isOnSea = (gameData) => {
-  const currentTile = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y];
+const isOnSea = () => {
+  const currentTile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   return currentTile.ground === grounds.SEA;
 };
 

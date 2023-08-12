@@ -2,6 +2,7 @@ import tileTypes from './tiles/tileTypes.js';
 import directions from './directions.js';
 import allowedNeighbors from './tiles/allowedNeighbors.js';
 import positionTransformer from './positionTransformer.js';
+import state from '../state/state.js';
 
 // Min and max size of the island in amount of tiles
 const MIN_ISLAND_TILES = 200;
@@ -10,7 +11,8 @@ const MAX_ISLAND_TILES = 500;
 // Height of highest point of island
 const MAX_HEIGHT = 3;
 
-const initTerrain = (terrain) => {
+const initTerrain = () => {
+  const terrain = state.terrain;
   for (let x in terrain) {
     for (let y in terrain[x]) {
       terrain[x][y].type = null;
@@ -56,8 +58,8 @@ const preferredTileTypes = {
   },
 };
 
-const getTileFromDirection = (tiles, x, y, direction) => {
-  return tiles[x + directions.xDiff[direction]]?.[y + directions.yDiff[direction]];
+const getTileFromDirection = (x, y, direction) => {
+  return state.terrain[x + directions.xDiff[direction]]?.[y + directions.yDiff[direction]];
 }
 
 const getAllowedTiles = (tile, direction) => {
@@ -73,10 +75,12 @@ const getAllowedTiles = (tile, direction) => {
   return allowedTiles.filter(allowedTile => allowedTile.height >= 0);
 }
 
-const findPossibleTiles = (tiles, x, y, doRecursiveCheck = true) => {
+const findPossibleTiles = (x, y, doRecursiveCheck = true) => {
+  const terrain = state.terrain;
+
   // if sea level reached for all direct neighbors then this tile is also sea (no other islands)
   if (directions.list.every(direction => {
-    const tile = getTileFromDirection(tiles, x, y, direction);
+    const tile = getTileFromDirection(x, y, direction);
     return !tile || tile.type === null || (tile.type === tileTypes.FLAT && tile.height === 0);
   })) {
     return [{
@@ -87,7 +91,7 @@ const findPossibleTiles = (tiles, x, y, doRecursiveCheck = true) => {
 
   // get allowed tiles from direct neighbors
   const allowedTilesGroups = directions.list.map(direction => {
-      const tile = getTileFromDirection(tiles, x, y, direction);
+      const tile = getTileFromDirection(x, y, direction);
       return getAllowedTiles(tile, directions.opposite[direction]);
     }
   );
@@ -114,19 +118,19 @@ const findPossibleTiles = (tiles, x, y, doRecursiveCheck = true) => {
 
   // only keep tiles which do not produce an impossible situation
   const possibleTiles = candidates.filter(candidate => {
-    tiles[x][y].type = candidate.type;
-    tiles[x][y].height = candidate.height;
+    terrain[x][y].type = candidate.type;
+    terrain[x][y].height = candidate.height;
     return directions.list.every(direction => {
-      const tile = getTileFromDirection(tiles, x, y, direction);
+      const tile = getTileFromDirection(x, y, direction);
       if (!tile) {
         return true;
       }
-      const possibleOtherTiles = findPossibleTiles(tiles, x + directions.xDiff[direction], y + directions.yDiff[direction], false);
+      const possibleOtherTiles = findPossibleTiles(x + directions.xDiff[direction], y + directions.yDiff[direction], false);
       return possibleOtherTiles.length > 0
     });
   });
-  tiles[x][y].type = null;
-  tiles[x][y].height = null;
+  terrain[x][y].type = null;
+  terrain[x][y].height = null;
 
   return possibleTiles;
 };
@@ -141,8 +145,9 @@ const findRandomTile = (possibleTiles, direction) => {
   return multipliedTiles[Math.floor(Math.random() * multipliedTiles.length)];
 };
 
-const setTile = (terrain, x, y, direction) => {
-  const possibleTiles = findPossibleTiles(terrain, x, y);
+const setTile = (x, y, direction) => {
+  const terrain = state.terrain;
+  const possibleTiles = findPossibleTiles(x, y);
   if (!possibleTiles.length) {
     console.error('No possible tile found', [
       terrain[x - 1][y - 1], terrain[x][y - 1], terrain[x + 1][y - 1], 
@@ -156,7 +161,8 @@ const setTile = (terrain, x, y, direction) => {
   terrain[x][y].height = randomTile.height;
 };
 
-const validateTerrain = (terrain) => {
+const validateTerrain = () => {
+  const terrain = state.terrain;
   let islandTiles = 0;
   for (let x in terrain) {
     for (let y in terrain[x]) {
@@ -176,19 +182,21 @@ const validateTerrain = (terrain) => {
   return islandTiles >= MIN_ISLAND_TILES; 
 };
 
-const calculateTilePositions = (terrain) => {
+const calculateTilePositions = () => {
+  const terrain = state.terrain;
   terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
-      terrain[x][y].position = positionTransformer.toPixel(terrain, x, y, tile.height);
+      terrain[x][y].position = positionTransformer.toPixel(x, y, tile.height);
     });
   });
 };
 
-const generateIsland = (terrain) => {
+const generateIsland = () => {
+  const terrain = state.terrain;
   const center = Math.floor(terrain.length / 2);
 
   for (let terrainAttempt = 0; terrainAttempt < 1000; terrainAttempt++) {
-    initTerrain(terrain);
+    initTerrain();
     terrain[center][center].type = tileTypes.FLAT;
     terrain[center][center].height = MAX_HEIGHT;
 
@@ -196,27 +204,27 @@ const generateIsland = (terrain) => {
     for (let radius = 1; radius <= center; radius++) {
       // North row
       for (let x = center - radius + 1; x <= center + radius; x++) {
-        setTile(terrain, x, center + directions.yDiff[directions.NORTH] * radius, directions.NORTH);
+        setTile(x, center + directions.yDiff[directions.NORTH] * radius, directions.NORTH);
       }
       // East col
       for (let y = center - radius + 1; y <= center + radius; y++) {
-        setTile(terrain, center + directions.xDiff[directions.EAST] * radius, y, directions.EAST);
+        setTile(center + directions.xDiff[directions.EAST] * radius, y, directions.EAST);
       }
       // South row
       for (let x = center + radius - 1; x >= center - radius; x--) {
-        setTile(terrain, x, center + directions.yDiff[directions.SOUTH] * radius, directions.SOUTH);
+        setTile(x, center + directions.yDiff[directions.SOUTH] * radius, directions.SOUTH);
       }
       // West col
       for (let y = center + radius - 1; y >= center - radius; y--) {
-        setTile(terrain, center + directions.xDiff[directions.WEST] * radius, y, directions.WEST);
+        setTile(center + directions.xDiff[directions.WEST] * radius, y, directions.WEST);
       }
     }
-    if (validateTerrain(terrain)) {
+    if (validateTerrain()) {
       break;
     }
   }
 
-  calculateTilePositions(terrain);
+  calculateTilePositions();
 }
 
 export default generateIsland;

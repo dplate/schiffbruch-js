@@ -1,10 +1,11 @@
 import inventoryOffsets from './inventoryOffsets.js';
 import itemSprites from './itemSprites.js';
 import items from './items.js';
+import state from '../../state/state.js';
 
-const findItemUnderCursor = (gameData, position) => {
+const findItemUnderCursor = (position) => {
   return items.list.find(item => {
-    if (gameData.guy.inventory[item] > 0) {
+    if (state.guy.inventory[item] > 0) {
       const sprite = itemSprites[item];
       const inventoryPosition = sprite.inventoryPosition
       const rectangle = {

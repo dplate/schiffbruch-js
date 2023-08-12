@@ -2,9 +2,10 @@ import canvases from '../images/canvases.js';
 import images from '../images/images.js';
 import drawTerrain from '../terrain/drawTerrain.js';
 import tileEdges from '../terrain/tiles/tileEdges.js';
+import state from '../state/state.js';
 
-const drawTreasureMap = (gameData) => {
-  const tile = gameData.terrain[gameData.treasure.x][gameData.treasure.y];
+const drawTreasureMap = () => {
+  const tile = state.terrain[state.treasure.x][state.treasure.y];
    const canvas = canvases.TREASURE_MAP.canvas;
 
   const tileCenter = tileEdges[tile.type].center;
@@ -14,7 +15,7 @@ const drawTreasureMap = (gameData) => {
     width: canvas.width,
     height: canvas.height
   };
-  drawTerrain(gameData, area, true, canvases.TREASURE_MAP);
+  drawTerrain(area, true, canvases.TREASURE_MAP);
   
   canvases.TREASURE_MAP.filter = 'blur(2px) sepia(1)';
   canvases.TREASURE_MAP.drawImage(canvas, 0, 0);

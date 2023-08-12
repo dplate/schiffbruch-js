@@ -1,7 +1,10 @@
+import state from '../state/state.js';
 import tileEdges from '../terrain/tiles/tileEdges.js';
 import tileTypes from '../terrain/tiles/tileTypes.js';
 
-const restrictCamera = (camera, terrain) => {
+const restrictCamera = () => {
+  const camera = state.camera;
+  const terrain = state.terrain;
   camera.x = Math.max(
     camera.x, 
     terrain[0][terrain[0].length - 1].position.x + tileEdges[tileTypes.FLAT].left.x

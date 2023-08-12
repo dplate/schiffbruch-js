@@ -1,14 +1,15 @@
 import goToCenterOfTile from '../guy/routing/goToCenterOfTile.js';
+import state from '../state/state.js';
 
-const pauseConstruction = (gameData) => {
-  const construction = gameData.terrain[gameData.guy.tile.x][gameData.guy.tile.y].construction;
+const pauseConstruction = () => {
+  const construction = state.terrain[state.guy.tile.x][state.guy.tile.y].construction;
   if (construction) {
     construction.lastGuyPosition = {
-      x: gameData.guy.position.x,
-      y: gameData.guy.position.y
+      x: state.guy.position.x,
+      y: state.guy.position.y
     }
   }
-  goToCenterOfTile(gameData);
+  goToCenterOfTile();
 };
 
 export default pauseConstruction;

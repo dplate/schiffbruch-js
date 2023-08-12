@@ -1,8 +1,9 @@
 import grounds from '../terrain/tiles/grounds.js';
 import tileTypes from '../terrain/tiles/tileTypes.js';
+import state from '../state/state.js';
 
-const hideTreasure = (gameData) => {
-  const terrain = gameData.terrain;
+const hideTreasure = () => {
+  const terrain = state.terrain;
   while (true) {
     const x = Math.floor(Math.random() * (terrain.length - 1));
     const y = Math.floor(Math.random() * (terrain[0].length - 1));

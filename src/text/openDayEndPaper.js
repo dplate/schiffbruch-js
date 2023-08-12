@@ -1,12 +1,13 @@
 import openPaper from './openPaper.js';
+import state from '../state/state.js';
 
-const openDayEndPaper = (text, gameData) => {
+const openDayEndPaper = (text) => {
   const filledText = text
-    .replaceAll('{day}', gameData.calendar.day)
-    .replaceAll('{health}', Math.round(gameData.guy.health))
-    .replaceAll('{chance}', gameData.guy.chance.toFixed(1))
+    .replaceAll('{day}', state.calendar.day)
+    .replaceAll('{health}', Math.round(state.guy.health))
+    .replaceAll('{chance}', state.guy.chance.toFixed(1))
     
-  openPaper(filledText, false, gameData);
+  openPaper(filledText, false);
 };
 
 export default openDayEndPaper;

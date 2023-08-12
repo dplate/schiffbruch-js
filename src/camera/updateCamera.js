@@ -1,6 +1,8 @@
 import canvases from '../images/canvases.js';
+import state from '../state/state.js';
 
-const updateCamera = (camera, newCenter, movie) => {
+const updateCamera = (newCenter, movie) => {
+  const camera = state.camera;
   camera.width = canvases.PRIMARY.canvas.width - (movie ? 0 : 195);
   camera.height = canvases.PRIMARY.canvas.height - (movie ? 0 : 20);
   camera.x = Math.floor(newCenter.x - camera.width / 2);

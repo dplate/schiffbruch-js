@@ -3,6 +3,7 @@ import images from '../../images/images.js';
 import drawItem from './drawItem.js';
 import inventoryOffsets from './inventoryOffsets.js';
 import itemSprites from './itemSprites.js';
+import state from '../../state/state.js';
 
 const romanOneWidth = 3;
 const romanOneHeight = 13;
@@ -52,8 +53,8 @@ const drawRomanNumber = (amountPosition, number) => {
   };
 };
 
-const drawItems = (gameData) => {
-  Object.entries(gameData.guy.inventory).forEach(([item, amount]) => {
+const drawItems = () => {
+  Object.entries(state.guy.inventory).forEach(([item, amount]) => {
     if (amount > 0) {
       const sprite = itemSprites[item];
       const position = {

@@ -1,5 +1,6 @@
 import goTo from './goTo.js';
+import state from '../../state/state.js';
 
-const goToStoredPosition = (gameData) => goTo(gameData, gameData.guy.storedPosition);
+const goToStoredPosition = () => goTo(state.guy.storedPosition);
 
 export default goToStoredPosition;

@@ -1,3 +1,4 @@
+import state from '../state/state.js';
 import fillPipeWithWater from './fillPipeWithWater.js';
 import isDryPipe from './objects/isDryPipe.js';
 import isRiverDam from './objects/isRiverDam.js';
@@ -5,8 +6,8 @@ import isWateredPipe from './objects/isWateredPipe.js';
 import tryCreateRiverDam from './objects/tryCreateRiverDam.js';
 import updateWetlands from './updateWetlands.js';
 
-const resetPipes = (terrain) => {
-  terrain.forEach((terrainColumn, x) => {
+const resetPipes = () => {
+  state.terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
       if (isWateredPipe(tile.object)) {
         tile.object.frame = 0;
@@ -20,7 +21,8 @@ const resetPipes = (terrain) => {
   });
 };
 
-const startFillingPipes = (terrain) => {
+const startFillingPipes = () => {
+  const terrain = state.terrain;
   terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
       if (
@@ -35,16 +37,16 @@ const startFillingPipes = (terrain) => {
           tryCreateRiverDam(terrain[x][y + 1])
         )
       ) {
-        fillPipeWithWater(terrain, x, y);
+        fillPipeWithWater(x, y);
       }
     });
   });
 };
 
-const updatePipes = (terrain) => {
-  resetPipes(terrain);
-  startFillingPipes(terrain);
-  updateWetlands(terrain);
+const updatePipes = () => {
+  resetPipes();
+  startFillingPipes();
+  updateWetlands();
 };
 
 export default updatePipes;

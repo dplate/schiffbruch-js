@@ -1,8 +1,9 @@
 import drawObject from '../objects/drawObject.js';
 import tileSprites from './tileSprites.js';
+import state from '../../state/state.js';
 
-const drawTile = (gameData, area, x, y, forTreasureMap, canvasContext) => {
-  const tile = gameData.terrain[x][y];
+const drawTile = (area, x, y, forTreasureMap, canvasContext) => {
+  const tile = state.terrain[x][y];
   if (!forTreasureMap && !tile.discovered) {
     return false;
   }
@@ -36,16 +37,16 @@ const drawTile = (gameData, area, x, y, forTreasureMap, canvasContext) => {
   drawTileSprite(sprite.variants.grounds[tile.ground]);
   
   if (!forTreasureMap) {
-    if (gameData.options.grid) {
+    if (state.options.grid) {
       drawTileSprite(sprite.variants.grid);
     }
 
-    if (!gameData.guy.active && gameData.guy.route.some((routeStep) => x === routeStep.x && y === routeStep.y)) {
+    if (!state.guy.active && state.guy.route.some((routeStep) => x === routeStep.x && y === routeStep.y)) {
       drawTileSprite(sprite.variants.route);
     }
   }
 
-  drawObject(gameData, area, tile, forTreasureMap, true, false, canvasContext);
+  drawObject(area, tile, forTreasureMap, true, false, canvasContext);
 };
 
 export default drawTile;
