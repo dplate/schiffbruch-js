@@ -25,6 +25,15 @@ const bigTreeDefault = {
   offsetY: -40,
 };
 
+const buttonDefault = {
+  image: images.BUTTONS,
+  sound: null,
+  width: 35,
+  height: 35,
+  offsetX: 0,
+  offsetY: 0,
+};
+
 const sprites = {
   [spriteTypes.WAVES]: {
     image: images.WATER,
@@ -1104,6 +1113,195 @@ const sprites = {
     offsetY: -19,
     frameCount: 5,
     speed: 4
+  },
+  [spriteTypes.BUTTON_ACTIONS]: {
+    ...buttonDefault,
+    x: 28,
+    y: 0,
+    frameCount: 3,
+    speed: 6
+  },
+  [spriteTypes.BUTTON_ACTIONS_CHECKED]: {
+    ...buttonDefault,
+    x: 28,
+    y: 105,
+    frameCount: 1,
+    speed: 0
+  },
+  [spriteTypes.BUTTON_CONSTRUCTIONS]: {
+    ...buttonDefault,
+    x: 203,
+    y: 0,
+    frameCount: 4,
+    speed: 5
+  },
+  [spriteTypes.BUTTON_CONSTRUCTIONS_CHECKED]: {
+    ...buttonDefault,
+    x: 203,
+    y: 140,
+    frameCount: 1,
+    speed: 0
+  },
+  [spriteTypes.BUTTON_INVENTORY]: {
+    ...buttonDefault,
+    x: 168,
+    y: 0,
+    frameCount: 4,
+    speed: 4
+  },
+  [spriteTypes.BUTTON_INVENTORY_CHECKED]: {
+    ...buttonDefault,
+    x: 168,
+    y: 140,
+    frameCount: 1,
+    speed: 0
+  },
+  [spriteTypes.BUTTON_SEARCHING]: {
+    ...buttonDefault,
+    x: 63,
+    y: 0,
+    frameCount: 4,
+    speed: 4
+  },
+  [spriteTypes.BUTTON_EATING]: {
+    ...buttonDefault,
+    x: 133,
+    y: 0,
+    frameCount: 4,
+    speed: 4
+  },
+  [spriteTypes.BUTTON_SLEEPING]: {
+    ...buttonDefault,
+    x: 308,
+    y: 0,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_CHOPPING]: {
+    ...buttonDefault,
+    x: 98,
+    y: 0,
+    frameCount: 4,
+    speed: 4
+  },
+  [spriteTypes.BUTTON_FISHING]: {
+    ...buttonDefault,
+    x: 413,
+    y: 0,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_LIGHTNING]: {
+    ...buttonDefault,
+    x: 28,
+    y: 175,
+    frameCount: 3,
+    speed: 4
+  },
+  [spriteTypes.BUTTON_LOOKING]: {
+    ...buttonDefault,
+    x: 63,
+    y: 175,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_HUNTING_TREASURE]: {
+    ...buttonDefault,
+    x: 98,
+    y: 175,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_SHOVELING]: {
+    ...buttonDefault,
+    x: 133,
+    y: 175,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_SLINGING]: {
+    ...buttonDefault,
+    x: 168,
+    y: 175,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_TENT]: {
+    ...buttonDefault,
+    x: 273,
+    y: 0,
+    frameCount: 3,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_FIELD]: {
+    ...buttonDefault,
+    x: 238,
+    y: 0,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_BOAT]: {
+    ...buttonDefault,
+    x: 448,
+    y: 0,
+    frameCount: 3,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_PIPE]: {
+    ...buttonDefault,
+    x: 518,
+    y: 0,
+    frameCount: 4,
+    speed: 2
+  },
+  [spriteTypes.BUTTON_SOS]: {
+    ...buttonDefault,
+    x: 588,
+    y: 0,
+    frameCount: 3,
+    speed: 2
+  },
+  [spriteTypes.BUTTON_LADDER]: {
+    ...buttonDefault,
+    x: 623,
+    y: 0,
+    frameCount: 5,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_PLATFORM]: {
+    ...buttonDefault,
+    x: 658,
+    y: 0,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_TREE_HOUSE]: {
+    ...buttonDefault,
+    x: 693,
+    y: 0,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_FIREPLACE]: {
+    ...buttonDefault,
+    x: 728,
+    y: 0,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_DESTROY]: {
+    ...buttonDefault,
+    x: 553,
+    y: 0,
+    frameCount: 4,
+    speed: 5
+  },
+  [spriteTypes.BUTTON_UNKNOWN]: {
+    ...buttonDefault,
+    x: 203,
+    y: 175,
+    frameCount: 1,
+    speed: 0
   },
 };
 

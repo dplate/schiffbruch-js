@@ -38,6 +38,10 @@ const images = {
   PAPER: {
     file: 'paper.png',
     instance: null
+  },
+  BUTTONS: {
+    file: 'buttons.png',
+    instance: null
   }
 };
 
