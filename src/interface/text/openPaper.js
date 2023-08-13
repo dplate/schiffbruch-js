@@ -1,11 +1,11 @@
-import isOnSea from '../guy/isOnSea.js';
-import startGuyAnimation from '../guy/startGuyAnimation.js';
-import canvases from '../images/canvases.js';
-import images from '../images/images.js';
-import spriteTypes from '../images/spriteTypes.js';
+import isOnSea from '../../guy/isOnSea.js';
+import startGuyAnimation from '../../guy/startGuyAnimation.js';
+import canvases from '../../images/canvases.js';
+import images from '../../images/images.js';
+import spriteTypes from '../../images/spriteTypes.js';
 import drawText from './drawText.js';
 import textAreas from './textAreas.js';
-import state from '../state/state.js';
+import state from '../../state/state.js';
 
 const drawYes = (yes) => {
   canvases.TEXT.drawImage(

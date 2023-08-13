@@ -1,4 +1,4 @@
-import actionTypes from '../action/actionTypes.js';
+import actionTypes from '../../action/actionTypes.js';
 import menuTypes from './menuTypes.js';
 
 const menus = {

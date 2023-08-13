@@ -1,6 +1,6 @@
 import clearText from './clearText.js';
 import textAreas from './textAreas.js';
-import state from '../state/state.js';
+import state from '../../state/state.js';
 
 const closePaper = () => {
   clearText(textAreas.PAPER);

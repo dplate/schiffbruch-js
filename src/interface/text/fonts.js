@@ -1,4 +1,4 @@
-import images from '../images/images.js';
+import images from '../../images/images.js';
 
 const fonts = {
   HAND: {

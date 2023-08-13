@@ -1,5 +1,5 @@
 import openPaper from './openPaper.js';
-import state from '../state/state.js';
+import state from '../../state/state.js';
 
 const openDayEndPaper = (text) => {
   const filledText = text

@@ -1,11 +1,11 @@
 import setupAudio from './sounds/setupAudio.js';
 import generateIsland from './terrain/generateIsland.js';
 import setGrounds from './terrain/setGrounds.js';
-import tileTypes from './terrain/tiles/tileTypes.js';
 import grounds from './terrain/tiles/grounds.js';
 import tileEdges from './terrain/tiles/tileEdges.js';
 import loadImages from './images/loadImages.js';
 import drawSprite from './images/drawSprite.js';
+import drawButtons from './interface/menu/drawButtons.js';
 import createWaves from './terrain/objects/createWaves.js';
 import animateTerrain from './terrain/animateTerrain.js';
 import loadSounds from './sounds/loadSounds.js';
@@ -19,10 +19,7 @@ import drawTerrain from './terrain/drawTerrain.js';
 import drawTreasureMap from './treasure/drawTreasureMap.js';
 import addPirateWreck from './terrain/addPirateWreck.js';
 import addShipWreck from './terrain/addShipWreck.js';
-import isDrinkable from './terrain/objects/isDrinkable.js';
-import isEatable from './terrain/objects/isEatable.js';
 import isNormalTree from './terrain/objects/isNormalTree.js';
-import isFishable from './terrain/objects/isFishable.js';
 import isRiver from './terrain/objects/isRiver.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
@@ -48,7 +45,7 @@ import itemTextIds from './guy/inventory/itemTextIds.js';
 import drawItems from './guy/inventory/drawItems.js';
 import itemSprites from './guy/inventory/itemSprites.js';
 import drawItem from './guy/inventory/drawItem.js';
-import updateMinimap from './minimap/updateMinimap.js';
+import updateMinimap from './interface/minimap/updateMinimap.js';
 import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
 import sounds from './sounds/sounds.js';
@@ -64,30 +61,33 @@ import findNeighbor from './guy/findNeighbor.js';
 import directions from './terrain/directions.js';
 import pauseConstruction from './construction/pauseConstruction.js';
 import continueConstruction from './construction/continueConstruction.js';
-import isDestroyable from './terrain/objects/isDestroyable.js';
 import isUsableBoat from './terrain/objects/isUsableBoat.js';
 import isBigTree from './terrain/objects/isBigTree.js';
-import isUsableFireplace from './terrain/objects/isUsableFireplace.js';
 import updatePipes from './terrain/updatePipes.js';
 import createTreeFallObject from './terrain/objects/createTreeFallObject.js';
-import drawText from './text/drawText.js';
-import textAreas from './text/textAreas.js';
-import clearText from './text/clearText.js';
-import closePaper from './text/closePaper.js';
-import drawPaper from './text/drawPaper.js';
-import blitText from './text/blitText.js';
-import openPaper from './text/openPaper.js';
+import drawText from './interface/text/drawText.js';
+import textAreas from './interface/text/textAreas.js';
+import clearText from './interface/text/clearText.js';
+import closePaper from './interface/text/closePaper.js';
+import drawPaper from './interface/text/drawPaper.js';
+import blitText from './interface/text/blitText.js';
+import openPaper from './interface/text/openPaper.js';
 import canvases from './images/canvases.js';
 import getTileByPosition from './terrain/getTileByPosition.js';
 import calculatePositionInTile from './terrain/tiles/calculatePositionInTile.js';
-import texts from './text/texts.js';
-import drawStartConstructionText from './construction/drawStartConstructionText.js';
-import openDayEndPaper from './text/openDayEndPaper.js';
-import drawStatusText from './text/drawStatusText.js';
+import texts from './interface/text/texts.js';
+import openDayEndPaper from './interface/text/openDayEndPaper.js';
+import drawStatusText from './interface/text/drawStatusText.js';
 import drawTileText from './terrain/tiles/drawTileText.js';
-import drawMinimap from './minimap/drawMinimap.js';
-import moveCameraFromMinimap from './minimap/moveCameraFromMinimap.js';
+import drawMinimap from './interface/minimap/drawMinimap.js';
+import moveCameraFromMinimap from './interface/minimap/moveCameraFromMinimap.js';
 import state from './state/state.js';
+import animateButtons from './interface/menu/animateButtons.js';
+import menuTypes from './interface/menu/menuTypes.js';
+import handleButtonTaps from './interface/menu/handleButtonTaps.js';
+import handleButtonHovers from './interface/menu/handleButtonHovers.js';
+import startAction from './action/startAction.js';
+import actionTypes from './action/actionTypes.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -102,33 +102,9 @@ const BUTTBEENDEN = BUTTGITTER + 1;
 const BUTTNEU = BUTTGITTER + 2;
 const BUTTTAGNEU = BUTTGITTER + 3;
 const BUTTSOUND = BUTTGITTER + 4;
-const BUTTAKTION = BUTTGITTER + 5;
-const BUTTBAUEN = BUTTGITTER + 6;
-const BUTTINVENTAR = BUTTGITTER + 7;
-const BUTTWEITER = BUTTGITTER + 8;
-const BUTTSTOP = BUTTGITTER + 9;
-const BUTTABLEGEN = BUTTGITTER + 10;
-const BUTTSUCHEN = 118;
-const BUTTESSEN = BUTTSUCHEN + 1;
-const BUTTSCHLAFEN = BUTTSUCHEN + 2;
-const BUTTFAELLEN = BUTTSUCHEN + 3;
-const BUTTANGELN = BUTTSUCHEN + 4;
-const BUTTANZUENDEN = BUTTSUCHEN + 5;
-const BUTTAUSSCHAU = BUTTSUCHEN + 6;
-const BUTTSCHATZKARTE = BUTTSUCHEN + 7;
-const BUTTSCHATZ = BUTTSUCHEN + 8;
-const BUTTSCHLEUDER = BUTTSUCHEN + 9;
-const BUTTZELT = 128;
-const BUTTFELD = BUTTZELT + 1;
-const BUTTBOOT = BUTTZELT + 2;
-const BUTTROHR = BUTTZELT + 3;
-const BUTTSOS = BUTTZELT + 4;
-const BUTTHAUS1 = BUTTZELT + 5;
-const BUTTHAUS2 = BUTTZELT + 6;
-const BUTTHAUS3 = BUTTZELT + 7;
-const BUTTFEUERST = BUTTZELT + 8;
-const BUTTFRAGEZ = BUTTZELT + 9;
-const BUTTDESTROY = BUTTZELT + 10;
+const BUTTWEITER = BUTTGITTER + 5;
+const BUTTSTOP = BUTTGITTER + 6;
+const BUTTABLEGEN = BUTTGITTER + 7;
 const SAEULE1 = 140;
 const SAEULE2 = SAEULE1 + 1;
 const SAEULE3 = SAEULE1 + 2;
@@ -151,45 +127,6 @@ const SCHWARZ = PROGRAMMIERUNG + 12;
 const MUSIK = PROGRAMMIERUNG + 13;
 const DPSOFTWARE = PROGRAMMIERUNG + 14;
 const BILDANZ = DPSOFTWARE + 1; //Wieviele Bilder
-
-//Aktionen
-const AKNICHTS = 0;
-const AKSUCHEN = 1;
-const AKESSEN = 2;
-const AKTRINKEN = 3;
-const AKFAELLEN = 4;
-const AKFELD = 5;
-const AKTAGENDE = 6;
-const AKGERETTET = 7;
-const AKZELT = 8;
-const AKSCHLAFEN = 9;
-const AKABBRUCH = 10;
-const AKANGELN = 11;
-const AKBOOT = 12;
-const AKABLEGEN = 13;
-const AKANLEGEN = 14;
-const AKROHR = 15;
-const AKDESTROY = 16;
-const AKSOS = 17;
-const AKHAUS1 = 18;
-const AKHAUS2 = 19;
-const AKHAUS3 = 20;
-const AKFEUERSTELLE = 21;
-const AKANZUENDEN = 22;
-const AKAUSSCHAU = 23;
-const AKSCHATZ = 24;
-const AKINTRO = 25;
-const AKSCHLEUDER = 26;
-const AKSPIELVERLASSEN = 27;
-const AKNEUBEGINNEN = 28;
-const AKTOD = 29;
-const AKTAGNEUBEGINNEN = 30;
-
-//Menüs
-const MEKEINS = 0;
-const MEAKTION = 1;
-const MEBAUEN = 2;
-const MEINVENTAR = 3;
 
 //Spielzustände
 const GAME_WAIT = 'wait';
@@ -229,7 +166,6 @@ let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let StdString = '';    //Standard string
-let HauptMenue;            //Welches Menü?
 let TwoClicks;                //Für Aktionen mit zwei Mausklicks
 let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
 let Spielbeenden = false;    //Wenn true wird das Spiel sofort beendet
@@ -244,11 +180,6 @@ const rcKarte = { left: MAXX - 158, top: 23, right: MAXX - 158 + MAXXKACH * 2, b
 const rcTextFeld1 = { left: 0, top: MAXY - 20, right: MAXX - 195, bottom: MAXY };
 
 const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
-
-let Guy = {
-  Aktion: null,              //Welche Aktion (Suchen, fischen ...) (Übergeordnet über Zustand)
-  AkNummer: null,            //Bei welcher Aktion (für die Aktionsprozeduren)
-};
 
 const Bmp = Array.from(Array(BILDANZ), () => ({
   Surface: null, //in welcher Surface gespeichert?
@@ -357,8 +288,6 @@ const SaveGame = () => {
 
   window.localStorage.setItem('stateV9', JSON.stringify({
     ...state,
-    Guy,
-    HauptMenue,
     Spielzustand,
     animations
   }));
@@ -384,8 +313,6 @@ const LoadGame = () => {
   }
   state.paper = null;
 
-  Guy = state.Guy;
-  HauptMenue = state.HauptMenue;
   Spielzustand = state.Spielzustand;
 
   for (i = 0; i < BILDANZ; i++) {
@@ -437,7 +364,7 @@ const InitStructs = async () => {
   //Buttons
 
   //StandardBmponsinitialisierung
-  for (i = BUTTGITTER; i <= BUTTDESTROY; i++) {
+  for (i = BUTTGITTER; i <= BUTTABLEGEN; i++) {
     Bmp[i].Animation = false;
     Bmp[i].Surface = buttonsImage;
     Bmp[i].Anzahl = 1;
@@ -513,49 +440,6 @@ const InitStructs = async () => {
   Bmp[BUTTSOUND].Hoehe = (Bmp[BUTTSOUND].rcSrc.bottom - Bmp[BUTTSOUND].rcSrc.top);
   Bmp[BUTTSOUND].Anzahl = 2;
 
-  //ButtAktion
-  Bmp[BUTTAKTION].rcSrc.left = 28;
-  Bmp[BUTTAKTION].rcSrc.top = 0;
-  Bmp[BUTTAKTION].rcSrc.right = 28 + 35;
-  Bmp[BUTTAKTION].rcSrc.bottom = 35;
-  Bmp[BUTTAKTION].rcDes.left = rcPanel.left + 29;
-  Bmp[BUTTAKTION].rcDes.top = rcPanel.top + 157;
-  Bmp[BUTTAKTION].rcDes.right = Bmp[BUTTAKTION].rcDes.left + 35;
-  Bmp[BUTTAKTION].rcDes.bottom = Bmp[BUTTAKTION].rcDes.top + 35;
-  Bmp[BUTTAKTION].Breite = (Bmp[BUTTAKTION].rcSrc.right - Bmp[BUTTAKTION].rcSrc.left);
-  Bmp[BUTTAKTION].Hoehe = (Bmp[BUTTAKTION].rcSrc.bottom - Bmp[BUTTAKTION].rcSrc.top);
-  Bmp[BUTTAKTION].Anzahl = 3;
-  Bmp[BUTTAKTION].Geschwindigkeit = 6;
-
-  //BUTTBAUEN
-  Bmp[BUTTBAUEN].rcSrc.left = 203;
-  Bmp[BUTTBAUEN].rcSrc.top = 0;
-  Bmp[BUTTBAUEN].rcSrc.right = 203 + 35;
-  Bmp[BUTTBAUEN].rcSrc.bottom = 35;
-  Bmp[BUTTBAUEN].rcDes.left = rcPanel.left + 70;
-  Bmp[BUTTBAUEN].rcDes.top = rcPanel.top + 157;
-  Bmp[BUTTBAUEN].rcDes.right = Bmp[BUTTBAUEN].rcDes.left + 35;
-  Bmp[BUTTBAUEN].rcDes.bottom = Bmp[BUTTBAUEN].rcDes.top + 35;
-  Bmp[BUTTBAUEN].Breite = (Bmp[BUTTBAUEN].rcSrc.right - Bmp[BUTTBAUEN].rcSrc.left);
-  Bmp[BUTTBAUEN].Hoehe = (Bmp[BUTTBAUEN].rcSrc.bottom - Bmp[BUTTBAUEN].rcSrc.top);
-  Bmp[BUTTBAUEN].Anzahl = 4;
-  Bmp[BUTTBAUEN].Geschwindigkeit = 5;
-
-
-  //BUTTINVENTAR
-  Bmp[BUTTINVENTAR].rcSrc.left = 168;
-  Bmp[BUTTINVENTAR].rcSrc.top = 0;
-  Bmp[BUTTINVENTAR].rcSrc.right = 168 + 35;
-  Bmp[BUTTINVENTAR].rcSrc.bottom = 35;
-  Bmp[BUTTINVENTAR].rcDes.left = rcPanel.left + 152;
-  Bmp[BUTTINVENTAR].rcDes.top = rcPanel.top + 157;
-  Bmp[BUTTINVENTAR].rcDes.right = Bmp[BUTTINVENTAR].rcDes.left + 35;
-  Bmp[BUTTINVENTAR].rcDes.bottom = Bmp[BUTTINVENTAR].rcDes.top + 35;
-  Bmp[BUTTINVENTAR].Breite = (Bmp[BUTTINVENTAR].rcSrc.right - Bmp[BUTTINVENTAR].rcSrc.left);
-  Bmp[BUTTINVENTAR].Hoehe = (Bmp[BUTTINVENTAR].rcSrc.bottom - Bmp[BUTTINVENTAR].rcSrc.top);
-  Bmp[BUTTINVENTAR].Anzahl = 4;
-  Bmp[BUTTINVENTAR].Geschwindigkeit = 4;
-
   //BUTTWEITER
   Bmp[BUTTWEITER].rcSrc.left = 343;
   Bmp[BUTTWEITER].rcSrc.top = 0;
@@ -600,314 +484,6 @@ const InitStructs = async () => {
   Bmp[BUTTABLEGEN].Anzahl = 4;
   Bmp[BUTTABLEGEN].Geschwindigkeit = 3;
   Bmp[BUTTSTOP].Phase = -1;
-
-  //BUTTSUCHEN
-  Bmp[BUTTSUCHEN].rcSrc.left = 63;
-  Bmp[BUTTSUCHEN].rcSrc.top = 0;
-  Bmp[BUTTSUCHEN].rcSrc.right = 63 + 35;
-  Bmp[BUTTSUCHEN].rcSrc.bottom = 35;
-  Bmp[BUTTSUCHEN].rcDes.left = rcPanel.left + 29;
-  Bmp[BUTTSUCHEN].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTSUCHEN].rcDes.right = Bmp[BUTTSUCHEN].rcDes.left + 35;
-  Bmp[BUTTSUCHEN].rcDes.bottom = Bmp[BUTTSUCHEN].rcDes.top + 35;
-  Bmp[BUTTSUCHEN].Breite = (Bmp[BUTTSUCHEN].rcSrc.right - Bmp[BUTTSUCHEN].rcSrc.left);
-  Bmp[BUTTSUCHEN].Hoehe = (Bmp[BUTTSUCHEN].rcSrc.bottom - Bmp[BUTTSUCHEN].rcSrc.top);
-  Bmp[BUTTSUCHEN].Anzahl = 4;
-  Bmp[BUTTSUCHEN].Geschwindigkeit = 4;
-
-  //BUTTESSEN
-  Bmp[BUTTESSEN].rcSrc.left = 133;
-  Bmp[BUTTESSEN].rcSrc.top = 0;
-  Bmp[BUTTESSEN].rcSrc.right = 133 + 35;
-  Bmp[BUTTESSEN].rcSrc.bottom = 35;
-  Bmp[BUTTESSEN].rcDes.left = rcPanel.left + 70;
-  Bmp[BUTTESSEN].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTESSEN].rcDes.right = Bmp[BUTTESSEN].rcDes.left + 35;
-  Bmp[BUTTESSEN].rcDes.bottom = Bmp[BUTTESSEN].rcDes.top + 35;
-  Bmp[BUTTESSEN].Breite = (Bmp[BUTTESSEN].rcSrc.right - Bmp[BUTTESSEN].rcSrc.left);
-  Bmp[BUTTESSEN].Hoehe = (Bmp[BUTTESSEN].rcSrc.bottom - Bmp[BUTTESSEN].rcSrc.top);
-  Bmp[BUTTESSEN].Anzahl = 4;
-  Bmp[BUTTESSEN].Geschwindigkeit = 4;
-
-  //BUTTSCHLAFEN
-  Bmp[BUTTSCHLAFEN].rcSrc.left = 308;
-  Bmp[BUTTSCHLAFEN].rcSrc.top = 0;
-  Bmp[BUTTSCHLAFEN].rcSrc.right = 308 + 35;
-  Bmp[BUTTSCHLAFEN].rcSrc.bottom = 35;
-  Bmp[BUTTSCHLAFEN].rcDes.left = rcPanel.left + 111;
-  Bmp[BUTTSCHLAFEN].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTSCHLAFEN].rcDes.right = Bmp[BUTTSCHLAFEN].rcDes.left + 35;
-  Bmp[BUTTSCHLAFEN].rcDes.bottom = Bmp[BUTTSCHLAFEN].rcDes.top + 35;
-  Bmp[BUTTSCHLAFEN].Breite = (Bmp[BUTTSCHLAFEN].rcSrc.right - Bmp[BUTTSCHLAFEN].rcSrc.left);
-  Bmp[BUTTSCHLAFEN].Hoehe = (Bmp[BUTTSCHLAFEN].rcSrc.bottom - Bmp[BUTTSCHLAFEN].rcSrc.top);
-  Bmp[BUTTSCHLAFEN].Anzahl = 4;
-  Bmp[BUTTSCHLAFEN].Geschwindigkeit = 3;
-
-  //BUTTFAELLEN
-  Bmp[BUTTFAELLEN].rcSrc.left = 98;
-  Bmp[BUTTFAELLEN].rcSrc.top = 0;
-  Bmp[BUTTFAELLEN].rcSrc.right = 98 + 35;
-  Bmp[BUTTFAELLEN].rcSrc.bottom = 35;
-  Bmp[BUTTFAELLEN].rcDes.left = rcPanel.left + 152;
-  Bmp[BUTTFAELLEN].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTFAELLEN].rcDes.right = Bmp[BUTTFAELLEN].rcDes.left + 35;
-  Bmp[BUTTFAELLEN].rcDes.bottom = Bmp[BUTTFAELLEN].rcDes.top + 35;
-  Bmp[BUTTFAELLEN].Breite = (Bmp[BUTTFAELLEN].rcSrc.right - Bmp[BUTTFAELLEN].rcSrc.left);
-  Bmp[BUTTFAELLEN].Hoehe = (Bmp[BUTTFAELLEN].rcSrc.bottom - Bmp[BUTTFAELLEN].rcSrc.top);
-  Bmp[BUTTFAELLEN].Anzahl = 4;
-  Bmp[BUTTFAELLEN].Geschwindigkeit = 4;
-  Bmp[BUTTFAELLEN].Phase = -1;
-
-  //BUTTANGELN
-  Bmp[BUTTANGELN].rcSrc.left = 413;
-  Bmp[BUTTANGELN].rcSrc.top = 0;
-  Bmp[BUTTANGELN].rcSrc.right = 413 + 35;
-  Bmp[BUTTANGELN].rcSrc.bottom = 35;
-  Bmp[BUTTANGELN].rcDes.left = rcPanel.left + 29;
-  Bmp[BUTTANGELN].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTANGELN].rcDes.right = Bmp[BUTTANGELN].rcDes.left + 35;
-  Bmp[BUTTANGELN].rcDes.bottom = Bmp[BUTTANGELN].rcDes.top + 35;
-  Bmp[BUTTANGELN].Breite = (Bmp[BUTTANGELN].rcSrc.right - Bmp[BUTTANGELN].rcSrc.left);
-  Bmp[BUTTANGELN].Hoehe = (Bmp[BUTTANGELN].rcSrc.bottom - Bmp[BUTTANGELN].rcSrc.top);
-  Bmp[BUTTANGELN].Anzahl = 4;
-  Bmp[BUTTANGELN].Geschwindigkeit = 3;
-  Bmp[BUTTANGELN].Phase = -1;
-
-  //BUTTANZUENDEN
-  Bmp[BUTTANZUENDEN].rcSrc.left = 28;
-  Bmp[BUTTANZUENDEN].rcSrc.top = 175;
-  Bmp[BUTTANZUENDEN].rcSrc.right = 28 + 35;
-  Bmp[BUTTANZUENDEN].rcSrc.bottom = 175 + 35;
-  Bmp[BUTTANZUENDEN].rcDes.left = rcPanel.left + 70;
-  Bmp[BUTTANZUENDEN].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTANZUENDEN].rcDes.right = Bmp[BUTTANZUENDEN].rcDes.left + 35;
-  Bmp[BUTTANZUENDEN].rcDes.bottom = Bmp[BUTTANZUENDEN].rcDes.top + 35;
-  Bmp[BUTTANZUENDEN].Breite = (Bmp[BUTTANZUENDEN].rcSrc.right - Bmp[BUTTANZUENDEN].rcSrc.left);
-  Bmp[BUTTANZUENDEN].Hoehe = (Bmp[BUTTANZUENDEN].rcSrc.bottom - Bmp[BUTTANZUENDEN].rcSrc.top);
-  Bmp[BUTTANZUENDEN].Anzahl = 3;
-  Bmp[BUTTANZUENDEN].Geschwindigkeit = 4;
-  Bmp[BUTTANZUENDEN].Phase = -1;
-
-  //BUTTAUSSCHAU
-  Bmp[BUTTAUSSCHAU].rcSrc.left = 63;
-  Bmp[BUTTAUSSCHAU].rcSrc.top = 175;
-  Bmp[BUTTAUSSCHAU].rcSrc.right = 63 + 35;
-  Bmp[BUTTAUSSCHAU].rcSrc.bottom = 175 + 35;
-  Bmp[BUTTAUSSCHAU].rcDes.left = rcPanel.left + 111;
-  Bmp[BUTTAUSSCHAU].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTAUSSCHAU].rcDes.right = Bmp[BUTTAUSSCHAU].rcDes.left + 35;
-  Bmp[BUTTAUSSCHAU].rcDes.bottom = Bmp[BUTTAUSSCHAU].rcDes.top + 35;
-  Bmp[BUTTAUSSCHAU].Breite = (Bmp[BUTTAUSSCHAU].rcSrc.right - Bmp[BUTTAUSSCHAU].rcSrc.left);
-  Bmp[BUTTAUSSCHAU].Hoehe = (Bmp[BUTTAUSSCHAU].rcSrc.bottom - Bmp[BUTTAUSSCHAU].rcSrc.top);
-  Bmp[BUTTAUSSCHAU].Anzahl = 4;
-  Bmp[BUTTAUSSCHAU].Geschwindigkeit = 3;
-  Bmp[BUTTAUSSCHAU].Phase = -1;
-
-  //BUTTSCHATZKARTE
-  Bmp[BUTTSCHATZKARTE].rcSrc.left = 98;
-  Bmp[BUTTSCHATZKARTE].rcSrc.top = 175;
-  Bmp[BUTTSCHATZKARTE].rcSrc.right = 98 + 35;
-  Bmp[BUTTSCHATZKARTE].rcSrc.bottom = 175 + 35;
-  Bmp[BUTTSCHATZKARTE].rcDes.left = rcPanel.left + 152;
-  Bmp[BUTTSCHATZKARTE].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTSCHATZKARTE].rcDes.right = Bmp[BUTTSCHATZKARTE].rcDes.left + 35;
-  Bmp[BUTTSCHATZKARTE].rcDes.bottom = Bmp[BUTTSCHATZKARTE].rcDes.top + 35;
-  Bmp[BUTTSCHATZKARTE].Breite = (Bmp[BUTTSCHATZKARTE].rcSrc.right - Bmp[BUTTSCHATZKARTE].rcSrc.left);
-  Bmp[BUTTSCHATZKARTE].Hoehe = (Bmp[BUTTSCHATZKARTE].rcSrc.bottom - Bmp[BUTTSCHATZKARTE].rcSrc.top);
-  Bmp[BUTTSCHATZKARTE].Anzahl = 4;
-  Bmp[BUTTSCHATZKARTE].Geschwindigkeit = 3;
-  Bmp[BUTTSCHATZKARTE].Phase = -1;
-
-  //BUTTSCHATZ
-  Bmp[BUTTSCHATZ].rcSrc.left = 133;
-  Bmp[BUTTSCHATZ].rcSrc.top = 175;
-  Bmp[BUTTSCHATZ].rcSrc.right = 133 + 35;
-  Bmp[BUTTSCHATZ].rcSrc.bottom = 175 + 35;
-  Bmp[BUTTSCHATZ].rcDes.left = rcPanel.left + 29;
-  Bmp[BUTTSCHATZ].rcDes.top = rcPanel.top + 316;
-  Bmp[BUTTSCHATZ].rcDes.right = Bmp[BUTTSCHATZ].rcDes.left + 35;
-  Bmp[BUTTSCHATZ].rcDes.bottom = Bmp[BUTTSCHATZ].rcDes.top + 35;
-  Bmp[BUTTSCHATZ].Breite = (Bmp[BUTTSCHATZ].rcSrc.right - Bmp[BUTTSCHATZ].rcSrc.left);
-  Bmp[BUTTSCHATZ].Hoehe = (Bmp[BUTTSCHATZ].rcSrc.bottom - Bmp[BUTTSCHATZ].rcSrc.top);
-  Bmp[BUTTSCHATZ].Anzahl = 4;
-  Bmp[BUTTSCHATZ].Geschwindigkeit = 3;
-  Bmp[BUTTSCHATZ].Phase = -1;
-
-  //BUTTSCHLEUDER
-  Bmp[BUTTSCHLEUDER].rcSrc.left = 168;
-  Bmp[BUTTSCHLEUDER].rcSrc.top = 175;
-  Bmp[BUTTSCHLEUDER].rcSrc.right = 168 + 35;
-  Bmp[BUTTSCHLEUDER].rcSrc.bottom = 175 + 35;
-  Bmp[BUTTSCHLEUDER].rcDes.left = rcPanel.left + 70;
-  Bmp[BUTTSCHLEUDER].rcDes.top = rcPanel.top + 316;
-  Bmp[BUTTSCHLEUDER].rcDes.right = Bmp[BUTTSCHLEUDER].rcDes.left + 35;
-  Bmp[BUTTSCHLEUDER].rcDes.bottom = Bmp[BUTTSCHLEUDER].rcDes.top + 35;
-  Bmp[BUTTSCHLEUDER].Breite = (Bmp[BUTTSCHLEUDER].rcSrc.right - Bmp[BUTTSCHLEUDER].rcSrc.left);
-  Bmp[BUTTSCHLEUDER].Hoehe = (Bmp[BUTTSCHLEUDER].rcSrc.bottom - Bmp[BUTTSCHLEUDER].rcSrc.top);
-  Bmp[BUTTSCHLEUDER].Anzahl = 4;
-  Bmp[BUTTSCHLEUDER].Geschwindigkeit = 3;
-  Bmp[BUTTSCHLEUDER].Phase = -1;
-
-  //BUTTFELD
-  Bmp[BUTTFELD].rcSrc.left = 238;
-  Bmp[BUTTFELD].rcSrc.top = 0;
-  Bmp[BUTTFELD].rcSrc.right = 238 + 35;
-  Bmp[BUTTFELD].rcSrc.bottom = 35;
-  Bmp[BUTTFELD].rcDes.left = rcPanel.left + 70;
-  Bmp[BUTTFELD].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTFELD].rcDes.right = Bmp[BUTTFELD].rcDes.left + 35;
-  Bmp[BUTTFELD].rcDes.bottom = Bmp[BUTTFELD].rcDes.top + 35;
-  Bmp[BUTTFELD].Breite = (Bmp[BUTTFELD].rcSrc.right - Bmp[BUTTFELD].rcSrc.left);
-  Bmp[BUTTFELD].Hoehe = (Bmp[BUTTFELD].rcSrc.bottom - Bmp[BUTTFELD].rcSrc.top);
-  Bmp[BUTTFELD].Anzahl = 4;
-  Bmp[BUTTFELD].Geschwindigkeit = 3;
-  Bmp[BUTTFELD].Phase = -1;
-
-  //BUTTZELT
-  Bmp[BUTTZELT].rcSrc.left = 273;
-  Bmp[BUTTZELT].rcSrc.top = 0;
-  Bmp[BUTTZELT].rcSrc.right = 273 + 35;
-  Bmp[BUTTZELT].rcSrc.bottom = 35;
-  Bmp[BUTTZELT].rcDes.left = rcPanel.left + 29;
-  Bmp[BUTTZELT].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTZELT].rcDes.right = Bmp[BUTTZELT].rcDes.left + 35;
-  Bmp[BUTTZELT].rcDes.bottom = Bmp[BUTTZELT].rcDes.top + 35;
-  Bmp[BUTTZELT].Breite = (Bmp[BUTTZELT].rcSrc.right - Bmp[BUTTZELT].rcSrc.left);
-  Bmp[BUTTZELT].Hoehe = (Bmp[BUTTZELT].rcSrc.bottom - Bmp[BUTTZELT].rcSrc.top);
-  Bmp[BUTTZELT].Anzahl = 3;
-  Bmp[BUTTZELT].Geschwindigkeit = 3;
-  Bmp[BUTTZELT].Phase = 0;
-
-  //BUTTBOOT
-  Bmp[BUTTBOOT].rcSrc.left = 448;
-  Bmp[BUTTBOOT].rcSrc.top = 0;
-  Bmp[BUTTBOOT].rcSrc.right = 448 + 35;
-  Bmp[BUTTBOOT].rcSrc.bottom = 35;
-  Bmp[BUTTBOOT].rcDes.left = rcPanel.left + 111;
-  Bmp[BUTTBOOT].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTBOOT].rcDes.right = Bmp[BUTTBOOT].rcDes.left + 35;
-  Bmp[BUTTBOOT].rcDes.bottom = Bmp[BUTTBOOT].rcDes.top + 35;
-  Bmp[BUTTBOOT].Breite = (Bmp[BUTTBOOT].rcSrc.right - Bmp[BUTTBOOT].rcSrc.left);
-  Bmp[BUTTBOOT].Hoehe = (Bmp[BUTTBOOT].rcSrc.bottom - Bmp[BUTTBOOT].rcSrc.top);
-  Bmp[BUTTBOOT].Anzahl = 3;
-  Bmp[BUTTBOOT].Geschwindigkeit = 3;
-  Bmp[BUTTBOOT].Phase = -1;
-
-  //BUTTROHR
-  Bmp[BUTTROHR].rcSrc.left = 518;
-  Bmp[BUTTROHR].rcSrc.top = 0;
-  Bmp[BUTTROHR].rcSrc.right = 518 + 35;
-  Bmp[BUTTROHR].rcSrc.bottom = 35;
-  Bmp[BUTTROHR].rcDes.left = rcPanel.left + 152;
-  Bmp[BUTTROHR].rcDes.top = rcPanel.top + 220;
-  Bmp[BUTTROHR].rcDes.right = Bmp[BUTTROHR].rcDes.left + 35;
-  Bmp[BUTTROHR].rcDes.bottom = Bmp[BUTTROHR].rcDes.top + 35;
-  Bmp[BUTTROHR].Breite = (Bmp[BUTTROHR].rcSrc.right - Bmp[BUTTROHR].rcSrc.left);
-  Bmp[BUTTROHR].Hoehe = (Bmp[BUTTROHR].rcSrc.bottom - Bmp[BUTTROHR].rcSrc.top);
-  Bmp[BUTTROHR].Anzahl = 4;
-  Bmp[BUTTROHR].Geschwindigkeit = 2;
-  Bmp[BUTTROHR].Phase = -1;
-
-  //BUTTSOS
-  Bmp[BUTTSOS].rcSrc.left = 588;
-  Bmp[BUTTSOS].rcSrc.top = 0;
-  Bmp[BUTTSOS].rcSrc.right = 588 + 35;
-  Bmp[BUTTSOS].rcSrc.bottom = 35;
-  Bmp[BUTTSOS].rcDes.left = rcPanel.left + 29;
-  Bmp[BUTTSOS].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTSOS].rcDes.right = Bmp[BUTTSOS].rcDes.left + 35;
-  Bmp[BUTTSOS].rcDes.bottom = Bmp[BUTTSOS].rcDes.top + 35;
-  Bmp[BUTTSOS].Breite = (Bmp[BUTTSOS].rcSrc.right - Bmp[BUTTSOS].rcSrc.left);
-  Bmp[BUTTSOS].Hoehe = (Bmp[BUTTSOS].rcSrc.bottom - Bmp[BUTTSOS].rcSrc.top);
-  Bmp[BUTTSOS].Anzahl = 3;
-  Bmp[BUTTSOS].Geschwindigkeit = 2;
-
-  //BUTTHAUS1
-  Bmp[BUTTHAUS1].rcSrc.left = 623;
-  Bmp[BUTTHAUS1].rcSrc.top = 0;
-  Bmp[BUTTHAUS1].rcSrc.right = 623 + 35;
-  Bmp[BUTTHAUS1].rcSrc.bottom = 35;
-  Bmp[BUTTHAUS1].rcDes.left = rcPanel.left + 70;
-  Bmp[BUTTHAUS1].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTHAUS1].rcDes.right = Bmp[BUTTHAUS1].rcDes.left + 35;
-  Bmp[BUTTHAUS1].rcDes.bottom = Bmp[BUTTHAUS1].rcDes.top + 35;
-  Bmp[BUTTHAUS1].Breite = (Bmp[BUTTHAUS1].rcSrc.right - Bmp[BUTTHAUS1].rcSrc.left);
-  Bmp[BUTTHAUS1].Hoehe = (Bmp[BUTTHAUS1].rcSrc.bottom - Bmp[BUTTHAUS1].rcSrc.top);
-  Bmp[BUTTHAUS1].Anzahl = 5;
-  Bmp[BUTTHAUS1].Geschwindigkeit = 3;
-  Bmp[BUTTHAUS1].Phase = -1;
-
-  //BUTTHAUS2
-  Bmp[BUTTHAUS2].rcSrc.left = 658;
-  Bmp[BUTTHAUS2].rcSrc.top = 0;
-  Bmp[BUTTHAUS2].rcSrc.right = 658 + 35;
-  Bmp[BUTTHAUS2].rcSrc.bottom = 35;
-  Bmp[BUTTHAUS2].rcDes.left = rcPanel.left + 111;
-  Bmp[BUTTHAUS2].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTHAUS2].rcDes.right = Bmp[BUTTHAUS2].rcDes.left + 35;
-  Bmp[BUTTHAUS2].rcDes.bottom = Bmp[BUTTHAUS2].rcDes.top + 35;
-  Bmp[BUTTHAUS2].Breite = (Bmp[BUTTHAUS2].rcSrc.right - Bmp[BUTTHAUS2].rcSrc.left);
-  Bmp[BUTTHAUS2].Hoehe = (Bmp[BUTTHAUS2].rcSrc.bottom - Bmp[BUTTHAUS2].rcSrc.top);
-  Bmp[BUTTHAUS2].Anzahl = 4;
-  Bmp[BUTTHAUS2].Geschwindigkeit = 3;
-  Bmp[BUTTHAUS2].Phase = -1;
-
-  //BUTTHAUS3
-  Bmp[BUTTHAUS3].rcSrc.left = 693;
-  Bmp[BUTTHAUS3].rcSrc.top = 0;
-  Bmp[BUTTHAUS3].rcSrc.right = 693 + 35;
-  Bmp[BUTTHAUS3].rcSrc.bottom = 35;
-  Bmp[BUTTHAUS3].rcDes.left = rcPanel.left + 152;
-  Bmp[BUTTHAUS3].rcDes.top = rcPanel.top + 268;
-  Bmp[BUTTHAUS3].rcDes.right = Bmp[BUTTHAUS3].rcDes.left + 35;
-  Bmp[BUTTHAUS3].rcDes.bottom = Bmp[BUTTHAUS3].rcDes.top + 35;
-  Bmp[BUTTHAUS3].Breite = (Bmp[BUTTHAUS3].rcSrc.right - Bmp[BUTTHAUS3].rcSrc.left);
-  Bmp[BUTTHAUS3].Hoehe = (Bmp[BUTTHAUS3].rcSrc.bottom - Bmp[BUTTHAUS3].rcSrc.top);
-  Bmp[BUTTHAUS3].Anzahl = 4;
-  Bmp[BUTTHAUS3].Geschwindigkeit = 3;
-  Bmp[BUTTHAUS3].Phase = -1;
-
-  //BUTTFEUERST
-  Bmp[BUTTFEUERST].rcSrc.left = 728;
-  Bmp[BUTTFEUERST].rcSrc.top = 0;
-  Bmp[BUTTFEUERST].rcSrc.right = 728 + 35;
-  Bmp[BUTTFEUERST].rcSrc.bottom = 35;
-  Bmp[BUTTFEUERST].rcDes.left = rcPanel.left + 29;
-  Bmp[BUTTFEUERST].rcDes.top = rcPanel.top + 316;
-  Bmp[BUTTFEUERST].rcDes.right = Bmp[BUTTFEUERST].rcDes.left + 35;
-  Bmp[BUTTFEUERST].rcDes.bottom = Bmp[BUTTFEUERST].rcDes.top + 35;
-  Bmp[BUTTFEUERST].Breite = (Bmp[BUTTFEUERST].rcSrc.right - Bmp[BUTTFEUERST].rcSrc.left);
-  Bmp[BUTTFEUERST].Hoehe = (Bmp[BUTTFEUERST].rcSrc.bottom - Bmp[BUTTFEUERST].rcSrc.top);
-  Bmp[BUTTFEUERST].Anzahl = 4;
-  Bmp[BUTTFEUERST].Geschwindigkeit = 3;
-
-  //BUTTFRAGEZ
-  Bmp[BUTTFRAGEZ].rcSrc.left = 203;
-  Bmp[BUTTFRAGEZ].rcSrc.top = 175;
-  Bmp[BUTTFRAGEZ].rcSrc.right = 203 + 35;
-  Bmp[BUTTFRAGEZ].rcSrc.bottom = 175 + 35;
-  Bmp[BUTTFRAGEZ].rcDes.left = 0;
-  Bmp[BUTTFRAGEZ].rcDes.top = 0;
-  Bmp[BUTTFRAGEZ].rcDes.right = 35;
-  Bmp[BUTTFRAGEZ].rcDes.bottom = 35;
-  Bmp[BUTTFRAGEZ].Breite = (Bmp[BUTTFRAGEZ].rcSrc.right - Bmp[BUTTFRAGEZ].rcSrc.left);
-  Bmp[BUTTFRAGEZ].Hoehe = (Bmp[BUTTFRAGEZ].rcSrc.bottom - Bmp[BUTTFRAGEZ].rcSrc.top);
-  Bmp[BUTTFRAGEZ].Anzahl = 1;
-  Bmp[BUTTFRAGEZ].Geschwindigkeit = 0;
-
-  //BUTTDESTROY
-  Bmp[BUTTDESTROY].rcSrc.left = 553;
-  Bmp[BUTTDESTROY].rcSrc.top = 0;
-  Bmp[BUTTDESTROY].rcSrc.right = 553 + 35;
-  Bmp[BUTTDESTROY].rcSrc.bottom = 35;
-  Bmp[BUTTDESTROY].rcDes.left = rcPanel.left + 152;
-  Bmp[BUTTDESTROY].rcDes.top = rcPanel.top + 316;
-  Bmp[BUTTDESTROY].rcDes.right = Bmp[BUTTDESTROY].rcDes.left + 35;
-  Bmp[BUTTDESTROY].rcDes.bottom = Bmp[BUTTDESTROY].rcDes.top + 35;
-  Bmp[BUTTDESTROY].Breite = (Bmp[BUTTDESTROY].rcSrc.right - Bmp[BUTTDESTROY].rcSrc.left);
-  Bmp[BUTTDESTROY].Hoehe = (Bmp[BUTTDESTROY].rcSrc.bottom - Bmp[BUTTDESTROY].rcSrc.top);
-  Bmp[BUTTDESTROY].Anzahl = 4;
-  Bmp[BUTTDESTROY].Geschwindigkeit = 5;
 
   //Sonstiges
 
@@ -1230,7 +806,6 @@ const InitStructs = async () => {
 
   CursorTyp = CUPFEIL;
   MouseAktiv = true;
-  HauptMenue = 0;
   TwoClicks = -1;
   Nacht = false;
   framesPerSecond = 100;
@@ -1427,7 +1002,7 @@ const CheckKey = () => {
       updateCamera(state.guy.position, false);
 
       state.guy.sprite = spriteTypes.GUY_WAITING;
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       Spielzustand = GAME_PLAY;
       state.guy.storedPosition = { ...state.guy.position };
       SaveGame();
@@ -1445,14 +1020,10 @@ const CheckKey = () => {
     if (pressedKeyCodes[DIK_DOWN]) state.camera.y += 10;
     if (pressedKeyCodes[DIK_UP]) state.camera.y -= 10;
     if (pressedKeyCodes[DIK_ESCAPE]) {
-      Guy.AkNummer = 0;
-      state.guy.active = false;
-      Guy.Aktion = AKSPIELVERLASSEN;
+      startAction(actionTypes.STOPPING_GAME);
     }
     if (pressedKeyCodes[DIK_F11]) {
-      Guy.AkNummer = 0;
-      state.guy.active = false;
-      Guy.Aktion = AKNEUBEGINNEN;
+      startAction(actionTypes.RESTARTING_GAME);
     }
     if (pressedKeyCodes[DIK_G]) {
       state.options.grid = !state.options.grid;
@@ -1486,20 +1057,6 @@ const CheckKey = () => {
       changeItem(items.SHOVEL, 1);
       changeItem(items.MAP, 1);
       changeItem(items.SLING, 1);
-
-      Bmp[BUTTFAELLEN].Phase = 0;
-      Bmp[BUTTANGELN].Phase = 0;
-      Bmp[BUTTANZUENDEN].Phase = 0;
-      Bmp[BUTTAUSSCHAU].Phase = 0;
-      Bmp[BUTTSCHATZKARTE].Phase = 0;
-      Bmp[BUTTSCHATZ].Phase = 0;
-      Bmp[BUTTSCHLEUDER].Phase = 0;
-      Bmp[BUTTFELD].Phase = 0;
-      Bmp[BUTTBOOT].Phase = 0;
-      Bmp[BUTTROHR].Phase = 0;
-      Bmp[BUTTHAUS1].Phase = 0;
-      Bmp[BUTTHAUS2].Phase = 0;
-      Bmp[BUTTHAUS3].Phase = 0;
 
       state.guy.chance += 10;
     }
@@ -1540,17 +1097,16 @@ const AddTime = (m) => {
       }
     }
   changeHealth(m * (state.guy.water - 50 + state.guy.food - 50) / 1000);
-  if (state.guy.health <= 0 && Guy.Aktion !== AKTOD && Guy.Aktion !== AKTAGENDE && Spielzustand === GAME_PLAY) {
-    state.guy.active = false;
-    Guy.AkNummer = 0;
-    Guy.Aktion = AKTOD;
+  if (state.guy.health <= 0 && 
+    state.guy.action?.type !== actionTypes.DYING && 
+    state.guy.action?.type !== actionTypes.ENDING_DAY && 
+    Spielzustand === GAME_PLAY) {
+    startAction(actionTypes.DYING);
   }
 
   if ((Spielzustand === GAME_PLAY) && (!isOnSea())) {
     if (Math.random() < (state.guy.chance / 100) * (m / 720)) {
-      state.guy.active = false;
-      Guy.AkNummer = 0;
-      Guy.Aktion = AKGERETTET;
+      startAction(actionTypes.LEAVING);
     }
   }
 }
@@ -1594,13 +1150,14 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
 const ButtAniAus = () => {
   let i;
 
-  for (i = BUTTGITTER; i <= BUTTDESTROY; i++) {
+  for (i = BUTTGITTER; i <= BUTTABLEGEN; i++) {
     Bmp[i].Animation = false;
   }
 }
 
 const MouseInPanel = (Button, Push) => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
+  const openedMenu = state.options.openedMenu;
 
   //wenn die Maus in der Minimap ist .
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
@@ -1636,64 +1193,21 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTBEENDEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      state.guy.active = false;
-      Guy.Aktion = AKSPIELVERLASSEN;
+      startAction(actionTypes.STOPPING_GAME);
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTNEU].rcDes)) {
     drawStatusText(texts.NEU);
     Bmp[BUTTNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      state.guy.active = false;
-      Guy.Aktion = AKNEUBEGINNEN;
+      startAction(actionTypes.RESTARTING_GAME);
     }
   } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTTAGNEU].rcDes)) {
     drawStatusText(texts.TAGNEU2);
     Bmp[BUTTTAGNEU].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      state.guy.active = false;
-      Guy.Aktion = AKTAGNEUBEGINNEN;
-    }
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAKTION].rcDes)) {
-    if (HauptMenue === MEAKTION) {
-      drawStatusText(texts.MEAKTIONZU);
-    } else {
-      drawStatusText(texts.MEAKTIONAUF);
-    }
-    Bmp[BUTTAKTION].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (HauptMenue === MEAKTION) HauptMenue = MEKEINS;
-      else HauptMenue = MEAKTION;
-    }
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBAUEN].rcDes) &&
-    (Bmp[BUTTBAUEN].Phase !== -1)) {
-    if (HauptMenue === MEBAUEN) {
-      drawStatusText(texts.MEBAUENZU);
-    } else {
-      drawStatusText(texts.MEBAUENAUF);
-    }
-    Bmp[BUTTBAUEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (HauptMenue === MEBAUEN) HauptMenue = MEKEINS;
-      else HauptMenue = MEBAUEN;
-    }
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTINVENTAR].rcDes)) {
-    if (HauptMenue === MEINVENTAR) {
-      drawStatusText(texts.MEINVENTARZU);
-    } else {
-      drawStatusText(texts.MEINVENTARAUF);
-    }
-    Bmp[BUTTINVENTAR].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (HauptMenue === MEINVENTAR) HauptMenue = MEKEINS;
-      else HauptMenue = MEINVENTAR;
+      startAction(actionTypes.RESTARTING_DAY);
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTWEITER].rcDes)) &&
     (Bmp[BUTTWEITER].Phase !== -1)) {
@@ -1706,31 +1220,31 @@ const MouseInPanel = (Button, Push) => {
       const construction = continueConstruction();
       switch (construction.type) {
         case constructionTypes.TENT:
-          Guy.Aktion = AKZELT;
+          startAction(actionTypes.CONSTRUCTING_TENT);
           break;
         case constructionTypes.FIELD:
-          Guy.Aktion = AKFELD;
+          startAction(actionTypes.CONSTRUCTING_FIELD);
           break;
         case constructionTypes.BOAT:
-          Guy.Aktion = AKBOOT;
+          startAction(actionTypes.CONSTRUCTING_BOAT);
           break;
         case constructionTypes.PIPE:
-          Guy.Aktion = AKROHR;
+          startAction(actionTypes.CONSTRUCTING_PIPE);
           break;
         case constructionTypes.SOS:
-          Guy.Aktion = AKSOS;
+          startAction(actionTypes.CONSTRUCTING_SOS);
           break;
         case constructionTypes.LADDER:
-          Guy.Aktion = AKHAUS1;
+          startAction(actionTypes.CONSTRUCTING_LADDER);
           break;
         case constructionTypes.PLATFORM:
-          Guy.Aktion = AKHAUS2;
+          startAction(actionTypes.CONSTRUCTING_PLATFORM);
           break;
         case constructionTypes.TREE_HOUSE:
-          Guy.Aktion = AKHAUS3;
+          startAction(actionTypes.CONSTRUCTING_TREE_HOUSE);;
           break;
         case constructionTypes.FIREPLACE:
-          Guy.Aktion = AKFEUERSTELLE;
+          startAction(actionTypes.CONSTRUCTING_FIREPLACE);;
           break;
       }
     }
@@ -1741,8 +1255,7 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTSTOP].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      Guy.Aktion = AKABBRUCH;
+      startAction(actionTypes.STOPPING);
       Bmp[BUTTSTOP].Phase = -1;
     }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTABLEGEN].rcDes)) &&
@@ -1751,344 +1264,14 @@ const MouseInPanel = (Button, Push) => {
     Bmp[BUTTABLEGEN].Animation = true;
     if ((Button === 0) && (Push === 1)) {
       sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (tile.ground !== grounds.SEA) Guy.Aktion = AKABLEGEN;
-      else Guy.Aktion = AKANLEGEN;
-
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSUCHEN].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTSUCHEN].Phase !== -1)) {
-    drawStatusText(texts.BEGINNSUCHEN);
-    Bmp[BUTTSUCHEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      Guy.Aktion = AKSUCHEN;
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTESSEN].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTESSEN].Phase !== -1)) {
-    drawStatusText(texts.BEGINNESSEN);
-    Bmp[BUTTESSEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (isEatable(tile.object)) {
-        Guy.Aktion = AKESSEN;
-      } else if (isDrinkable(tile.object))
-        Guy.Aktion = AKTRINKEN;
-      else {
-        openPaper(texts.KEINESSENTRINKEN, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLAFEN].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLAFEN].Phase !== -1)) {
-    drawStatusText(texts.BEGINNSCHLAFEN);
-    Bmp[BUTTSCHLAFEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
       if (tile.ground !== grounds.SEA) {
-        Guy.AkNummer = 0;
-        Guy.Aktion = AKSCHLAFEN;
+        startAction(actionTypes.UNDOCKING);
       } else {
-        openPaper(texts.NICHTAUFWASSERSCHLAFEN, false);
+        startAction(actionTypes.DOCKING);
       }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFAELLEN].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTFAELLEN].Phase !== -1)) {
-    drawStatusText(texts.BEGINNFAELLEN);
-    Bmp[BUTTFAELLEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (state.guy.inventory[items.LOG] <= 10) {
-        if (isNormalTree(tile.object)) {
-          Guy.Aktion = AKFAELLEN;
-        } else if (isBigTree(tile.object)) {
-          openPaper(texts.BAUMZUGROSS, false);
-        } else {
-          openPaper(texts.KEINBAUM, false);
-        }
-      } else {
-        openPaper(texts.ROHSTAMMZUVIEL, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANGELN].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTANGELN].Phase !== -1)) {
-    drawStatusText(texts.BEGINNANGELN);
-    Bmp[BUTTANGELN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (isFishable(tile)) {
-        Guy.Aktion = AKANGELN;
-      } else {
-        openPaper(texts.KEINWASSER, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTANZUENDEN].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTANZUENDEN].Phase !== -1)) {
-    drawStatusText(texts.BEGINNANZUENDEN);
-    Bmp[BUTTANZUENDEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (isUsableFireplace(tile)) {
-        Guy.Aktion = AKANZUENDEN;
-      } else {
-        openPaper(texts.KEINEFEUERST, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTAUSSCHAU].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTAUSSCHAU].Phase !== -1)) {
-    drawStatusText(texts.BEGINNAUSSCHAU);
-    Bmp[BUTTAUSSCHAU].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (tile.ground !== grounds.SEA) {
-        Guy.AkNummer = 0;
-        Guy.Aktion = AKAUSSCHAU;
-      } else {
-        drawStatusText(texts.WELLENZUHOCH, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZ].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZ].Phase !== -1)) {
-    drawStatusText(texts.BEGINNSCHATZ);
-    Bmp[BUTTSCHATZ].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (tile.ground !== grounds.SEA &&
-        tile.type === tileTypes.FLAT &&
-        !tile.object) {
-        Guy.AkNummer = 0;
-        Guy.Aktion = AKSCHATZ;
-      } else {
-        openPaper(texts.GRABENBEDINGUNGEN, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHLEUDER].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTSCHLEUDER].Phase !== -1)) {
-    drawStatusText(texts.BEGINNSCHLEUDER);
-    Bmp[BUTTSCHLEUDER].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Guy.AkNummer = 0;
-      if (isNormalTree(tile.object)) {
-        Guy.AkNummer = 0;
-        Guy.Aktion = AKSCHLEUDER;
-      } else if (isBigTree(tile.object)) {
-        openPaper(texts.BAUMZUGROSS, false);
-      } else {
-        openPaper(texts.KEINVOGEL, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSCHATZKARTE].rcDes)) &&
-    (HauptMenue === MEAKTION) && (Bmp[BUTTSCHATZKARTE].Phase !== -1)) {
-    drawStatusText(texts.BEGINNSCHATZKARTE);
-    Bmp[BUTTSCHATZKARTE].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      DrawSchatzkarte();
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFELD].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTFELD].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.FIELD);
 
-    Bmp[BUTTFELD].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (!tile.object &&
-        tile.type === tileTypes.FLAT &&
-        tile.ground === grounds.WETLAND) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKFELD;
-      } else if (tile.construction?.type === constructionTypes.FIELD) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKFELD;
-      } else {
-        openPaper(texts.FELDBEDINGUNGEN, false);
-      }
     }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTZELT].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTZELT].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.TENT);
-    
-    Bmp[BUTTZELT].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (!tile.object &&
-        tile.type === tileTypes.FLAT) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKZELT;
-      } else if (tile.construction?.type === constructionTypes.TENT) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKZELT;
-      } else {
-        openPaper(texts.ZELTBEDINGUNGEN, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBOOT].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTBOOT].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.BOAT);
-
-    Bmp[BUTTBOOT].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (!tile.object &&
-        (tile.ground === grounds.BEACH) &&
-        ((state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground === grounds.SEA) ||
-          (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground === grounds.SEA) ||
-          (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground === grounds.SEA) ||
-          (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground === grounds.SEA))) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKBOOT;
-      } else if (tile.construction?.type === constructionTypes.BOAT) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKBOOT;
-      } else {
-        openPaper(texts.BOOTBEDINGUNGEN, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTROHR].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTROHR].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.PIPE);
-
-    Bmp[BUTTROHR].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (!tile.object &&
-        (tile.type === tileTypes.FLAT)) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKROHR;
-      } else if (tile.construction?.type === constructionTypes.PIPE) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKROHR;
-      } else {
-        openPaper(texts.ROHRBEDINGUNGEN, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOS].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTSOS].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.SOS);
-
-    Bmp[BUTTSOS].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (!tile.object &&
-        (tile.type === tileTypes.FLAT)) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKSOS;
-      } else if (tile.construction?.type === constructionTypes.SOS) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKSOS;
-      } else {
-        openPaper(texts.SOSBEDINGUNGEN, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS1].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS1].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.LADDER);
-
-    Bmp[BUTTHAUS1].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false);
-      } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKHAUS1;
-      } else if (tile.construction?.type === constructionTypes.LADDER) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKHAUS1;
-      } else {
-        openPaper(texts.GEGENDNICHT, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS2].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS2].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.PLATFORM);
-
-    Bmp[BUTTHAUS2].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false);
-      } else if (tile.object?.sprite === spriteTypes.BIG_TREE) {
-        openPaper(texts.NICHTOHNELEITER, false);
-      } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKHAUS2;
-      } else if (tile.construction?.type === constructionTypes.PLATFORM) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKHAUS2;
-      } else {
-        openPaper(texts.GEGENDNICHT, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTHAUS3].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTHAUS3].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.TREE_HOUSE);
-
-    Bmp[BUTTHAUS3].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (isNormalTree(tile.object)) {
-        openPaper(texts.BAUMZUKLEIN, false);
-      } else if (tile.object?.sprite === spriteTypes.BIG_TREE || tile.object?.sprite === spriteTypes.BIG_TREE_WITH_LADDER) {
-        openPaper(texts.NICHTOHNEPLATTFORM, false);
-      } else if (tile.object?.sprite === spriteTypes.BIG_TREE_WITH_PLATFORM) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKHAUS3;
-      } else if (tile.construction?.type === constructionTypes.TREE_HOUSE) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKHAUS3;
-      } else {
-        openPaper(texts.GEGENDNICHT, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTFEUERST].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTFEUERST].Phase !== -1)) {
-    drawStartConstructionText(constructionTypes.FIREPLACE);
-
-    Bmp[BUTTFEUERST].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (!tile.object &&
-        (tile.type === tileTypes.FLAT)) {
-        Bmp[BUTTSTOP].Phase = 0;
-        Guy.Aktion = AKFEUERSTELLE;
-      } else if (tile.construction?.type === constructionTypes.FIREPLACE) {
-        Bmp[BUTTSTOP].Phase = 0;
-        continueConstruction()
-        Guy.Aktion = AKFEUERSTELLE;
-      } else {
-        openPaper(texts.FEUERSTELLENBEDINGUNGEN, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTDESTROY].rcDes)) &&
-    (HauptMenue === MEBAUEN) && (Bmp[BUTTDESTROY].Phase !== -1)) {
-    drawStatusText(texts.BEGINNDESTROY);
-    Bmp[BUTTDESTROY].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (isDestroyable(tile.object)) {
-        Guy.AkNummer = 0;
-        Guy.Aktion = AKDESTROY;
-      } else {
-        openPaper(texts.KEINBAUWERK, false);
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (HauptMenue === MEINVENTAR)) {
+  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (openedMenu === menuTypes.INVENTORY)) {
     const item = findItemUnderCursor(MousePosition);
     if (item) {
       if ((Button === 0) && (Push === 1)) {
@@ -2122,7 +1305,10 @@ const MouseInPanel = (Button, Push) => {
   )) {
     drawStatusText(texts.CHANCETEXT);
   } else {
-    if ((Button === 0) && (Push === 1)) sounds.CLICK.instance.play();
+    handleButtonHovers(MousePosition);
+    if ((Button === 0) && (Push === 1)) {
+      handleButtonTaps(MousePosition);
+    };
     TwoClicks = -1;
   }
 }
@@ -2173,10 +1359,8 @@ const startGame = async (newGame) => {
     state.calendar.minutes = 0;
 
     Spielzustand = GAME_INTRO;
-    state.guy.active = false;
     state.guy.sprite = spriteTypes.GUY_SAILING;
-    Guy.AkNummer = 0;
-    Guy.Aktion = AKINTRO;
+    startAction(actionTypes.ARRIVING);
   }
 
   closePaper();
@@ -2451,21 +1635,6 @@ const ZeichnePanel = () => {
   //TAGNEUknopf
   ZeichneBilder(Bmp[BUTTTAGNEU].rcDes.left, Bmp[BUTTTAGNEU].rcDes.top, BUTTTAGNEU, rcPanel);
 
-  //Aktionsknopf
-  if (HauptMenue === MEAKTION) Bmp[BUTTAKTION].Phase = Bmp[BUTTAKTION].Anzahl;
-  else if (Bmp[BUTTAKTION].Phase === Bmp[BUTTAKTION].Anzahl) Bmp[BUTTAKTION].Phase = 0;
-  ZeichneBilder(Bmp[BUTTAKTION].rcDes.left, Bmp[BUTTAKTION].rcDes.top, BUTTAKTION, rcPanel);
-
-  //BauKnopf
-  if (HauptMenue === MEBAUEN) Bmp[BUTTBAUEN].Phase = Bmp[BUTTBAUEN].Anzahl;
-  else if (Bmp[BUTTBAUEN].Phase === Bmp[BUTTBAUEN].Anzahl) Bmp[BUTTBAUEN].Phase = 0;
-  ZeichneBilder(Bmp[BUTTBAUEN].rcDes.left, Bmp[BUTTBAUEN].rcDes.top, BUTTBAUEN, rcPanel);
-
-  //Inventarknopf
-  if (HauptMenue === MEINVENTAR) Bmp[BUTTINVENTAR].Phase = Bmp[BUTTINVENTAR].Anzahl;
-  else if (Bmp[BUTTINVENTAR].Phase === Bmp[BUTTINVENTAR].Anzahl) Bmp[BUTTINVENTAR].Phase = 0;
-  ZeichneBilder(Bmp[BUTTINVENTAR].rcDes.left, Bmp[BUTTINVENTAR].rcDes.top, BUTTINVENTAR, rcPanel);
-
   //WEITERknopf
   if (Bmp[BUTTWEITER].Phase !== -1) ZeichneBilder(Bmp[BUTTWEITER].rcDes.left, Bmp[BUTTWEITER].rcDes.top, BUTTWEITER, rcPanel);
 
@@ -2476,30 +1645,12 @@ const ZeichnePanel = () => {
   if (Bmp[BUTTABLEGEN].Phase !== -1) ZeichneBilder(Bmp[BUTTABLEGEN].rcDes.left, Bmp[BUTTABLEGEN].rcDes.top, BUTTABLEGEN, rcPanel);
 
   //Welches Menü zeichnen?
-  switch (HauptMenue) {
-    case MEAKTION:
-      for (i = BUTTSUCHEN; i <= BUTTSCHLEUDER; i++) {
-        if (Bmp[i].Phase === -1) {
-          ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, BUTTFRAGEZ, rcPanel);
-          continue;
-        }
-        ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, i, rcPanel);
-      }
-      break;
-    case MEBAUEN:
-      for (i = BUTTZELT; i <= BUTTDESTROY; i++) {
-        if (Bmp[i].Phase === -1) {
-          ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, BUTTFRAGEZ, rcPanel);
-          continue;
-        }
-        ZeichneBilder(Bmp[i].rcDes.left, Bmp[i].rcDes.top, i, rcPanel);
-      }
-      break;
-    case MEINVENTAR:
-      ZeichneBilder(Bmp[INVPAPIER].rcDes.left, Bmp[INVPAPIER].rcDes.top, INVPAPIER, rcPanel);
-      drawItems();
-      break;
+  if (state.options.openedMenu === menuTypes.INVENTORY) {
+    ZeichneBilder(Bmp[INVPAPIER].rcDes.left, Bmp[INVPAPIER].rcDes.top, INVPAPIER, rcPanel);
+    drawItems();
   }
+
+  drawButtons();
 
   //Säule1
   i = Bmp[SAEULE1].Hoehe - state.guy.water * Bmp[SAEULE1].Hoehe / 100;
@@ -2555,25 +1706,6 @@ const ZeichnePanel = () => {
   rcRectsrc.bottom = 20;
   rcRectdes = { ...rcTextFeld1 };
   drawImage(textfieldImage, canvases.PRIMARY);
-}
-
-const DrawSchatzkarte = () => {
-  const treasureMapCanvas = canvases.TREASURE_MAP.canvas;
-
-  state.paper = {
-    height: treasureMapCanvas.height
-  };
-
-  rcRectsrc.left = 0;
-  rcRectsrc.right = treasureMapCanvas.width;
-  rcRectsrc.top = 0;
-  rcRectsrc.bottom = treasureMapCanvas.height;
-  rcRectdes.left = textAreas.PAPER.x;
-  rcRectdes.top = textAreas.PAPER.y;
-  rcRectdes.right = rcRectdes.left + treasureMapCanvas.width;
-  rcRectdes.bottom = rcRectdes.top + treasureMapCanvas.height;
-
-  drawImage(treasureMapCanvas, canvases.TEXT);
 }
 
 const CalcRect = (rcBereich) => {
@@ -2646,107 +1778,105 @@ const CheckRohstoff = () => {
     if (Check === false) break;
   }
   openPaper(texts.ROHSTOFFNICHT, false);
-  Guy.AkNummer = 0;
-  Guy.Aktion = AKABBRUCH;
+  startAction(actionTypes.STOPPING);
   Bmp[BUTTSTOP].Phase = -1;
   return false;
 }
 
-const Event = (Eventnr) => {
-  if (Eventnr !== AKNICHTS) {
-    state.guy.route = [];
+const Event = () => {
+  if (state.guy.active || !state.guy.action) {
+    return;
   }
-  switch (Eventnr) {
-    case AKNICHTS:
-      break;
-    case AKSUCHEN:
+  state.guy.route = [];
+  switch (state.guy.action.type) {
+    case actionTypes.SEARCHING:
       AkSuchen();
       break;
-    case AKESSEN:
+    case actionTypes.EATING:
       AkEssen();
       break;
-    case AKTRINKEN:
+    case actionTypes.DRINKING:
       AkTrinken();
       break;
-    case AKFAELLEN:
+    case actionTypes.CHOPPING:
       AkFaellen();
       break;
-    case AKFELD:
+    case actionTypes.CONSTRUCTING_FIELD:
       AkFeld();
       break;
-    case AKTAGENDE:
+    case actionTypes.ENDING_DAY:
       AkTagEnde();
       break;
-    case AKGERETTET:
+    case actionTypes.LEAVING:
       AkGerettet();
       break;
-    case AKZELT:
+    case actionTypes.CONSTRUCTING_TENT:
       AkZelt();
       break;
-    case AKSCHLAFEN:
+    case actionTypes.SLEEPING:
       AkSchlafen();
       break;
-    case AKABBRUCH:
+    case actionTypes.STOPPING:
       AkAbbruch();
       break;
-    case AKANGELN:
+    case actionTypes.FISHING:
       AkAngeln();
       break;
-    case AKBOOT:
+    case actionTypes.CONSTRUCTING_BOAT:
       AkBoot();
       break;
-    case AKABLEGEN:
+    case actionTypes.UNDOCKING:
       AkAblegen();
       break;
-    case AKANLEGEN:
+    case actionTypes.DOCKING:
       AkAnlegen();
       break;
-    case AKROHR:
+    case actionTypes.CONSTRUCTING_PIPE:
       AkRohr();
       break;
-    case AKDESTROY:
+    case actionTypes.DESTROYING:
       AkDestroy();
       break;
-    case AKSOS:
+    case actionTypes.CONSTRUCTING_SOS:
       AkSOS();
       break;
-    case AKHAUS1:
+    case actionTypes.CONSTRUCTING_LADDER:
       AkHaus1();
       break;
-    case AKHAUS2:
+    case actionTypes.CONSTRUCTING_PLATFORM:
       AkHaus2();
       break;
-    case AKHAUS3:
+    case actionTypes.CONSTRUCTING_TREE_HOUSE:
       AkHaus3();
       break;
-    case AKFEUERSTELLE:
+    case actionTypes.CONSTRUCTING_FIREPLACE:
       AkFeuerstelle();
       break;
-    case AKANZUENDEN:
+    case actionTypes.LIGHTNING:
       AkAnzuenden();
       break;
-    case AKAUSSCHAU:
+    case actionTypes.LOOKING:
       AkAusschau();
       break;
-    case AKSCHATZ:
+    case actionTypes.SHOVELING:
       AkSchatz();
       break;
-    case AKINTRO:
+    case actionTypes.ARRIVING:
       AkIntro();
       break;
-    case AKSCHLEUDER:
+    case actionTypes.SLINGING:
       AkSchleuder();
       break;
-    case AKSPIELVERLASSEN:
+    case actionTypes.STOPPING_GAME:
       AkSpielverlassen();
       break;
-    case AKNEUBEGINNEN:
+    case actionTypes.RESTARTING_GAME:
       AkNeubeginnen();
       break;
-    case AKTAGNEUBEGINNEN:
+    case actionTypes.RESTARTING_DAY:
       AkTagNeubeginnen();
       break;
-    case AKTOD:
+    case actionTypes.DYING:
       AkTod();
       break;
   }
@@ -2765,8 +1895,8 @@ const AkIntro = () => {
   let x;
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       //Intro Route herstellen
       state.guy.active = true;
@@ -2800,7 +1930,7 @@ const AkIntro = () => {
       updateCamera(state.guy.position, false);
       state.guy.storedPosition = { ...state.guy.position };
       Spielzustand = GAME_PLAY;
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       openPaper(texts.INTROTEXT, false);
       SaveGame();
       break;
@@ -2808,8 +1938,8 @@ const AkIntro = () => {
 }
 
 const AkNeubeginnen = () => {
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
@@ -2818,7 +1948,7 @@ const AkNeubeginnen = () => {
       openPaper(texts.NEUBEGINNEN, true);
       break;
     case 3:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       if (state.paper.question.answer) {
         startGame(true);
         return;
@@ -2829,8 +1959,8 @@ const AkNeubeginnen = () => {
 }
 
 const AkTagNeubeginnen = () => {
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
@@ -2839,7 +1969,7 @@ const AkTagNeubeginnen = () => {
       openPaper(texts.TAGNEU, true);
       break;
     case 3:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       if (state.paper.question.answer) {
         startGame(false);
         return;
@@ -2850,8 +1980,8 @@ const AkTagNeubeginnen = () => {
 }
 
 const AkSpielverlassen = () => {
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
@@ -2860,7 +1990,7 @@ const AkSpielverlassen = () => {
       openPaper(texts.SPIELVERLASSEN, true);
       break;
     case 3:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       if (state.paper.question.answer) {
         if (state.guy.health > 10) {
           SaveGame();
@@ -2874,8 +2004,8 @@ const AkSpielverlassen = () => {
 }
 
 const AkTod = () => {
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       openPaper(texts.TOD, false);
       break;
@@ -2895,7 +2025,7 @@ const AkTod = () => {
       break;
     case 5:
       Nacht = false;
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       if (state.paper.question.answer) {
         startGame(false)
       } else {
@@ -2908,26 +2038,25 @@ const AkTod = () => {
 }
 
 const AkAbbruch = () => {
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       pauseConstruction();
       break;
     case 2:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
-
 const AkDestroy = () => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToOnTile({
         x: tile.object.x + 4,
@@ -2965,7 +2094,7 @@ const AkDestroy = () => {
       goToStoredPosition();
       break;
     case 7:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -2973,17 +2102,17 @@ const AkDestroy = () => {
 const AkSuchen = () => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
     case 3:
     case 5:
     case 7:
       if (isOnSea()) {
-        if (Guy.AkNummer === 1) {
+        if (state.guy.action.step === 1) {
           startGuyAnimation(spriteTypes.GUY_DIVING_JUMPING);
           sounds.SPLASH.instance.play();
         }
@@ -3073,11 +2202,7 @@ const AkSuchen = () => {
           if (!state.guy.inventory[items.SPYGLASS]) {
             openPaper(texts.FERNROHRGEFUNDEN, false);
             changeItem(items.SPYGLASS, 1);
-            Bmp[BUTTAUSSCHAU].Phase = 0;
             changeItem(items.HAMMER, 1);
-            Bmp[BUTTHAUS1].Phase = 0;
-            Bmp[BUTTHAUS2].Phase = 0;
-            Bmp[BUTTHAUS3].Phase = 0;
           } else {
             openPaper(texts.NICHTSGEFUNDEN2, false);
           }
@@ -3085,9 +2210,7 @@ const AkSuchen = () => {
           if (!state.guy.inventory[items.MAP]) {
             openPaper(texts.KARTEGEFUNDEN, false);
             changeItem(items.MAP, 1);
-            Bmp[BUTTSCHATZKARTE].Phase = 0;
             changeItem(items.SHOVEL, 1);
-            Bmp[BUTTSCHATZ].Phase = 0;
           } else {
             openPaper(texts.NICHTSGEFUNDEN2, false);
           }
@@ -3099,18 +2222,18 @@ const AkSuchen = () => {
       }
       break;
     case 12:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkEssen = () => {
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       if (tile.object) {
         goToObject(0, 2);
@@ -3128,17 +2251,17 @@ const AkEssen = () => {
       goToStoredPosition();
       break;
     case 5:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkSchleuder = () => {
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToObject(-14, 9);
       break;
@@ -3160,17 +2283,17 @@ const AkSchleuder = () => {
       goToStoredPosition();
       break;
     case 6:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkTrinken = () => {
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToOffset(-4, -2);
       break;
@@ -3185,21 +2308,18 @@ const AkTrinken = () => {
       goToStoredPosition();
       break;
     case 5:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkFaellen = () => {
-  let i;
-
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  const tree = tile.object;
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToObject(9, 3);
       break;
@@ -3226,18 +2346,18 @@ const AkFaellen = () => {
       goToStoredPosition();
       break;
     case 9:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkAngeln = () => {
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       if (tile.object) {
         switch (tile.object.sprite) {
@@ -3420,7 +2540,7 @@ const AkAngeln = () => {
       break;
     case 9:
       changeWaterAndFood(0, 20);
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -3428,11 +2548,11 @@ const AkAngeln = () => {
 const AkAnzuenden = () => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToOnTile({
         x: tile.object.x - 12,
@@ -3455,17 +2575,17 @@ const AkAnzuenden = () => {
       goToStoredPosition();
       break;
     case 5:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkAusschau = () => {
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       startGuyAnimation(spriteTypes.GUY_LOOKING);
       AddTime(40);
@@ -3484,18 +2604,18 @@ const AkAusschau = () => {
       break;
     case 5:
       state.guy.chance -= 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkSchatz = () => {
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };
   }
-  Guy.AkNummer++;
+  state.guy.action.step++;
 
-  switch (Guy.AkNummer) {
+  switch (state.guy.action.step) {
     case 1:
       startGuyAnimation(spriteTypes.GUY_SHOVELING);
       sounds.SHOVELING.instance.play();
@@ -3507,14 +2627,13 @@ const AkSchatz = () => {
       if (state.guy.tile.x === state.treasure.x && state.guy.tile.y === state.treasure.y && !state.treasure.found) {
         openPaper(texts.SCHATZGEFUNDEN, false);
         changeItem(items.MATCHES, 1);
-        Bmp[BUTTANZUENDEN].Phase = 0;
         state.treasure.found = true;
       } else {
         openPaper(texts.KEINSCHATZ, false);
       }
       break;
     case 3:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -3607,7 +2726,7 @@ const AkFeld = () => {
         openPaper(texts.FELDHILFE, false);
         state.constructionHints[constructionTypes.FIELD] = true;
       }
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -3621,8 +2740,8 @@ const AkTagEnde = () => {
   const tent = isUsableTent(tile);
   const house = isUsableTreeHouse(tile);
 
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       state.calendar.minutes = 12 * 60;
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
@@ -3702,8 +2821,8 @@ const AkTagEnde = () => {
         changeHealth(-5);
         if (state.guy.health <= 0) {
           openDayEndPaper(texts.TAGENDE5);
-          Guy.AkNummer = 2;
-          Guy.Aktion = AKTOD;
+          startAction(actionTypes.DYING);
+          state.guy.action.step = 2;
           state.calendar.minutes = 0;
         } else {
           openPaper(texts.TAGENDE2, false);
@@ -3713,15 +2832,15 @@ const AkTagEnde = () => {
         openDayEndPaper(texts.TAGENDE4);
       } else if (isOnSea()) {
         openDayEndPaper(texts.TAGENDE3);
-        Guy.AkNummer = 2;
-        Guy.Aktion = AKTOD;
+        startAction(actionTypes.DYING);
+        state.guy.action.step = 2;
         state.calendar.minutes = 0;
       } else {
         changeHealth(-20);
         if (state.guy.health <= 0) {
           openDayEndPaper(texts.TAGENDE5);
-          Guy.AkNummer = 2;
-          Guy.Aktion = AKTOD;
+          startAction(actionTypes.DYING);
+          state.guy.action.step = 2;
           state.calendar.minutes = 0;
         } else {
           openDayEndPaper(texts.TAGENDE1);
@@ -3767,7 +2886,7 @@ const AkTagEnde = () => {
       state.calendar.minutes = 0;
 
       goToCenterOfTile();
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       if (state.guy.health > 10) SaveGame();
       break;
   }
@@ -3776,8 +2895,8 @@ const AkTagEnde = () => {
 const AkGerettet = () => {
   let x;
 
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
@@ -3789,7 +2908,7 @@ const AkGerettet = () => {
       if (state.paper.question.answer) {
         Spielzustand = GAME_OUTRO;
       } else {
-        Guy.Aktion = AKNICHTS;
+        state.guy.action = null;
       }
       closePaper();
       break;
@@ -3831,7 +2950,7 @@ const AkGerettet = () => {
     case 8:
       sounds.STORM.instance.stop();
       audio.stopAll();
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       Spielzustand = GAME_CREDITS;
       break;
   }
@@ -3916,7 +3035,7 @@ const AkZelt = () => {
         openPaper(texts.ZELTHILFE, false);
         state.constructionHints[constructionTypes.TENT] = true;
       }
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -3996,7 +3115,7 @@ const AkBoot = () => {
         openPaper(texts.BOOTHILFE, false);
         state.constructionHints[constructionTypes.BOAT] = true;
       }
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -4060,7 +3179,7 @@ const AkRohr = () => {
         openPaper(texts.ROHRHILFE, false);
         state.constructionHints[constructionTypes.PIPE] = true;
       }
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -4156,7 +3275,7 @@ const AkSOS = () => {
         openPaper(texts.SOSHILFE, false);
         state.constructionHints[constructionTypes.SOS] = true;
       }
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -4216,7 +3335,7 @@ const AkFeuerstelle = () => {
         openPaper(texts.FEUERSTELLEHILFE, false);
         state.constructionHints[constructionTypes.FIREPLACE] = true;
       }
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -4284,7 +3403,7 @@ const AkHaus1 = () => {
     case 19:
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -4362,7 +3481,7 @@ const AkHaus2 = () => {
     case 21:
       finishConstruction(tile);
       Bmp[BUTTSTOP].Phase = -1;
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -4444,7 +3563,7 @@ const AkHaus3 = () => {
         openPaper(texts.HAUS3HILFE, false);
         state.constructionHints[constructionTypes.TREE_HOUSE] = true;
       }
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
@@ -4453,11 +3572,11 @@ const AkSchlafen = () => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const tent = isUsableTent(tile);
   const house = isUsableTreeHouse(tile);
-  if (Guy.AkNummer === 0) {
+  if (state.guy.action.step === 0) {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       if (tent)
         goToOnTile({
@@ -4510,15 +3629,15 @@ const AkSchlafen = () => {
       break;
     case 8:
       goToStoredPosition();
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       break;
   }
 }
 
 const AkAblegen = () => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       goToOnTile({
         x: tile.object.x,
@@ -4536,7 +3655,7 @@ const AkAblegen = () => {
       goToCenterOfTile();
       break;
     case 3:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       state.guy.storedPosition.x = state.guy.position.x;
       state.guy.storedPosition.y = state.guy.position.y;
       break;
@@ -4544,8 +3663,8 @@ const AkAblegen = () => {
 }
 
 const AkAnlegen = () => {
-  Guy.AkNummer++;
-  switch (Guy.AkNummer) {
+  state.guy.action.step++;
+  switch (state.guy.action.step) {
     case 1:
       if (state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground !== grounds.SEA) {
         goToWestOfTile();
@@ -4572,7 +3691,7 @@ const AkAnlegen = () => {
       goToCenterOfTile();
       break;
     case 3:
-      Guy.Aktion = AKNICHTS;
+      state.guy.action = null;
       state.guy.storedPosition.x = state.guy.position.x;
       state.guy.storedPosition.y = state.guy.position.y;
       break;
@@ -4591,16 +3710,12 @@ const CheckBenutze = (item) => {
       changeItem(items.STONE, -1);
       changeItem(items.BRANCH, -1);
       changeItem(items.AXE, 1);
-      Bmp[BUTTFAELLEN].Phase = 0;
-      Bmp[BUTTBOOT].Phase = 0;
-      Bmp[BUTTROHR].Phase = 0;
       openPaper(texts.BAUEAXT, false);
       sounds.INVENTION.instance.play();
     } else if (!state.guy.inventory[items.HARROW]) {
       changeItem(items.STONE, -1);
       changeItem(items.BRANCH, -1);
       changeItem(items.HARROW, 1);
-      Bmp[BUTTFELD].Phase = 0;
       openPaper(texts.BAUEEGGE, false);
       sounds.INVENTION.instance.play();
     } else {
@@ -4612,7 +3727,6 @@ const CheckBenutze = (item) => {
       changeItem(items.LIANA, -1);
       changeItem(items.BRANCH, -1);
       changeItem(items.FISHING_ROD, 1);
-      Bmp[BUTTANGELN].Phase = 0;
       openPaper(texts.BAUEANGEL, false);
       sounds.INVENTION.instance.play();
     } else {
@@ -4624,7 +3738,6 @@ const CheckBenutze = (item) => {
       changeItem(items.LIANA, -1);
       changeItem(items.STONE, -1);
       changeItem(items.SLING, 1);
-      Bmp[BUTTSCHLEUDER].Phase = 0;
       openPaper(texts.BAUESCHLEUDER, false);
       sounds.INVENTION.instance.play();
     } else {
@@ -4638,10 +3751,11 @@ const CheckBenutze = (item) => {
 
 const Animationen = () => {
   animateTerrain(frame, framesPerSecond);
+  animateButtons(frame, framesPerSecond, MousePosition);
 
   let i, j; //Zwischenspeicher
 
-  for (j = BUTTGITTER; j <= BUTTDESTROY; j++) {
+  for (j = BUTTGITTER; j <= BUTTABLEGEN; j++) {
     if (!Bmp[j].Animation) continue;
     i = Math.floor(framesPerSecond / Bmp[j].Geschwindigkeit);
     if (i < 1) i = 1;
@@ -4678,18 +3792,15 @@ const refresh = (timestamp) => {
     discoverTerrain();
     playTerrainSounds();
     updateCamera(state.guy.position, true);
-
-    if (!state.guy.active) Event(Guy.Aktion); //Aktionen starten
-
+    Event(); //Aktionen starten
     drawTerrain(state.camera, false);
-
   } else if (Spielzustand === GAME_PLAY) {
-    if (state.calendar.minutes > (12 * 60) && (Guy.Aktion !== AKTAGENDE))  //Hier ist der Tag zuende
+    if (state.calendar.minutes > (12 * 60) && (state.guy.action?.type !== actionTypes.ENDING_DAY))  //Hier ist der Tag zuende
     {
-      if (Guy.Aktion === AKAUSSCHAU) state.guy.chance -= 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
-      state.guy.active = false;
-      Guy.AkNummer = 0;
-      Guy.Aktion = AKTAGENDE;
+      if (state.guy.action?.type === actionTypes.LOOKING) {
+        state.guy.chance -= 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
+      }
+      startAction(actionTypes.ENDING_DAY);
     }
 
     CheckSpzButton();          //Die Spezialknöpfe umschalten
@@ -4699,7 +3810,7 @@ const refresh = (timestamp) => {
     Animationen();            //Die Animationsphasen weiterschalten
     discoverTerrain();
     playTerrainSounds();
-    if (!state.guy.active) Event(Guy.Aktion);  //Die Aktionen starten
+    Event();  //Die Aktionen starten
     Zeige();//Das Bild zeichnen
     if (Spielbeenden) return false;
 

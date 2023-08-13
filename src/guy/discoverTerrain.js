@@ -1,4 +1,4 @@
-import updateMinimap from '../minimap/updateMinimap.js';
+import updateMinimap from '../interface/minimap/updateMinimap.js';
 import state from '../state/state.js';
 
 const discoverTerrain = () => {

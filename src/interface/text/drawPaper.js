@@ -1,6 +1,6 @@
-import canvases from '../images/canvases.js';
-import images from '../images/images.js';
-import state from '../state/state.js';
+import canvases from '../../images/canvases.js';
+import images from '../../images/images.js';
+import state from '../../state/state.js';
 import blitText from './blitText.js';
 import textAreas from './textAreas.js';
 

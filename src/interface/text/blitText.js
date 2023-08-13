@@ -1,4 +1,4 @@
-import canvases from '../images/canvases.js';
+import canvases from '../../images/canvases.js';
 
 const blitText = (textArea) => {
   canvases.PRIMARY.drawImage(

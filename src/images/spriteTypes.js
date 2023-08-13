@@ -110,7 +110,7 @@ const spriteTypes = {
   BUTTON_INVENTORY: 'buttonInventory',
   BUTTON_INVENTORY_CHECKED: 'buttonInventoryChecked',
   BUTTON_SEARCHING: 'buttonSearching',
-  BUTTON_EATING: 'buttonEating',
+  BUTTON_EATING_AND_DRINKING: 'buttonEatingAndDrinking',
   BUTTON_SLEEPING: 'buttonSleeping',
   BUTTON_CHOPPING: 'buttonChopping',
   BUTTON_FISHING: 'buttonFishing',
@@ -128,7 +128,7 @@ const spriteTypes = {
   BUTTON_PLATFORM: 'buttonPlatform',
   BUTTON_TREE_HOUSE: 'buttonTreeHouse',
   BUTTON_FIREPLACE: 'buttonFireplace',
-  BUTTON_DESTROY: 'buttonDestroy',
+  BUTTON_DESTROYING: 'buttonDestroying',
   BUTTON_UNKNOWN: 'buttonUnknown'
 
 };

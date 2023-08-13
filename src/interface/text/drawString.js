@@ -1,4 +1,4 @@
-import canvases from '../images/canvases.js';
+import canvases from '../../images/canvases.js';
 
 const charCodeOffset = ' '.charCodeAt(0);
 const lastCharacters = ['/', '?', 'O', '_', 'o', '~'];

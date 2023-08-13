@@ -11,10 +11,12 @@ const state = {
     height: null
   },
   options: {
-    grid: false
+    grid: false,
+    openedMenu: null
   },
   guy: {
     active: false,
+    action: null,
     route: [],
     sprite: null,
     frame: null,

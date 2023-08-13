@@ -1,5 +1,5 @@
 import itemTextIds from '../guy/inventory/itemTextIds.js';
-import texts from '../text/texts.js';
+import texts from '../interface/text/texts.js';
 
 const createNeededItemsText = (items) => {
   const neededItems = Object.entries(items).filter(([, amount]) => amount);

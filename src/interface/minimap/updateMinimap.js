@@ -1,6 +1,6 @@
-import canvases from '../images/canvases.js';
-import state from '../state/state.js';
-import grounds from '../terrain/tiles/grounds.js';
+import canvases from '../../images/canvases.js';
+import state from '../../state/state.js';
+import grounds from '../../terrain/tiles/grounds.js';
 import minimapScaling from './minimapScaling.js';
 
 const undiscoveredColor = 'rgba(247, 222, 191, 1)';

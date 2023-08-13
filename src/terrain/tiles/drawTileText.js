@@ -1,7 +1,7 @@
 import constructions from '../../construction/constructions.js';
 import createNeededItemsText from '../../construction/createNeededItemsText.js';
-import drawStatusText from '../../text/drawStatusText.js';
-import texts from '../../text/texts.js';
+import drawStatusText from '../../interface/text/drawStatusText.js';
+import texts from '../../interface/text/texts.js';
 import getTextIdForObject from '../objects/getTextIdForObject.js';
 import groundTextIds from './groundTextIds.js';
 

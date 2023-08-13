@@ -1,8 +1,8 @@
-import canvases from '../images/canvases.js';
-import images from '../images/images.js';
-import positionTransformer from '../terrain/positionTransformer.js';
+import canvases from '../../images/canvases.js';
+import images from '../../images/images.js';
+import positionTransformer from '../../terrain/positionTransformer.js';
 import minimapScaling from './minimapScaling.js';
-import state from '../state/state.js';
+import state from '../../state/state.js';
 
 const drawMinimap = (position) => {
   const minimapWidth = minimapScaling * state.terrain.length;
