@@ -88,6 +88,7 @@ import handleButtonTaps from './interface/menu/handleButtonTaps.js';
 import handleButtonHovers from './interface/menu/handleButtonHovers.js';
 import startAction from './action/startAction.js';
 import actionTypes from './action/actionTypes.js';
+import isEatable from './terrain/objects/isEatable.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -1792,11 +1793,8 @@ const Event = () => {
     case actionTypes.SEARCHING:
       AkSuchen();
       break;
-    case actionTypes.EATING:
+    case actionTypes.EATING_AND_DRINKING:
       AkEssen();
-      break;
-    case actionTypes.DRINKING:
-      AkTrinken();
       break;
     case actionTypes.CHOPPING:
       AkFaellen();
@@ -2232,22 +2230,34 @@ const AkEssen = () => {
     state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
   }
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
+  const eatable = isEatable(tile.object);
   state.guy.action.step++;
   switch (state.guy.action.step) {
     case 1:
-      if (tile.object) {
+      if (eatable) {
         goToObject(0, 2);
+      } else {
+        goToOffset(-4, -2);
       }
       break;
     case 2:
     case 3:
-      startGuyAnimation(spriteTypes.GUY_EATING);
-      sounds.CRACKLING.instance.play();
-      changeWaterAndFood(0, 15);
-      AddTime(2);
+      if (eatable) {
+        startGuyAnimation(spriteTypes.GUY_EATING);
+        sounds.CRACKLING.instance.play();
+        changeWaterAndFood(0, 15);
+        AddTime(2);
+      } else {
+        startGuyAnimation(spriteTypes.GUY_DRINKING);
+        sounds.DRINKING.instance.play();
+        changeWaterAndFood(30, 0);
+        AddTime(3);
+      }
       break;
     case 4:
-      tile.object.frame = 0;
+      if (eatable) {
+        tile.object.frame = 0;
+      }
       goToStoredPosition();
       break;
     case 5:
@@ -2283,31 +2293,6 @@ const AkSchleuder = () => {
       goToStoredPosition();
       break;
     case 6:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkTrinken = () => {
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToOffset(-4, -2);
-      break;
-    case 2:
-    case 3:
-      startGuyAnimation(spriteTypes.GUY_DRINKING);
-      sounds.DRINKING.instance.play();
-      changeWaterAndFood(30, 0);
-      AddTime(3);
-      break;
-    case 4:
-      goToStoredPosition();
-      break;
-    case 5:
       state.guy.action = null;
       break;
   }

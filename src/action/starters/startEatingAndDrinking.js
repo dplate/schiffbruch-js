@@ -8,11 +8,9 @@ import texts from '../../interface/text/texts.js';
 
 const startEatingAndDrinking = () => {
   const object = state.terrain[state.guy.tile.x][state.guy.tile.y].object;
-  if (isEatable(object)) {
-    startAction(actionTypes.EATING);
-  } else if (isDrinkable(object))
-    startAction(actionTypes.DRINKING);
-  else {
+  if (isEatable(object) || isDrinkable(object)) {
+    startAction(actionTypes.EATING_AND_DRINKING);
+  } else {
     openPaper(texts.IMPOSSIBLE_NO_FOOD_OR_WATER, false);
   }
 };
