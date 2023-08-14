@@ -1760,9 +1760,12 @@ const CheckRohstoff = () => {
   Benoetigt = 0;
   Object.entries(constructions[tile.construction.type].items).forEach(([, amount]) => Benoetigt += amount);
 
+  // This is buggy and starts building boat without any items!
   GebrauchtTmp = Benoetigt / constructions[tile.construction.type].actionSteps;
   Gebraucht = Math.floor(GebrauchtTmp * (tile.construction.actionStep + 1)) - Math.floor(GebrauchtTmp * tile.construction.actionStep);
-  if (Gebraucht === 0) return true;
+  if (Gebraucht === 0) {
+    return true;
+  }
 
   while (1) {
     Check = false;
@@ -1772,7 +1775,9 @@ const CheckRohstoff = () => {
         changeItem(neededItem, -1);
         tile.construction.neededItems[neededItem]--;
         Gebraucht--;
-        if (Gebraucht === 0) return true;
+        if (Gebraucht === 0) {
+          return true;
+        }
         Check = true;
       }
     }

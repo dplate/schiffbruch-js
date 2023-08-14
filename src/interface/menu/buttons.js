@@ -4,29 +4,10 @@ import state from '../../state/state.js';
 import menuTypes from './menuTypes.js';
 import startAction from '../../action/startAction.js';
 import actionTypes from '../../action/actionTypes.js';
-import startEatingAndDrinking from '../../action/starters/startEatingAndDrinking.js';
-import startSleeping from '../../action/starters/startSleeping.js';
-import startChopping from '../../action/starters/startChopping.js';
-import startFishing from '../../action/starters/startFishing.js';
-import startLightning from '../../action/starters/startLightning.js';
-import startLooking from '../../action/starters/startLooking.js';
-import openTreasureMap from '../../treasure/openTreasureMap.js';
-import startShoveling from '../../action/starters/startShoveling.js';
-import startSlinging from '../../action/starters/startSlinging.js';
 import drawStatusText from '../text/drawStatusText.js';
 import texts from '../text/texts.js';
-import startConstructingTent from '../../action/starters/startConstructingTent.js';
 import constructionTypes from '../../construction/constructionTypes.js';
 import drawStartConstructionText from '../../construction/drawStartConstructionText.js';
-import startConstructingField from '../../action/starters/startConstructingField.js';
-import startConstructingBoat from '../../action/starters/startConstructingBoat.js';
-import startConstructingPipe from '../../action/starters/startConstructingPipe.js';
-import startConstructingSos from '../../action/starters/startConstructingSos.js';
-import startConstructingLadder from '../../action/starters/startConstructingLadder.js';
-import startConstructingPlatform from '../../action/starters/startConstructingPlatform.js';
-import startConstructingTreeHouse from '../../action/starters/startConstructingTreeHouse.js';
-import startConstructingFireplace from '../../action/starters/startConstructingFireplace.js';
-import startDestroying from '../../action/starters/startDestroying.js';
 
 const buttonDefault = {
   frame: 0,
@@ -119,7 +100,7 @@ const buttons = [
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS,
-    onTap: startEatingAndDrinking,
+    onTap: () => startAction(actionTypes.EATING_AND_DRINKING),
     onHover: () => drawStatusText(texts.BUTTON_EATING_AND_DRINKING)
   },
   {
@@ -130,7 +111,7 @@ const buttons = [
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS,
-    onTap: startSleeping,
+    onTap: () => startAction(actionTypes.SLEEPING),
     onHover: () => drawStatusText(texts.BUTTON_SLEEPING)
   },
   {
@@ -141,7 +122,7 @@ const buttons = [
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.AXE],
-    onTap: startChopping,
+    onTap: () => startAction(actionTypes.CHOPPING),
     onHover: () => drawStatusText(texts.BUTTON_CHOPPING)
   },
   {
@@ -161,7 +142,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.FISHING_ROD],
-    onTap: startFishing,
+    onTap: () => startAction(actionTypes.FISHING),
     onHover: () => drawStatusText(texts.BUTTON_FISHING)
   },
   {
@@ -181,7 +162,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.MATCHES],
-    onTap: startLightning,
+    onTap: () => startAction(actionTypes.LIGHTNING),
     onHover: () => drawStatusText(texts.BUTTON_LIGHTNING)
   },
   {
@@ -201,7 +182,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.SPYGLASS],
-    onTap: startLooking,
+    onTap: () => startAction(actionTypes.LOOKING),
     onHover: () => drawStatusText(texts.BUTTON_LOOKING)
   },
   {
@@ -221,7 +202,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.MAP],
-    onTap: openTreasureMap,
+    onTap: () => startAction(actionTypes.openTreasureMap),
     onHover: () => drawStatusText(texts.BUTTON_HUNTING_TREASURE)
   },
   {
@@ -241,7 +222,7 @@ const buttons = [
       y: 316
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.SHOVEL],
-    onTap: startShoveling,
+    onTap: () => startAction(actionTypes.SHOVELING),
     onHover: () => drawStatusText(texts.BUTTON_SHOVELING)
   },
   {
@@ -261,7 +242,7 @@ const buttons = [
       y: 316
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.SLING],
-    onTap: startSlinging,
+    onTap: () => startAction(actionTypes.SLINGING),
     onHover: () => drawStatusText(texts.BUTTON_SLINGING)
   },
   {
@@ -281,7 +262,7 @@ const buttons = [
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
-    onTap: startConstructingTent,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_TENT),
     onHover: () => drawStartConstructionText(constructionTypes.TENT)
   },
   {
@@ -292,7 +273,7 @@ const buttons = [
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HARROW],
-    onTap: startConstructingField,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_FIELD),
     onHover: () => drawStartConstructionText(constructionTypes.FIELD)
   },
   {
@@ -312,7 +293,7 @@ const buttons = [
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.AXE],
-    onTap: startConstructingBoat,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_BOAT),
     onHover: () => drawStartConstructionText(constructionTypes.BOAT)
   },
   {
@@ -332,7 +313,7 @@ const buttons = [
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.AXE],
-    onTap: startConstructingPipe,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_PIPE),
     onHover: () => drawStartConstructionText(constructionTypes.PIPE)
   },
   {
@@ -352,7 +333,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
-    onTap: startConstructingSos,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_SOS),
     onHover: () => drawStartConstructionText(constructionTypes.SOS)
   },
   {
@@ -363,7 +344,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HAMMER],
-    onTap: startConstructingLadder,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_LADDER),
     onHover: () => drawStartConstructionText(constructionTypes.LADDER)
   },
   {
@@ -383,7 +364,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HAMMER],
-    onTap: startConstructingPlatform,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_PLATFORM),
     onHover: () => drawStartConstructionText(constructionTypes.PLATFORM)
   },
   {
@@ -403,7 +384,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HAMMER],
-    onTap: startConstructingTreeHouse,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_TREE_HOUSE),
     onHover: () => drawStartConstructionText(constructionTypes.TREE_HOUSE)
   },
   {
@@ -423,7 +404,7 @@ const buttons = [
       y: 316
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
-    onTap: startConstructingFireplace,
+    onTap: () => startAction(actionTypes.CONSTRUCTING_FIREPLACE),
     onHover: () => drawStartConstructionText(constructionTypes.FIREPLACE)
   },
   {
@@ -434,7 +415,7 @@ const buttons = [
       y: 316
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
-    onTap: startDestroying,
+    onTap: () => startAction(actionTypes.DESTROYING),
     onHover: () => drawStatusText(texts.BUTTON_DESTROYING)
   }
 ];
