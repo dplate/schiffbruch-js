@@ -1114,6 +1114,69 @@ const sprites = {
     frameCount: 5,
     speed: 4
   },
+  [spriteTypes.BUTTON_STOPPING_GAME]: {
+    ...buttonDefault,
+    x: 0,
+    y: 112,
+    width: 20,
+    height: 20,
+    frameCount: 4,
+    speed: 4
+  },
+  [spriteTypes.BUTTON_RESTARTING_GAME]: {
+    ...buttonDefault,
+    x: 0,
+    y: 192,
+    width: 20,
+    height: 20,
+    frameCount: 2,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_RESTARTING_DAY]: {
+    ...buttonDefault,
+    x: 0,
+    y: 232,
+    width: 20,
+    height: 20,
+    frameCount: 2,
+    speed: 2
+  },
+  [spriteTypes.BUTTON_GRID]: {
+    ...buttonDefault,
+    x: 0,
+    y: 0,
+    width: 28,
+    height: 28,
+    frameCount: 1,
+    speed: 0
+  },
+  [spriteTypes.BUTTON_GRID_CHECKED]: {
+    ...buttonDefault,
+    x: 0,
+    y: 28,
+    width: 28,
+    height: 28,
+    frameCount: 1,
+    speed: 0
+  },
+  [spriteTypes.BUTTON_MUTE]: {
+    ...buttonDefault,
+    x: 0,
+    y: 272,
+    width: 28,
+    height: 28,
+    frameCount: 1,
+    speed: 0
+  },
+  [spriteTypes.BUTTON_MUTE_CHECKED]: {
+    ...buttonDefault,
+    x: 0,
+    y: 300,
+    width: 28,
+    height: 28,
+    frameCount: 1,
+    speed: 0
+  },
   [spriteTypes.BUTTON_ACTIONS]: {
     ...buttonDefault,
     x: 28,
@@ -1141,6 +1204,27 @@ const sprites = {
     y: 140,
     frameCount: 1,
     speed: 0
+  },
+  [spriteTypes.BUTTON_DOCKING_AND_UNDOCKING]: {
+    ...buttonDefault,
+    x: 483,
+    y: 0,
+    frameCount: 4,
+    speed: 3
+  },
+  [spriteTypes.BUTTON_STOPPING]: {
+    ...buttonDefault,
+    x: 378,
+    y: 0,
+    frameCount: 4,
+    speed: 4
+  },
+  [spriteTypes.BUTTON_RESTARTING_CONSTRUCTION]: {
+    ...buttonDefault,
+    x: 343,
+    y: 0,
+    frameCount: 4,
+    speed: 4
   },
   [spriteTypes.BUTTON_INVENTORY]: {
     ...buttonDefault,

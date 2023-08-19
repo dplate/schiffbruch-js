@@ -1,4 +1,4 @@
-import setupAudio from './sounds/setupAudio.js';
+import audio from './sounds/audio.js';
 import generateIsland from './terrain/generateIsland.js';
 import setGrounds from './terrain/setGrounds.js';
 import grounds from './terrain/tiles/grounds.js';
@@ -60,8 +60,6 @@ import isUsableTreeHouse from './terrain/objects/isUsableTreeHouse.js';
 import findNeighbor from './guy/findNeighbor.js';
 import directions from './terrain/directions.js';
 import pauseConstruction from './construction/pauseConstruction.js';
-import continueConstruction from './construction/continueConstruction.js';
-import isUsableBoat from './terrain/objects/isUsableBoat.js';
 import isBigTree from './terrain/objects/isBigTree.js';
 import updatePipes from './terrain/updatePipes.js';
 import createTreeFallObject from './terrain/objects/createTreeFallObject.js';
@@ -89,6 +87,7 @@ import handleButtonHovers from './interface/menu/handleButtonHovers.js';
 import startAction from './action/startAction.js';
 import actionTypes from './action/actionTypes.js';
 import isEatable from './terrain/objects/isEatable.js';
+import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -98,14 +97,6 @@ const MAXY = 600;
 const CUPFEIL = 34;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
-const BUTTGITTER = 51;
-const BUTTBEENDEN = BUTTGITTER + 1;
-const BUTTNEU = BUTTGITTER + 2;
-const BUTTTAGNEU = BUTTGITTER + 3;
-const BUTTSOUND = BUTTGITTER + 4;
-const BUTTWEITER = BUTTGITTER + 5;
-const BUTTSTOP = BUTTGITTER + 6;
-const BUTTABLEGEN = BUTTGITTER + 7;
 const SAEULE1 = 140;
 const SAEULE2 = SAEULE1 + 1;
 const SAEULE3 = SAEULE1 + 2;
@@ -153,9 +144,6 @@ const mouseUpdates = {
   rgbButtons: []
 };
 const pressedKeyCodes = {};
-
-// Sound
-let audio;
 
 let Spielzustand = GAME_LOGO;       // in welchem Zustand ist das Spiel?
 let MouseAktiv = false;    // Mouse angestellt?
@@ -271,11 +259,6 @@ const initInput = (window) => {
   });
 }
 
-const initAudio = () => {
-  audio = setupAudio();
-  return audio;
-}
-
 const SaveGame = () => {
   let i;
 
@@ -361,130 +344,6 @@ const InitStructs = async () => {
     Bmp[i].Breite = 18;
     Bmp[i].Hoehe = 18;
   }
-
-  //Buttons
-
-  //StandardBmponsinitialisierung
-  for (i = BUTTGITTER; i <= BUTTABLEGEN; i++) {
-    Bmp[i].Animation = false;
-    Bmp[i].Surface = buttonsImage;
-    Bmp[i].Anzahl = 1;
-    Bmp[i].Phase = 0;
-  }
-
-  //ButtGitter
-  Bmp[BUTTGITTER].rcSrc.left = 0;
-  Bmp[BUTTGITTER].rcSrc.top = 0;
-  Bmp[BUTTGITTER].rcSrc.right = 28;
-  Bmp[BUTTGITTER].rcSrc.bottom = 28;
-  Bmp[BUTTGITTER].rcDes.left = rcPanel.left + 173;
-  Bmp[BUTTGITTER].rcDes.top = rcPanel.top + 26;
-  Bmp[BUTTGITTER].rcDes.right = Bmp[BUTTGITTER].rcDes.left + 28;
-  Bmp[BUTTGITTER].rcDes.bottom = Bmp[BUTTGITTER].rcDes.top + 28;
-  Bmp[BUTTGITTER].Breite = (Bmp[BUTTGITTER].rcSrc.right - Bmp[BUTTGITTER].rcSrc.left);
-  Bmp[BUTTGITTER].Hoehe = (Bmp[BUTTGITTER].rcSrc.bottom - Bmp[BUTTGITTER].rcSrc.top);
-  Bmp[BUTTGITTER].Anzahl = 2;
-
-  //BUTTBEENDEN
-  Bmp[BUTTBEENDEN].rcSrc.left = 0;
-  Bmp[BUTTBEENDEN].rcSrc.top = 112;
-  Bmp[BUTTBEENDEN].rcSrc.right = 20;
-  Bmp[BUTTBEENDEN].rcSrc.bottom = 112 + 20;
-  Bmp[BUTTBEENDEN].rcDes.left = rcPanel.left + 60;
-  Bmp[BUTTBEENDEN].rcDes.top = rcPanel.top + 2;
-  Bmp[BUTTBEENDEN].rcDes.right = Bmp[BUTTBEENDEN].rcDes.left + 20;
-  Bmp[BUTTBEENDEN].rcDes.bottom = Bmp[BUTTBEENDEN].rcDes.top + 20;
-  Bmp[BUTTBEENDEN].Breite = (Bmp[BUTTBEENDEN].rcSrc.right - Bmp[BUTTBEENDEN].rcSrc.left);
-  Bmp[BUTTBEENDEN].Hoehe = (Bmp[BUTTBEENDEN].rcSrc.bottom - Bmp[BUTTBEENDEN].rcSrc.top);
-  Bmp[BUTTBEENDEN].Anzahl = 4;
-  Bmp[BUTTBEENDEN].Geschwindigkeit = 4;
-
-  //BUTTNEU
-  Bmp[BUTTNEU].rcSrc.left = 0;
-  Bmp[BUTTNEU].rcSrc.top = 192;
-  Bmp[BUTTNEU].rcSrc.right = 20;
-  Bmp[BUTTNEU].rcSrc.bottom = 192 + 20;
-  Bmp[BUTTNEU].rcDes.left = rcPanel.left + 100;
-  Bmp[BUTTNEU].rcDes.top = rcPanel.top + 2;
-  Bmp[BUTTNEU].rcDes.right = Bmp[BUTTNEU].rcDes.left + 20;
-  Bmp[BUTTNEU].rcDes.bottom = Bmp[BUTTNEU].rcDes.top + 20;
-  Bmp[BUTTNEU].Breite = (Bmp[BUTTNEU].rcSrc.right - Bmp[BUTTNEU].rcSrc.left);
-  Bmp[BUTTNEU].Hoehe = (Bmp[BUTTNEU].rcSrc.bottom - Bmp[BUTTNEU].rcSrc.top);
-  Bmp[BUTTNEU].Anzahl = 2;
-  Bmp[BUTTNEU].Geschwindigkeit = 3;
-
-
-  //BUTTTAGNEU
-  Bmp[BUTTTAGNEU].rcSrc.left = 0;
-  Bmp[BUTTTAGNEU].rcSrc.top = 232;
-  Bmp[BUTTTAGNEU].rcSrc.right = 20;
-  Bmp[BUTTTAGNEU].rcSrc.bottom = 232 + 20;
-  Bmp[BUTTTAGNEU].rcDes.left = rcPanel.left + 140;
-  Bmp[BUTTTAGNEU].rcDes.top = rcPanel.top + 2;
-  Bmp[BUTTTAGNEU].rcDes.right = Bmp[BUTTTAGNEU].rcDes.left + 20;
-  Bmp[BUTTTAGNEU].rcDes.bottom = Bmp[BUTTTAGNEU].rcDes.top + 20;
-  Bmp[BUTTTAGNEU].Breite = (Bmp[BUTTTAGNEU].rcSrc.right - Bmp[BUTTTAGNEU].rcSrc.left);
-  Bmp[BUTTTAGNEU].Hoehe = (Bmp[BUTTTAGNEU].rcSrc.bottom - Bmp[BUTTTAGNEU].rcSrc.top);
-  Bmp[BUTTTAGNEU].Anzahl = 2;
-  Bmp[BUTTTAGNEU].Geschwindigkeit = 2;
-
-  //BUTTSOUND
-  Bmp[BUTTSOUND].rcSrc.left = 0;
-  Bmp[BUTTSOUND].rcSrc.top = 272;
-  Bmp[BUTTSOUND].rcSrc.right = 28;
-  Bmp[BUTTSOUND].rcSrc.bottom = 272 + 28;
-  Bmp[BUTTSOUND].rcDes.left = rcPanel.left + 173;
-  Bmp[BUTTSOUND].rcDes.top = rcPanel.top + 60;
-  Bmp[BUTTSOUND].rcDes.right = Bmp[BUTTSOUND].rcDes.left + 28;
-  Bmp[BUTTSOUND].rcDes.bottom = Bmp[BUTTSOUND].rcDes.top + 28;
-  Bmp[BUTTSOUND].Breite = (Bmp[BUTTSOUND].rcSrc.right - Bmp[BUTTSOUND].rcSrc.left);
-  Bmp[BUTTSOUND].Hoehe = (Bmp[BUTTSOUND].rcSrc.bottom - Bmp[BUTTSOUND].rcSrc.top);
-  Bmp[BUTTSOUND].Anzahl = 2;
-
-  //BUTTWEITER
-  Bmp[BUTTWEITER].rcSrc.left = 343;
-  Bmp[BUTTWEITER].rcSrc.top = 0;
-  Bmp[BUTTWEITER].rcSrc.right = 343 + 35;
-  Bmp[BUTTWEITER].rcSrc.bottom = 35;
-  Bmp[BUTTWEITER].rcDes.left = rcPanel.left + 111;
-  Bmp[BUTTWEITER].rcDes.top = rcPanel.top + 157;
-  Bmp[BUTTWEITER].rcDes.right = Bmp[BUTTWEITER].rcDes.left + 35;
-  Bmp[BUTTWEITER].rcDes.bottom = Bmp[BUTTWEITER].rcDes.top + 35;
-  Bmp[BUTTWEITER].Breite = (Bmp[BUTTWEITER].rcSrc.right - Bmp[BUTTWEITER].rcSrc.left);
-  Bmp[BUTTWEITER].Hoehe = (Bmp[BUTTWEITER].rcSrc.bottom - Bmp[BUTTWEITER].rcSrc.top);
-  Bmp[BUTTWEITER].Anzahl = 4;
-  Bmp[BUTTWEITER].Geschwindigkeit = 4;
-  Bmp[BUTTWEITER].Phase = -1;
-
-  //BUTTSTOP
-  Bmp[BUTTSTOP].rcSrc.left = 378;
-  Bmp[BUTTSTOP].rcSrc.top = 0;
-  Bmp[BUTTSTOP].rcSrc.right = 378 + 35;
-  Bmp[BUTTSTOP].rcSrc.bottom = 35;
-  Bmp[BUTTSTOP].rcDes.left = rcPanel.left + 111;
-  Bmp[BUTTSTOP].rcDes.top = rcPanel.top + 157;
-  Bmp[BUTTSTOP].rcDes.right = Bmp[BUTTSTOP].rcDes.left + 35;
-  Bmp[BUTTSTOP].rcDes.bottom = Bmp[BUTTSTOP].rcDes.top + 35;
-  Bmp[BUTTSTOP].Breite = (Bmp[BUTTSTOP].rcSrc.right - Bmp[BUTTSTOP].rcSrc.left);
-  Bmp[BUTTSTOP].Hoehe = (Bmp[BUTTSTOP].rcSrc.bottom - Bmp[BUTTSTOP].rcSrc.top);
-  Bmp[BUTTSTOP].Anzahl = 4;
-  Bmp[BUTTSTOP].Geschwindigkeit = 4;
-  Bmp[BUTTSTOP].Phase = -1;
-
-  //BUTTABLEGEN
-  Bmp[BUTTABLEGEN].rcSrc.left = 483;
-  Bmp[BUTTABLEGEN].rcSrc.top = 0;
-  Bmp[BUTTABLEGEN].rcSrc.right = 483 + 35;
-  Bmp[BUTTABLEGEN].rcSrc.bottom = 35;
-  Bmp[BUTTABLEGEN].rcDes.left = rcPanel.left + 111;
-  Bmp[BUTTABLEGEN].rcDes.top = rcPanel.top + 157;
-  Bmp[BUTTABLEGEN].rcDes.right = Bmp[BUTTABLEGEN].rcDes.left + 35;
-  Bmp[BUTTABLEGEN].rcDes.bottom = Bmp[BUTTABLEGEN].rcDes.top + 35;
-  Bmp[BUTTABLEGEN].Breite = (Bmp[BUTTABLEGEN].rcSrc.right - Bmp[BUTTABLEGEN].rcSrc.left);
-  Bmp[BUTTABLEGEN].Hoehe = (Bmp[BUTTABLEGEN].rcSrc.bottom - Bmp[BUTTABLEGEN].rcSrc.top);
-  Bmp[BUTTABLEGEN].Anzahl = 4;
-  Bmp[BUTTABLEGEN].Geschwindigkeit = 3;
-  Bmp[BUTTSTOP].Phase = -1;
 
   //Sonstiges
 
@@ -861,9 +720,11 @@ const CheckMouse = () => {
 
   if (TwoClicks === -1) {
     if (state.guy.active) {
-      if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes) &&
-        (Bmp[BUTTSTOP].Phase !== -1)) CursorTyp = CUPFEIL;
-      else CursorTyp = CUUHR;
+      if (getButtonAtPosition(MousePosition)?.sprite === spriteTypes.BUTTON_STOPPING) {   
+        CursorTyp = CUPFEIL;
+      } else {
+        CursorTyp = CUUHR;
+      }
     } else CursorTyp = CUPFEIL;
   }
   Button = -1;
@@ -944,12 +805,10 @@ const CheckMouse = () => {
 
   //Animationen und Text löschen (werden dann von den MouseIn.. Sachen neu angestellt
   clearText(textAreas.STATUS);
-  ButtAniAus();
 
   //Wenn der Guy aktiv dann linke Mouse-Buttons ignorieren
   if (state.guy.active && (Button === 0)) {
-    if (!((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes)) &&
-      (Bmp[BUTTSTOP].Phase !== -1))) {
+    if (getButtonAtPosition(MousePosition)?.sprite !== spriteTypes.BUTTON_STOPPING) {
       Button = -1;
     }
   }
@@ -1129,7 +988,6 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
         if (state.guy.route.length &&
           (tilePosition.x === state.guy.route[state.guy.route.length - 1].x) &&
           (tilePosition.y === state.guy.route[state.guy.route.length - 1].y)) {
-          Bmp[BUTTSTOP].Phase = 0;
           state.guy.active = true;
         } else {
           state.guy.route = findRoute(tilePosition);
@@ -1148,14 +1006,6 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   }
 }
 
-const ButtAniAus = () => {
-  let i;
-
-  for (i = BUTTGITTER; i <= BUTTABLEGEN; i++) {
-    Bmp[i].Animation = false;
-  }
-}
-
 const MouseInPanel = (Button, Push) => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const openedMenu = state.options.openedMenu;
@@ -1163,115 +1013,6 @@ const MouseInPanel = (Button, Push) => {
   //wenn die Maus in der Minimap ist .
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
     moveCameraFromMinimap({ x: MousePosition.x - rcKarte.left, y: MousePosition.y - rcKarte.top });
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTGITTER].rcDes)) {
-    if (state.options.grid) {
-      drawStatusText(texts.GITTERAUS);
-    } else {
-      drawStatusText(texts.GITTERAN);
-    }
-
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      state.options.grid = !state.options.grid;
-    }
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSOUND].rcDes)) {
-    if (audio.isRunning()) {
-      drawStatusText(texts.SOUNDAUS);
-    } else {
-      drawStatusText(texts.SOUNDAN);
-    }
-
-    if ((Button === 0) && (Push === 1)) {
-      if (audio.isRunning()) {
-        audio.suspend();
-      } else {
-        audio.resume();
-        sounds.CLICK2.instance.play();
-      }
-    }
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTBEENDEN].rcDes)) {
-    drawStatusText(texts.BEENDEN);
-    Bmp[BUTTBEENDEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      startAction(actionTypes.STOPPING_GAME);
-    }
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTNEU].rcDes)) {
-    drawStatusText(texts.NEU);
-    Bmp[BUTTNEU].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      startAction(actionTypes.RESTARTING_GAME);
-    }
-  } else if (InRect(MousePosition.x, MousePosition.y, Bmp[BUTTTAGNEU].rcDes)) {
-    drawStatusText(texts.TAGNEU2);
-    Bmp[BUTTTAGNEU].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      startAction(actionTypes.RESTARTING_DAY);
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTWEITER].rcDes)) &&
-    (Bmp[BUTTWEITER].Phase !== -1)) {
-    drawStatusText(texts.WEITER);
-
-    Bmp[BUTTWEITER].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      Bmp[BUTTSTOP].Phase = 0;
-      const construction = continueConstruction();
-      switch (construction.type) {
-        case constructionTypes.TENT:
-          startAction(actionTypes.CONSTRUCTING_TENT);
-          break;
-        case constructionTypes.FIELD:
-          startAction(actionTypes.CONSTRUCTING_FIELD);
-          break;
-        case constructionTypes.BOAT:
-          startAction(actionTypes.CONSTRUCTING_BOAT);
-          break;
-        case constructionTypes.PIPE:
-          startAction(actionTypes.CONSTRUCTING_PIPE);
-          break;
-        case constructionTypes.SOS:
-          startAction(actionTypes.CONSTRUCTING_SOS);
-          break;
-        case constructionTypes.LADDER:
-          startAction(actionTypes.CONSTRUCTING_LADDER);
-          break;
-        case constructionTypes.PLATFORM:
-          startAction(actionTypes.CONSTRUCTING_PLATFORM);
-          break;
-        case constructionTypes.TREE_HOUSE:
-          startAction(actionTypes.CONSTRUCTING_TREE_HOUSE);;
-          break;
-        case constructionTypes.FIREPLACE:
-          startAction(actionTypes.CONSTRUCTING_FIREPLACE);;
-          break;
-      }
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTSTOP].rcDes)) &&
-    (Bmp[BUTTSTOP].Phase !== -1)) {
-    drawStatusText(texts.STOP);
-
-    Bmp[BUTTSTOP].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      startAction(actionTypes.STOPPING);
-      Bmp[BUTTSTOP].Phase = -1;
-    }
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[BUTTABLEGEN].rcDes)) &&
-    (Bmp[BUTTABLEGEN].Phase !== -1)) {
-    drawStatusText(texts.BEGINNABLEGEN);
-    Bmp[BUTTABLEGEN].Animation = true;
-    if ((Button === 0) && (Push === 1)) {
-      sounds.CLICK2.instance.play();
-      if (tile.ground !== grounds.SEA) {
-        startAction(actionTypes.UNDOCKING);
-      } else {
-        startAction(actionTypes.DOCKING);
-      }
-
-    }
   } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (openedMenu === menuTypes.INVENTORY)) {
     const item = findItemUnderCursor(MousePosition);
     if (item) {
@@ -1619,32 +1360,6 @@ const ZeichnePanel = () => {
   rcRectdes.bottom = rcPanel.bottom;
   drawImage(panelImage, canvases.PRIMARY);
 
-  //Gitternetzknopf
-  if (state.options.grid) Bmp[BUTTGITTER].Phase = 1; else Bmp[BUTTGITTER].Phase = 0;
-  ZeichneBilder(Bmp[BUTTGITTER].rcDes.left, Bmp[BUTTGITTER].rcDes.top, BUTTGITTER, rcPanel);
-
-  //SOUNDknopf
-  if (audio.isRunning()) Bmp[BUTTSOUND].Phase = 0; else Bmp[BUTTSOUND].Phase = 1;
-  ZeichneBilder(Bmp[BUTTSOUND].rcDes.left, Bmp[BUTTSOUND].rcDes.top, BUTTSOUND, rcPanel);
-
-  //BEENDENknopf
-  ZeichneBilder(Bmp[BUTTBEENDEN].rcDes.left, Bmp[BUTTBEENDEN].rcDes.top, BUTTBEENDEN, rcPanel);
-
-  //NEUknopf
-  ZeichneBilder(Bmp[BUTTNEU].rcDes.left, Bmp[BUTTNEU].rcDes.top, BUTTNEU, rcPanel);
-
-  //TAGNEUknopf
-  ZeichneBilder(Bmp[BUTTTAGNEU].rcDes.left, Bmp[BUTTTAGNEU].rcDes.top, BUTTTAGNEU, rcPanel);
-
-  //WEITERknopf
-  if (Bmp[BUTTWEITER].Phase !== -1) ZeichneBilder(Bmp[BUTTWEITER].rcDes.left, Bmp[BUTTWEITER].rcDes.top, BUTTWEITER, rcPanel);
-
-  //STOPknopf
-  if (Bmp[BUTTSTOP].Phase !== -1) ZeichneBilder(Bmp[BUTTSTOP].rcDes.left, Bmp[BUTTSTOP].rcDes.top, BUTTSTOP, rcPanel);
-
-  //ABLEGENknopf
-  if (Bmp[BUTTABLEGEN].Phase !== -1) ZeichneBilder(Bmp[BUTTABLEGEN].rcDes.left, Bmp[BUTTABLEGEN].rcDes.top, BUTTABLEGEN, rcPanel);
-
   //Welches Menü zeichnen?
   if (state.options.openedMenu === menuTypes.INVENTORY) {
     ZeichneBilder(Bmp[INVPAPIER].rcDes.left, Bmp[INVPAPIER].rcDes.top, INVPAPIER, rcPanel);
@@ -1730,26 +1445,6 @@ const CalcRect = (rcBereich) => {
   rcRectdes.bottom = Math.max(rcRectdes.top, rcRectdes.bottom);
 }
 
-const CheckSpzButton = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  const tileWest = state.terrain[state.guy.tile.x - 1][state.guy.tile.y];
-  const tileNorth = state.terrain[state.guy.tile.x][state.guy.tile.y - 1];
-  const tileEast = state.terrain[state.guy.tile.x + 1][state.guy.tile.y];
-  const tileSouth = state.terrain[state.guy.tile.x][state.guy.tile.y + 1];
-  if (tile.construction && Bmp[BUTTSTOP].Phase === -1) {
-    if (Bmp[BUTTWEITER].Phase === -1) Bmp[BUTTWEITER].Phase = 0;
-  } else Bmp[BUTTWEITER].Phase = -1;
-
-  if (Bmp[BUTTSTOP].Phase === -1 && (isUsableBoat(tile) ||
-    (isOnSea() &&
-      ((tileWest.ground !== grounds.SEA && !tileWest.object) ||
-        (tileNorth.ground !== grounds.SEA && !tileNorth.object) ||
-        (tileEast.ground !== grounds.SEA && !tileEast.object) ||
-        (tileSouth.ground !== grounds.SEA && !tileSouth.object))))) {
-    if (Bmp[BUTTABLEGEN].Phase === -1) Bmp[BUTTABLEGEN].Phase = 0;
-  } else Bmp[BUTTABLEGEN].Phase = -1;
-}
-
 const CheckRohstoff = () => {
   let Benoetigt; //Anzahl der Gesamtbenötigten Rohstoffe
   let GebrauchtTmp; //Soviel Rohstoffe werden für diesen Schritt benötigt
@@ -1785,7 +1480,6 @@ const CheckRohstoff = () => {
   }
   openPaper(texts.ROHSTOFFNICHT, false);
   startAction(actionTypes.STOPPING);
-  Bmp[BUTTSTOP].Phase = -1;
   return false;
 }
 
@@ -2711,7 +2405,6 @@ const AkFeld = () => {
       break;
     case 20:
       finishConstruction(tile);
-      Bmp[BUTTSTOP].Phase = -1;
       if (!state.constructionHints[constructionTypes.FIELD]) {
         openPaper(texts.FELDHILFE, false);
         state.constructionHints[constructionTypes.FIELD] = true;
@@ -2735,7 +2428,6 @@ const AkTagEnde = () => {
     case 1:
       state.calendar.minutes = 12 * 60;
       TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
-      Bmp[BUTTSTOP].Phase = -1;
       if (alreadyAtSleepPosition) break;
       pauseConstruction();
       break;
@@ -3020,7 +2712,6 @@ const AkZelt = () => {
       break;
     case 16:
       finishConstruction(tile);
-      Bmp[BUTTSTOP].Phase = -1;
       if (!state.constructionHints[constructionTypes.TENT]) {
         openPaper(texts.ZELTHILFE, false);
         state.constructionHints[constructionTypes.TENT] = true;
@@ -3100,7 +2791,6 @@ const AkBoot = () => {
         tile.object.x = south.x;
         tile.object.y = south.y;
       }
-      Bmp[BUTTSTOP].Phase = -1;
       if (!state.constructionHints[constructionTypes.BOAT]) {
         openPaper(texts.BOOTHILFE, false);
         state.constructionHints[constructionTypes.BOAT] = true;
@@ -3164,7 +2854,6 @@ const AkRohr = () => {
     case 16:
       finishConstruction(tile);
       updatePipes();
-      Bmp[BUTTSTOP].Phase = -1;
       if (!state.constructionHints[constructionTypes.PIPE]) {
         openPaper(texts.ROHRHILFE, false);
         state.constructionHints[constructionTypes.PIPE] = true;
@@ -3260,7 +2949,6 @@ const AkSOS = () => {
         tile.object.chance = 2;
       }
       state.guy.chance += tile.object.chance;
-      Bmp[BUTTSTOP].Phase = -1;
       if (!state.constructionHints[constructionTypes.SOS]) {
         openPaper(texts.SOSHILFE, false);
         state.constructionHints[constructionTypes.SOS] = true;
@@ -3320,7 +3008,6 @@ const AkFeuerstelle = () => {
       break;
     case 9:
       finishConstruction(tile);
-      Bmp[BUTTSTOP].Phase = -1;
       if (!state.constructionHints[constructionTypes.FIREPLACE]) {
         openPaper(texts.FEUERSTELLEHILFE, false);
         state.constructionHints[constructionTypes.FIREPLACE] = true;
@@ -3392,7 +3079,6 @@ const AkHaus1 = () => {
       break;
     case 19:
       finishConstruction(tile);
-      Bmp[BUTTSTOP].Phase = -1;
       state.guy.action = null;
       break;
   }
@@ -3470,7 +3156,6 @@ const AkHaus2 = () => {
       break;
     case 21:
       finishConstruction(tile);
-      Bmp[BUTTSTOP].Phase = -1;
       state.guy.action = null;
       break;
   }
@@ -3548,7 +3233,6 @@ const AkHaus3 = () => {
       break;
     case 21:
       finishConstruction(tile);
-      Bmp[BUTTSTOP].Phase = -1;
       if (!state.constructionHints[constructionTypes.TREE_HOUSE]) {
         openPaper(texts.HAUS3HILFE, false);
         state.constructionHints[constructionTypes.TREE_HOUSE] = true;
@@ -3742,19 +3426,6 @@ const CheckBenutze = (item) => {
 const Animationen = () => {
   animateTerrain(frame, framesPerSecond);
   animateButtons(frame, framesPerSecond, MousePosition);
-
-  let i, j; //Zwischenspeicher
-
-  for (j = BUTTGITTER; j <= BUTTABLEGEN; j++) {
-    if (!Bmp[j].Animation) continue;
-    i = Math.floor(framesPerSecond / Bmp[j].Geschwindigkeit);
-    if (i < 1) i = 1;
-    if (frame % i === 0) {
-      Bmp[j].Phase++;
-      if (Bmp[j].Phase >= Bmp[j].Anzahl) Bmp[j].Phase = 0;
-    }
-  }
-
   if (!state.paper) {
     animateGuy(frame, framesPerSecond, AddTime.bind(this));
   }
@@ -3793,7 +3464,6 @@ const refresh = (timestamp) => {
       startAction(actionTypes.ENDING_DAY);
     }
 
-    CheckSpzButton();          //Die Spezialknöpfe umschalten
     if (MouseAktiv) CheckMouse();    //Den MouseZustand abchecken
     CheckKey();
     restrictCamera();            //Das Scrollen an die Grenzen der Landschaft anpassen
@@ -3815,8 +3485,7 @@ const refresh = (timestamp) => {
 const run = async (window) => {
   await loadImages();
   await initCanvases(window);
-  initAudio();
-  await loadSounds(audio);
+  await loadSounds();
   initInput(window);
   texts.init('de');
 

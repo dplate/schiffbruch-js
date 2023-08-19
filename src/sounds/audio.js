@@ -36,30 +36,28 @@ const createSound = (audioContext, audioBuffer, baseGain) => {
   };
 };
 
-const setupAudio = () => {
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const sounds = [];
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const sounds = [];
 
-  return {
-    suspend: () => {
-      audioContext.suspend();
-    },
-    resume: () => {
-      audioContext.resume();
-    },
-    isRunning: () => audioContext.state === 'running',
-    load: async (name, baseGain = 1) => {
-      const response = await fetch('./sounds/' + name + '.mp3');
-      const buffer = await response.arrayBuffer();
-      const audioBuffer = await audioContext.decodeAudioData(buffer);
-      const sound = createSound(audioContext, audioBuffer, baseGain);
-      sounds.push(sound);
-      return sound;
-    },
-    stopAll: () => {
-      sounds.forEach(sound => sound.stop());
-    }
-  };
+const audio = {
+  suspend: () => {
+    audioContext.suspend();
+  },
+  resume: () => {
+    audioContext.resume();
+  },
+  isRunning: () => audioContext.state === 'running',
+  load: async (name, baseGain = 1) => {
+    const response = await fetch('./sounds/' + name + '.mp3');
+    const buffer = await response.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(buffer);
+    const sound = createSound(audioContext, audioBuffer, baseGain);
+    sounds.push(sound);
+    return sound;
+  },
+  stopAll: () => {
+    sounds.forEach(sound => sound.stop());
+  }
 };
 
-export default setupAudio;
+export default audio;

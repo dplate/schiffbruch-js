@@ -8,6 +8,12 @@ import drawStatusText from '../text/drawStatusText.js';
 import texts from '../text/texts.js';
 import constructionTypes from '../../construction/constructionTypes.js';
 import drawStartConstructionText from '../../construction/drawStartConstructionText.js';
+import grounds from '../../terrain/tiles/grounds.js';
+import isUsableBoat from '../../terrain/objects/isUsableBoat.js';
+import findNeighbor from '../../guy/findNeighbor.js';
+import isOnSea from '../../guy/isOnSea.js';
+import actions from '../../action/actions.js';
+import audio from '../../sounds/audio.js';
 
 const buttonDefault = {
   frame: 0,
@@ -15,6 +21,83 @@ const buttonDefault = {
 };
 
 const buttons = [
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_STOPPING_GAME,
+    position: {
+      x: 60,
+      y: 2
+    },
+    isVisible: () => true,
+    onTap: () => startAction(actionTypes.STOPPING_GAME),
+    onHover: () => drawStatusText(texts.BUTTON_STOPPING_GAME)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_RESTARTING_GAME,
+    position: {
+      x: 100,
+      y: 2
+    },
+    isVisible: () => true,
+    onTap: () => startAction(actionTypes.RESTARTING_GAME),
+    onHover: () => drawStatusText(texts.BUTTON_RESTARTING_GAME)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_RESTARTING_DAY,
+    position: {
+      x: 140,
+      y: 2
+    },
+    isVisible: () => true,
+    onTap: () => startAction(actionTypes.RESTARTING_DAY),
+    onHover: () => drawStatusText(texts.BUTTON_RESTARTING_DAY)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_GRID,
+    position: {
+      x: 173,
+      y: 26
+    },
+    isVisible: () => !state.options.grid,
+    onTap: () => state.options.grid = true,
+    onHover: () => drawStatusText(texts.BUTTON_GRID)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_GRID_CHECKED,
+    position: {
+      x: 173,
+      y: 26
+    },
+    isVisible: () => state.options.grid,
+    onTap: () => state.options.grid = false,
+    onHover: () => drawStatusText(texts.BUTTON_GRID_CHECKED)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_MUTE,
+    position: {
+      x: 173,
+      y: 60
+    },
+    isVisible: () => audio.isRunning(),
+    onTap: () => audio.suspend(),
+    onHover: () => drawStatusText(texts.BUTTON_MUTE)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_MUTE_CHECKED,
+    position: {
+      x: 173,
+      y: 60
+    },
+    isVisible: () => !audio.isRunning(),
+    onTap: () => audio.resume(),
+    onHover: () => drawStatusText(texts.BUTTON_MUTE_CHECKED)
+  },
   {
     ...buttonDefault,
     sprite: spriteTypes.BUTTON_ACTIONS,
@@ -58,6 +141,58 @@ const buttons = [
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
     onTap: () => state.options.openedMenu = null,
     onHover: () => drawStatusText(texts.BUTTON_CONSTRUCTIONS_CHECKED)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_DOCKING_AND_UNDOCKING,
+    position: {
+      x: 111,
+      y: 157
+    },
+    isVisible: () => !state.guy.active && isUsableBoat(state.terrain[state.guy.tile.x][state.guy.tile.y]),
+    onTap: () => startAction(actionTypes.UNDOCKING),
+    onHover: () => drawStatusText(texts.BUTTON_UNDOCKING)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_DOCKING_AND_UNDOCKING,
+    position: {
+      x: 111,
+      y: 157
+    },
+    isVisible: () => !state.guy.active && isOnSea() && findNeighbor((tile) => tile.ground !== grounds.SEA),
+    onTap: () => startAction(actionTypes.DOCKING),
+    onHover: () => drawStatusText(texts.BUTTON_DOCKING)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_STOPPING,
+    position: {
+      x: 111,
+      y: 157
+    },
+    isVisible: () => state.guy.active,
+    onTap: () => startAction(actionTypes.STOPPING),
+    onHover: () => drawStatusText(texts.BUTTON_STOPPING)
+  },
+  {
+    ...buttonDefault,
+    sprite: spriteTypes.BUTTON_RESTARTING_CONSTRUCTION,
+    position: {
+      x: 111,
+      y: 157
+    },
+    isVisible: () => !state.guy.active && state.terrain[state.guy.tile.x][state.guy.tile.y].construction,
+    onTap: () => {
+      const construction = state.terrain[state.guy.tile.x][state.guy.tile.y].construction;
+      for (const [actionType, action] of Object.entries(actions)) {
+        if (action.construction === construction.type) {
+          startAction(actionType);
+          return;
+        }
+      }
+    },
+    onHover: () => drawStatusText(texts.BUTTON_RESTARTING_CONSTRUCTION)
   },
   {
     ...buttonDefault,
