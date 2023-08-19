@@ -63,7 +63,6 @@ import pauseConstruction from './construction/pauseConstruction.js';
 import isBigTree from './terrain/objects/isBigTree.js';
 import updatePipes from './terrain/updatePipes.js';
 import createTreeFallObject from './terrain/objects/createTreeFallObject.js';
-import drawText from './interface/text/drawText.js';
 import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
@@ -90,6 +89,7 @@ import isEatable from './terrain/objects/isEatable.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import drawCondition from './interface/drawCondition.js';
 import drawSundial from './interface/drawSundial.js';
+import drawChance from './interface/drawChance.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -100,7 +100,6 @@ const CUPFEIL = 34;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
 const INVPAPIER = 157;
-const RING = INVPAPIER + 1;
 const PROGRAMMIERUNG = 164;
 const DIRKPLATE = PROGRAMMIERUNG + 1;
 const MATTHIAS = PROGRAMMIERUNG + 2;
@@ -327,19 +326,6 @@ const InitStructs = async () => {
   Bmp[INVPAPIER].Breite = (Bmp[INVPAPIER].rcSrc.right - Bmp[INVPAPIER].rcSrc.left);
   Bmp[INVPAPIER].Hoehe = (Bmp[INVPAPIER].rcSrc.bottom - Bmp[INVPAPIER].rcSrc.top);
   Bmp[INVPAPIER].Surface = inventarImage;
-
-  //RING
-  Bmp[RING].rcSrc.left = 205;
-  Bmp[RING].rcSrc.top = 210;
-  Bmp[RING].rcSrc.right = Bmp[RING].rcSrc.left + 37;
-  Bmp[RING].rcSrc.bottom = Bmp[RING].rcSrc.top + 150;
-  Bmp[RING].rcDes.left = rcPanel.left + 5;
-  Bmp[RING].rcDes.top = rcPanel.top - 113;
-  Bmp[RING].rcDes.right = Bmp[RING].rcDes.left + 30;
-  Bmp[RING].rcDes.bottom = Bmp[RING].rcDes.top;
-  Bmp[RING].Breite = (Bmp[RING].rcSrc.right - Bmp[RING].rcSrc.left);
-  Bmp[RING].Hoehe = (Bmp[RING].rcSrc.bottom - Bmp[RING].rcSrc.top);
-  Bmp[RING].Surface = panelImage;
 
   //PROGRAMMIERUNG
   Bmp[PROGRAMMIERUNG].rcSrc.left = 0;
@@ -1008,15 +994,9 @@ const startGame = async (newGame) => {
 }
 
 const Zeige = () => {
-  let Stringsave1 = '';
-  let Stringsave2 = ''; //Für die Zeitausgabe
-
   drawTerrain(state.camera, false);
 
   ZeichnePanel();
-
-  //Die TagesZeit ausgeben
-
 
   if (state.paper) {
     drawPaper();
@@ -1252,19 +1232,7 @@ const ZeichnePanel = () => {
   drawButtons();
   drawCondition();
   drawSundial();
-
-  //Rettungsring
-  if (state.guy.chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * state.guy.chance));
-  else Ringtmp = 100;
-  if (Ringtmp > 100) Ringtmp = 100;
-  ZeichneBilder(Math.floor(Bmp[RING].rcDes.left),
-    Math.floor(Bmp[RING].rcDes.top + Ringtmp),
-    RING, rcPanel);
-
-  //Die ChanceZahl ausgeben
-  textAreas.CHANCE.y = Math.floor(Bmp[RING].rcDes.top + Ringtmp + Bmp[RING].Hoehe - 25);
-  StdString = state.guy.chance.toFixed(0);
-  drawText(StdString, textAreas.CHANCE);
+  drawChance();
 
   //TextFeld malen
   rcRectsrc.left = 0;
