@@ -3,6 +3,8 @@ import images from '../images/images.js';
 import state from '../state/state.js';
 import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
+import drawText from './text/drawText.js';
+import textAreas from './text/textAreas.js';
 
 const width = 51;
 const height = 50;
@@ -14,7 +16,6 @@ const center = {
   x: 107,
   y: 573
 };
-
 
 const drawSun = () => {
   const panelPosition = interfaces[interfaceTypes.INTERFACE_PANEL].position;
@@ -39,4 +40,15 @@ const drawSun = () => {
   );
 };
 
-export default drawSun;
+const drawTime = () => {
+  const hour = String(6 + Math.floor(state.calendar.minutes / 60));
+  const minute =  String(state.calendar.minutes % 60);
+  drawText(`${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`, textAreas.TIME);
+}
+
+const drawSundial = () => {
+  drawSun();
+  drawTime();
+}
+
+export default drawSundial;

@@ -89,7 +89,7 @@ import actionTypes from './action/actionTypes.js';
 import isEatable from './terrain/objects/isEatable.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import drawCondition from './interface/drawCondition.js';
-import drawSun from './interface/drawSun.js';
+import drawSundial from './interface/drawSundial.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -132,7 +132,6 @@ let textfieldImage = null;
 let creditsImage = null;
 let logoImage = null;
 let cursorsImage = null;
-let buttonsImage = null;
 let inventarImage = null;
 
 // Input
@@ -170,14 +169,10 @@ const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
 
 const Bmp = Array.from(Array(BILDANZ), () => ({
   Surface: null, //in welcher Surface gespeichert?
-  Animation: null, //Läuft die Animations?
-  Anzahl: null,    //Anzahl der Animationsphasen
-  Phase: null,    //die aktuelle Phase
   rcSrc: { left: null, top: null, right: null, bottom: null },     //Quelle des 1. Bildes
   rcDes: { left: null, top: null, right: null, bottom: null },        //Falls es immer an die gleiche Stelle gezeichnet wird. (Buttons)
   Breite: null,   //Die Breite des Bildes
   Hoehe: null,    //Die Hoehe des Bildes
-  Geschwindigkeit: null, //Wieviel Bilder/sec
 }));
 
 const AbspannListe = Array.from(Array(10), () => Array.from(Array(10), () => ({
@@ -197,7 +192,6 @@ const loadImage = async (file) => {
 const initCanvases = async (window) => {
   panelImage = await loadImage('panel.png');
   cursorsImage = await loadImage('cursors.png');
-  buttonsImage = await loadImage('buttons.png');
   textfieldImage = await loadImage('textfield.png');
   inventarImage = await loadImage('inventory.png');
   creditsImage = await loadImage('credits.png');
@@ -260,18 +254,9 @@ const initInput = (window) => {
 const SaveGame = () => {
   let i;
 
-  const animations = [];
-  for (i = 0; i < BILDANZ; i++) {
-    animations.push({
-      Animation: Bmp[i].Animation,
-      Phase: Bmp[i].Phase,
-    });
-  }
-
   window.localStorage.setItem('stateV9', JSON.stringify({
     ...state,
-    Spielzustand,
-    animations
+    Spielzustand
   }));
 }
 
@@ -297,11 +282,6 @@ const LoadGame = () => {
 
   Spielzustand = state.Spielzustand;
 
-  for (i = 0; i < BILDANZ; i++) {
-    Bmp[i].Animation = state.animations[i].Animation;
-    Bmp[i].Phase = state.animations[i].Phase;
-  }
-
   return true;
 }
 
@@ -311,10 +291,6 @@ const InitStructs = async () => {
   //BILD
   //Standardbildinitialisierung
   for (i = 0; i < BILDANZ; i++) {
-    Bmp[i].Animation = false;
-    Bmp[i].Anzahl = 0;
-    Bmp[i].Geschwindigkeit = 0;
-    Bmp[i].Phase = 0;
     Bmp[i].Surface = null;
     Bmp[i].rcSrc.left = 0;
     Bmp[i].rcSrc.right = 0;
@@ -330,10 +306,6 @@ const InitStructs = async () => {
 
   //Cursor
   for (i = CUPFEIL; i <= CUUHR; i++) {
-    Bmp[i].Animation = false;
-    Bmp[i].Anzahl = 1;
-    Bmp[i].Geschwindigkeit = 0;
-    Bmp[i].Phase = 0;
     Bmp[i].Surface = cursorsImage;
     Bmp[i].rcSrc.left = (i - CUPFEIL) * 18;
     Bmp[i].rcSrc.top = 0;
@@ -344,7 +316,6 @@ const InitStructs = async () => {
   }
 
   //INVPAPIER
-  Bmp[INVPAPIER].Anzahl = 1;
   Bmp[INVPAPIER].rcSrc.left = 0;
   Bmp[INVPAPIER].rcSrc.top = 15;
   Bmp[INVPAPIER].rcSrc.right = Bmp[INVPAPIER].rcSrc.left + 178;
@@ -358,7 +329,6 @@ const InitStructs = async () => {
   Bmp[INVPAPIER].Surface = inventarImage;
 
   //RING
-  Bmp[RING].Anzahl = 1;
   Bmp[RING].rcSrc.left = 205;
   Bmp[RING].rcSrc.top = 210;
   Bmp[RING].rcSrc.right = Bmp[RING].rcSrc.left + 37;
@@ -372,7 +342,6 @@ const InitStructs = async () => {
   Bmp[RING].Surface = panelImage;
 
   //PROGRAMMIERUNG
-  Bmp[PROGRAMMIERUNG].Anzahl = 1;
   Bmp[PROGRAMMIERUNG].rcSrc.left = 0;
   Bmp[PROGRAMMIERUNG].rcSrc.top = 0;
   Bmp[PROGRAMMIERUNG].rcSrc.right = Bmp[PROGRAMMIERUNG].rcSrc.left + 348;
@@ -386,7 +355,6 @@ const InitStructs = async () => {
   Bmp[PROGRAMMIERUNG].Surface = creditsImage;
 
   //DIRKPLATE
-  Bmp[DIRKPLATE].Anzahl = 1;
   Bmp[DIRKPLATE].rcSrc.left = 0;
   Bmp[DIRKPLATE].rcSrc.top = 49;
   Bmp[DIRKPLATE].rcSrc.right = Bmp[DIRKPLATE].rcSrc.left + 196;
@@ -400,7 +368,6 @@ const InitStructs = async () => {
   Bmp[DIRKPLATE].Surface = creditsImage;
 
   //MATTHIAS
-  Bmp[MATTHIAS].Anzahl = 1;
   Bmp[MATTHIAS].rcSrc.left = 0;
   Bmp[MATTHIAS].rcSrc.top = 96;
   Bmp[MATTHIAS].rcSrc.right = Bmp[MATTHIAS].rcSrc.left + 379;
@@ -414,7 +381,6 @@ const InitStructs = async () => {
   Bmp[MATTHIAS].Surface = creditsImage;
 
   //TESTSPIELER
-  Bmp[TESTSPIELER].Anzahl = 1;
   Bmp[TESTSPIELER].rcSrc.left = 0;
   Bmp[TESTSPIELER].rcSrc.top = 143;
   Bmp[TESTSPIELER].rcSrc.right = Bmp[TESTSPIELER].rcSrc.left + 210;
@@ -428,7 +394,6 @@ const InitStructs = async () => {
   Bmp[TESTSPIELER].Surface = creditsImage;
 
   //TOBIAS
-  Bmp[TOBIAS].Anzahl = 1;
   Bmp[TOBIAS].rcSrc.left = 0;
   Bmp[TOBIAS].rcSrc.top = 198;
   Bmp[TOBIAS].rcSrc.right = Bmp[TOBIAS].rcSrc.left + 273;
@@ -442,7 +407,6 @@ const InitStructs = async () => {
   Bmp[TOBIAS].Surface = creditsImage;
 
   //SIGRID
-  Bmp[SIGRID].Anzahl = 1;
   Bmp[SIGRID].rcSrc.left = 0;
   Bmp[SIGRID].rcSrc.top = 254;
   Bmp[SIGRID].rcSrc.right = Bmp[SIGRID].rcSrc.left + 226;
@@ -456,7 +420,6 @@ const InitStructs = async () => {
   Bmp[SIGRID].Surface = creditsImage;
 
   //PATHFINDING
-  Bmp[PATHFINDING].Anzahl = 1;
   Bmp[PATHFINDING].rcSrc.left = 0;
   Bmp[PATHFINDING].rcSrc.top = 353;
   Bmp[PATHFINDING].rcSrc.right = Bmp[PATHFINDING].rcSrc.left + 233;
@@ -470,7 +433,6 @@ const InitStructs = async () => {
   Bmp[PATHFINDING].Surface = creditsImage;
 
   //JOHN
-  Bmp[JOHN].Anzahl = 1;
   Bmp[JOHN].rcSrc.left = 0;
   Bmp[JOHN].rcSrc.top = 412;
   Bmp[JOHN].rcSrc.right = Bmp[JOHN].rcSrc.left + 347;
@@ -484,7 +446,6 @@ const InitStructs = async () => {
   Bmp[JOHN].Surface = creditsImage;
 
   //HEIKO
-  Bmp[HEIKO].Anzahl = 1;
   Bmp[HEIKO].rcSrc.left = 0;
   Bmp[HEIKO].rcSrc.top = 468;
   Bmp[HEIKO].rcSrc.right = Bmp[HEIKO].rcSrc.left + 236;
@@ -498,7 +459,6 @@ const InitStructs = async () => {
   Bmp[HEIKO].Surface = creditsImage;
 
   //GISELA
-  Bmp[GISELA].Anzahl = 1;
   Bmp[GISELA].rcSrc.left = 0;
   Bmp[GISELA].rcSrc.top = 515;
   Bmp[GISELA].rcSrc.right = Bmp[GISELA].rcSrc.left + 232;
@@ -512,7 +472,6 @@ const InitStructs = async () => {
   Bmp[GISELA].Surface = creditsImage;
 
   //WEITEREHILFE
-  Bmp[WEITEREHILFE].Anzahl = 1;
   Bmp[WEITEREHILFE].rcSrc.left = 0;
   Bmp[WEITEREHILFE].rcSrc.top = 562;
   Bmp[WEITEREHILFE].rcSrc.right = Bmp[WEITEREHILFE].rcSrc.left + 258;
@@ -526,7 +485,6 @@ const InitStructs = async () => {
   Bmp[WEITEREHILFE].Surface = creditsImage;
 
   //DPSOFTWARE
-  Bmp[DPSOFTWARE].Anzahl = 1;
   Bmp[DPSOFTWARE].rcSrc.left = 0;
   Bmp[DPSOFTWARE].rcSrc.top = 608;
   Bmp[DPSOFTWARE].rcSrc.right = Bmp[DPSOFTWARE].rcSrc.left + 291;
@@ -540,7 +498,6 @@ const InitStructs = async () => {
   Bmp[DPSOFTWARE].Surface = creditsImage;
 
   //SCHWARZ
-  Bmp[SCHWARZ].Anzahl = 1;
   Bmp[SCHWARZ].rcSrc.left = 0;
   Bmp[SCHWARZ].rcSrc.top = 608;
   Bmp[SCHWARZ].rcSrc.right = Bmp[SCHWARZ].rcSrc.left + 1;
@@ -554,7 +511,6 @@ const InitStructs = async () => {
   Bmp[SCHWARZ].Surface = creditsImage;
 
   //SOUNDS
-  Bmp[SOUNDS].Anzahl = 1;
   Bmp[SOUNDS].rcSrc.left = 0;
   Bmp[SOUNDS].rcSrc.top = 310;
   Bmp[SOUNDS].rcSrc.right = Bmp[SOUNDS].rcSrc.left + 144;
@@ -568,7 +524,6 @@ const InitStructs = async () => {
   Bmp[SOUNDS].Surface = creditsImage;
 
   //MUSIK
-  Bmp[MUSIK].Anzahl = 1;
   Bmp[MUSIK].rcSrc.left = 160;
   Bmp[MUSIK].rcSrc.top = 310;
   Bmp[MUSIK].rcSrc.right = Bmp[MUSIK].rcSrc.left + 124;
@@ -743,7 +698,7 @@ const CheckMouse = () => {
     return;
   }
 
-  //Animationen und Text löschen (werden dann von den MouseIn.. Sachen neu angestellt
+  //Text löschen (werden dann von den MouseIn.. Sachen neu angestellt
   clearText(textAreas.STATUS);
 
   //Wenn der Guy aktiv dann linke Mouse-Buttons ignorieren
@@ -1061,17 +1016,7 @@ const Zeige = () => {
   ZeichnePanel();
 
   //Die TagesZeit ausgeben
-  const hour = 6 + Math.floor(state.calendar.minutes / 60);
-  const minute = state.calendar.minutes % 60;
-  Stringsave1 = hour;
-  Stringsave2 = minute;
-  StdString = '';
-  if (hour < 10) StdString += '0';;
-  StdString += Stringsave1;
-  StdString += ':';
-  if (minute < 10) StdString += '0';
-  StdString += Stringsave2;
-  drawText(StdString, textAreas.TIME);
+
 
   if (state.paper) {
     drawPaper();
@@ -1273,7 +1218,6 @@ const AbspannCalc = () => {
 
 const ZeichneBilder = (x, y, i, Ziel) => {
   rcRectsrc = { ...Bmp[i].rcSrc };
-  rcRectsrc.top += Math.floor(Bmp[i].Phase * Bmp[i].Hoehe);
   rcRectsrc.bottom = rcRectsrc.top + Bmp[i].Hoehe;
   rcRectdes.left = Math.round(x);
   rcRectdes.top = Math.round(y);
@@ -1307,7 +1251,7 @@ const ZeichnePanel = () => {
 
   drawButtons();
   drawCondition();
-  drawSun();
+  drawSundial();
 
   //Rettungsring
   if (state.guy.chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * state.guy.chance));
