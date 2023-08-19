@@ -5,7 +5,6 @@ import grounds from './terrain/tiles/grounds.js';
 import tileEdges from './terrain/tiles/tileEdges.js';
 import loadImages from './images/loadImages.js';
 import drawSprite from './images/drawSprite.js';
-import drawButtons from './interface/menu/drawButtons.js';
 import createWaves from './terrain/objects/createWaves.js';
 import animateTerrain from './terrain/animateTerrain.js';
 import loadSounds from './sounds/loadSounds.js';
@@ -42,7 +41,6 @@ import items from './guy/inventory/items.js';
 import changeItem from './guy/inventory/changeItem.js';
 import findItemUnderCursor from './guy/inventory/findItemUnderCursor.js';
 import itemTextIds from './guy/inventory/itemTextIds.js';
-import drawItems from './guy/inventory/drawItems.js';
 import itemSprites from './guy/inventory/itemSprites.js';
 import drawItem from './guy/inventory/drawItem.js';
 import updateMinimap from './interface/minimap/updateMinimap.js';
@@ -76,7 +74,6 @@ import texts from './interface/text/texts.js';
 import openDayEndPaper from './interface/text/openDayEndPaper.js';
 import drawStatusText from './interface/text/drawStatusText.js';
 import drawTileText from './terrain/tiles/drawTileText.js';
-import drawMinimap from './interface/minimap/drawMinimap.js';
 import moveCameraFromMinimap from './interface/minimap/moveCameraFromMinimap.js';
 import state from './state/state.js';
 import animateButtons from './interface/menu/animateButtons.js';
@@ -87,9 +84,7 @@ import startAction from './action/startAction.js';
 import actionTypes from './action/actionTypes.js';
 import isEatable from './terrain/objects/isEatable.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
-import drawCondition from './interface/drawCondition.js';
-import drawSundial from './interface/drawSundial.js';
-import drawChance from './interface/drawChance.js';
+import drawPanel from './interface/drawPanel.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -99,7 +94,6 @@ const MAXY = 600;
 const CUPFEIL = 34;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
-const INVPAPIER = 157;
 const PROGRAMMIERUNG = 164;
 const DIRKPLATE = PROGRAMMIERUNG + 1;
 const MATTHIAS = PROGRAMMIERUNG + 2;
@@ -126,12 +120,10 @@ const GAME_OUTRO = 'outro';
 const GAME_LOGO = 'logo';
 
 //ddraw
-let panelImage = null;
 let textfieldImage = null;
 let creditsImage = null;
 let logoImage = null;
 let cursorsImage = null;
-let inventarImage = null;
 
 // Input
 const mouseUpdates = {
@@ -150,7 +142,6 @@ let timestampInSeconds;            //Start der Sekunde
 let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
-let StdString = '';    //Standard string
 let TwoClicks;                //Für Aktionen mit zwei Mausklicks
 let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
 let Spielbeenden = false;    //Wenn true wird das Spiel sofort beendet
@@ -189,10 +180,8 @@ const loadImage = async (file) => {
 };
 
 const initCanvases = async (window) => {
-  panelImage = await loadImage('panel.png');
   cursorsImage = await loadImage('cursors.png');
   textfieldImage = await loadImage('textfield.png');
-  inventarImage = await loadImage('inventory.png');
   creditsImage = await loadImage('credits.png');
   logoImage = await loadImage('logo.png');
 
@@ -313,19 +302,6 @@ const InitStructs = async () => {
     Bmp[i].Breite = 18;
     Bmp[i].Hoehe = 18;
   }
-
-  //INVPAPIER
-  Bmp[INVPAPIER].rcSrc.left = 0;
-  Bmp[INVPAPIER].rcSrc.top = 15;
-  Bmp[INVPAPIER].rcSrc.right = Bmp[INVPAPIER].rcSrc.left + 178;
-  Bmp[INVPAPIER].rcSrc.bottom = Bmp[INVPAPIER].rcSrc.top + 114;
-  Bmp[INVPAPIER].rcDes.left = rcPanel.left + 15;
-  Bmp[INVPAPIER].rcDes.top = rcPanel.top + 220;
-  Bmp[INVPAPIER].rcDes.right = Bmp[INVPAPIER].rcDes.left + 178;
-  Bmp[INVPAPIER].rcDes.bottom = Bmp[INVPAPIER].rcDes.top + 114;
-  Bmp[INVPAPIER].Breite = (Bmp[INVPAPIER].rcSrc.right - Bmp[INVPAPIER].rcSrc.left);
-  Bmp[INVPAPIER].Hoehe = (Bmp[INVPAPIER].rcSrc.bottom - Bmp[INVPAPIER].rcSrc.top);
-  Bmp[INVPAPIER].Surface = inventarImage;
 
   //PROGRAMMIERUNG
   Bmp[PROGRAMMIERUNG].rcSrc.left = 0;
@@ -888,12 +864,10 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
 }
 
 const MouseInPanel = (Button, Push) => {
-  const openedMenu = state.options.openedMenu;
-
   //wenn die Maus in der Minimap ist .
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
     moveCameraFromMinimap({ x: MousePosition.x - rcKarte.left, y: MousePosition.y - rcKarte.top });
-  } else if ((InRect(MousePosition.x, MousePosition.y, Bmp[INVPAPIER].rcDes)) && (openedMenu === menuTypes.INVENTORY)) {
+  } else if (state.options.openedMenu === menuTypes.INVENTORY) {
     const item = findItemUnderCursor(MousePosition);
     if (item) {
       if ((Button === 0) && (Push === 1)) {
@@ -996,7 +970,15 @@ const startGame = async (newGame) => {
 const Zeige = () => {
   drawTerrain(state.camera, false);
 
-  ZeichnePanel();
+  drawPanel();
+  
+  //TextFeld malen
+  rcRectsrc.left = 0;
+  rcRectsrc.top = 0;
+  rcRectsrc.right = 605;
+  rcRectsrc.bottom = 20;
+  rcRectdes = { ...rcTextFeld1 };
+  drawImage(textfieldImage, canvases.PRIMARY);
 
   if (state.paper) {
     drawPaper();
@@ -1205,42 +1187,6 @@ const ZeichneBilder = (x, y, i, Ziel) => {
   rcRectdes.bottom = Math.round(y) + Bmp[i].Hoehe;
   CalcRect(Ziel);
   drawImage(Bmp[i].Surface, canvases.PRIMARY);
-}
-
-const ZeichnePanel = () => {
-  let Ringtmp; 
-
-  drawMinimap({ x: rcKarte.left, y: rcKarte.top });
-
-  //Panel malen
-  rcRectsrc.left = 0;
-  rcRectsrc.top = 0;
-  rcRectsrc.right = 205;
-  rcRectsrc.bottom = 600;
-  rcRectdes.left = rcPanel.left;
-  rcRectdes.top = rcPanel.top;
-  rcRectdes.right = rcPanel.right;
-  rcRectdes.bottom = rcPanel.bottom;
-  drawImage(panelImage, canvases.PRIMARY);
-
-  //Welches Menü zeichnen?
-  if (state.options.openedMenu === menuTypes.INVENTORY) {
-    ZeichneBilder(Bmp[INVPAPIER].rcDes.left, Bmp[INVPAPIER].rcDes.top, INVPAPIER, rcPanel);
-    drawItems();
-  }
-
-  drawButtons();
-  drawCondition();
-  drawSundial();
-  drawChance();
-
-  //TextFeld malen
-  rcRectsrc.left = 0;
-  rcRectsrc.top = 0;
-  rcRectsrc.right = 605;
-  rcRectsrc.bottom = 20;
-  rcRectdes = { ...rcTextFeld1 };
-  drawImage(textfieldImage, canvases.PRIMARY);
 }
 
 const CalcRect = (rcBereich) => {

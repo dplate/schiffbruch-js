@@ -3,8 +3,16 @@ import images from '../../images/images.js';
 import positionTransformer from '../../terrain/positionTransformer.js';
 import minimapScaling from './minimapScaling.js';
 import state from '../../state/state.js';
+import interfaceTypes from '../interfaceTypes.js';
+import interfaces from '../interfaces.js';
 
-const drawMinimap = (position) => {
+const drawMinimap = () => {
+  const panelPosition = interfaces[interfaceTypes.INTERFACE_PANEL].position;
+  const position = {
+    x: panelPosition.x + 47,
+    y: panelPosition.y + 23
+  };
+
   const minimapWidth = minimapScaling * state.terrain.length;
   const minimapHeight = minimapScaling * state.terrain[0].length;
   canvases.PRIMARY.drawImage(
