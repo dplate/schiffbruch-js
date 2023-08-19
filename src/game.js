@@ -88,6 +88,7 @@ import startAction from './action/startAction.js';
 import actionTypes from './action/actionTypes.js';
 import isEatable from './terrain/objects/isEatable.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
+import drawCondition from './interface/drawCondition.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -97,9 +98,6 @@ const MAXY = 600;
 const CUPFEIL = 34;
 const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
-const SAEULE1 = 140;
-const SAEULE2 = SAEULE1 + 1;
-const SAEULE3 = SAEULE1 + 2;
 const INVPAPIER = 157;
 const RING = INVPAPIER + 1;
 const SONNE = INVPAPIER + 2;
@@ -344,50 +342,6 @@ const InitStructs = async () => {
     Bmp[i].Breite = 18;
     Bmp[i].Hoehe = 18;
   }
-
-  //Sonstiges
-
-  //Säule1
-  Bmp[SAEULE1].Anzahl = 1;
-  Bmp[SAEULE1].rcSrc.left = 205;
-  Bmp[SAEULE1].rcSrc.top = 115;
-  Bmp[SAEULE1].rcSrc.right = Bmp[SAEULE1].rcSrc.left + 11;
-  Bmp[SAEULE1].rcSrc.bottom = Bmp[SAEULE1].rcSrc.top + 95;
-  Bmp[SAEULE1].rcDes.left = rcPanel.left + 52;
-  Bmp[SAEULE1].rcDes.top = rcPanel.top + 393;
-  Bmp[SAEULE1].rcDes.right = Bmp[SAEULE1].rcDes.left + 11;
-  Bmp[SAEULE1].rcDes.bottom = Bmp[SAEULE1].rcDes.top + 95;
-  Bmp[SAEULE1].Breite = (Bmp[SAEULE1].rcSrc.right - Bmp[SAEULE1].rcSrc.left);
-  Bmp[SAEULE1].Hoehe = (Bmp[SAEULE1].rcSrc.bottom - Bmp[SAEULE1].rcSrc.top);
-  Bmp[SAEULE1].Surface = panelImage;
-
-  //Säule2
-  Bmp[SAEULE2].Anzahl = 1;
-  Bmp[SAEULE2].rcSrc.left = 216;
-  Bmp[SAEULE2].rcSrc.top = 115;
-  Bmp[SAEULE2].rcSrc.right = Bmp[SAEULE2].rcSrc.left + 11;
-  Bmp[SAEULE2].rcSrc.bottom = Bmp[SAEULE2].rcSrc.top + 95;
-  Bmp[SAEULE2].rcDes.left = rcPanel.left + 114;
-  Bmp[SAEULE2].rcDes.top = rcPanel.top + 393;
-  Bmp[SAEULE2].rcDes.right = Bmp[SAEULE2].rcDes.left + 11;
-  Bmp[SAEULE2].rcDes.bottom = Bmp[SAEULE2].rcDes.top + 95;
-  Bmp[SAEULE2].Breite = (Bmp[SAEULE2].rcSrc.right - Bmp[SAEULE2].rcSrc.left);
-  Bmp[SAEULE2].Hoehe = (Bmp[SAEULE2].rcSrc.bottom - Bmp[SAEULE2].rcSrc.top);
-  Bmp[SAEULE2].Surface = panelImage;
-
-  //Säule3
-  Bmp[SAEULE3].Anzahl = 1;
-  Bmp[SAEULE3].rcSrc.left = 227;
-  Bmp[SAEULE3].rcSrc.top = 115;
-  Bmp[SAEULE3].rcSrc.right = Bmp[SAEULE3].rcSrc.left + 11;
-  Bmp[SAEULE3].rcSrc.bottom = Bmp[SAEULE3].rcSrc.top + 95;
-  Bmp[SAEULE3].rcDes.left = rcPanel.left + 175;
-  Bmp[SAEULE3].rcDes.top = rcPanel.top + 393;
-  Bmp[SAEULE3].rcDes.right = Bmp[SAEULE3].rcDes.left + 11;
-  Bmp[SAEULE3].rcDes.bottom = Bmp[SAEULE3].rcDes.top + 95;
-  Bmp[SAEULE3].Breite = (Bmp[SAEULE3].rcSrc.right - Bmp[SAEULE3].rcSrc.left);
-  Bmp[SAEULE3].Hoehe = (Bmp[SAEULE3].rcSrc.bottom - Bmp[SAEULE3].rcSrc.top);
-  Bmp[SAEULE3].Surface = panelImage;
 
   //INVPAPIER
   Bmp[INVPAPIER].Anzahl = 1;
@@ -1007,7 +961,6 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
 }
 
 const MouseInPanel = (Button, Push) => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const openedMenu = state.options.openedMenu;
 
   //wenn die Maus in der Minimap ist .
@@ -1367,30 +1320,7 @@ const ZeichnePanel = () => {
   }
 
   drawButtons();
-
-  //Säule1
-  i = Bmp[SAEULE1].Hoehe - state.guy.water * Bmp[SAEULE1].Hoehe / 100;
-  rcRectsrc = { ...Bmp[SAEULE1].rcSrc };
-  rcRectsrc.top += i;
-  rcRectdes = { ...Bmp[SAEULE1].rcDes };
-  rcRectdes.top += i;
-  drawImage(Bmp[SAEULE1].Surface, canvases.PRIMARY);
-
-  //Säule2
-  i = Bmp[SAEULE2].Hoehe - state.guy.food * Bmp[SAEULE2].Hoehe / 100;
-  rcRectsrc = { ...Bmp[SAEULE2].rcSrc };
-  rcRectsrc.top += i;
-  rcRectdes = { ...Bmp[SAEULE2].rcDes };
-  rcRectdes.top += i;
-  drawImage(Bmp[SAEULE2].Surface, canvases.PRIMARY);
-
-  //Säule3
-  i = Bmp[SAEULE3].Hoehe - state.guy.health * Bmp[SAEULE3].Hoehe / 100;
-  rcRectsrc = { ...Bmp[SAEULE3].rcSrc };
-  rcRectsrc.top += i;
-  rcRectdes = { ...Bmp[SAEULE3].rcDes };
-  rcRectdes.top += i;
-  drawImage(Bmp[SAEULE3].Surface, canvases.PRIMARY);
+  drawCondition();
 
   //Sonnenanzeige
   diffx = (Bmp[SONNE].rcDes.right - Bmp[SONNE].rcDes.left - Bmp[SONNE].Breite) / 2;
