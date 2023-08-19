@@ -89,6 +89,7 @@ import actionTypes from './action/actionTypes.js';
 import isEatable from './terrain/objects/isEatable.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import drawCondition from './interface/drawCondition.js';
+import drawSun from './interface/drawSun.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -100,7 +101,6 @@ const CURICHTUNG = CUPFEIL + 1;
 const CUUHR = CUPFEIL + 2;
 const INVPAPIER = 157;
 const RING = INVPAPIER + 1;
-const SONNE = INVPAPIER + 2;
 const PROGRAMMIERUNG = 164;
 const DIRKPLATE = PROGRAMMIERUNG + 1;
 const MATTHIAS = PROGRAMMIERUNG + 2;
@@ -370,20 +370,6 @@ const InitStructs = async () => {
   Bmp[RING].Breite = (Bmp[RING].rcSrc.right - Bmp[RING].rcSrc.left);
   Bmp[RING].Hoehe = (Bmp[RING].rcSrc.bottom - Bmp[RING].rcSrc.top);
   Bmp[RING].Surface = panelImage;
-
-  //Sonne
-  Bmp[SONNE].Anzahl = 1;
-  Bmp[SONNE].rcSrc.left = 205;
-  Bmp[SONNE].rcSrc.top = 65;
-  Bmp[SONNE].rcSrc.right = Bmp[SONNE].rcSrc.left + 51;
-  Bmp[SONNE].rcSrc.bottom = Bmp[SONNE].rcSrc.top + 50;
-  Bmp[SONNE].rcDes.left = rcPanel.left + 30;
-  Bmp[SONNE].rcDes.top = rcPanel.top + 518;
-  Bmp[SONNE].rcDes.right = Bmp[SONNE].rcDes.left + 152;
-  Bmp[SONNE].rcDes.bottom = Bmp[SONNE].rcDes.top + 55;
-  Bmp[SONNE].Breite = (Bmp[SONNE].rcSrc.right - Bmp[SONNE].rcSrc.left);
-  Bmp[SONNE].Hoehe = (Bmp[SONNE].rcSrc.bottom - Bmp[SONNE].rcSrc.top);
-  Bmp[SONNE].Surface = panelImage;
 
   //PROGRAMMIERUNG
   Bmp[PROGRAMMIERUNG].Anzahl = 1;
@@ -1298,7 +1284,7 @@ const ZeichneBilder = (x, y, i, Ziel) => {
 }
 
 const ZeichnePanel = () => {
-  let diffx, diffy, i, Ringtmp;  //für die Sonnenanzeige
+  let Ringtmp; 
 
   drawMinimap({ x: rcKarte.left, y: rcKarte.top });
 
@@ -1321,15 +1307,7 @@ const ZeichnePanel = () => {
 
   drawButtons();
   drawCondition();
-
-  //Sonnenanzeige
-  diffx = (Bmp[SONNE].rcDes.right - Bmp[SONNE].rcDes.left - Bmp[SONNE].Breite) / 2;
-  diffy = Bmp[SONNE].rcDes.bottom - Bmp[SONNE].rcDes.top - Bmp[SONNE].Hoehe / 2;
-  
-  
-  ZeichneBilder(Math.floor(Bmp[SONNE].rcDes.left + diffx * Math.cos(pi - pi * state.calendar.minutes / 720) + diffx),
-    Math.floor(Bmp[SONNE].rcDes.top + (-diffy * Math.sin(pi - pi * state.calendar.minutes / 720) + diffy)),
-    SONNE, Bmp[SONNE].rcDes);
+  drawSun();
 
   //Rettungsring
   if (state.guy.chance < 100) Ringtmp = (100 * Math.sin(pi / 200 * state.guy.chance));
@@ -1340,7 +1318,6 @@ const ZeichnePanel = () => {
     RING, rcPanel);
 
   //Die ChanceZahl ausgeben
-  clearText(textAreas.CHANCE);
   textAreas.CHANCE.y = Math.floor(Bmp[RING].rcDes.top + Ringtmp + Bmp[RING].Hoehe - 25);
   StdString = state.guy.chance.toFixed(0);
   drawText(StdString, textAreas.CHANCE);
