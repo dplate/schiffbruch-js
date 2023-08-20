@@ -3,8 +3,8 @@ import sprites from '../../images/sprites.js';
 
 const createWaves = () => ({
   sprite: spriteTypes.WAVES,
-  x: 0,
-  y: 0,
+  x: Math.floor(Math.random() * 5),
+  y: -Math.floor(Math.random() * 5),
   reverse: Math.random() < 0.5,
   frame: Math.floor(Math.random() * sprites[spriteTypes.WAVES].frameCount)
 });

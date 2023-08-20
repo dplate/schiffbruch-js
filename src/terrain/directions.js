@@ -34,7 +34,7 @@ directions.byDiff = {
   },
   [0]: {
     [-1]: directions.NORTH,
-    [-1]: directions.SOUTH
+    [1]: directions.SOUTH
   },
   [1]: {
     [0]: directions.EAST

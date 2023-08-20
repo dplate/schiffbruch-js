@@ -10,15 +10,17 @@ import constructingSos from './actions/constructingSos.js';
 import constructingTent from './actions/constructingTent.js';
 import constructingTreeHouse from './actions/constructingTreeHouse.js';
 import destroying from './actions/destroying.js';
-import eatingAndDrinking from './actions/eatingAndDrinking.js';
+import consuming from './actions/consuming.js';
 import fishing from './actions/fishing.js';
-import huntingTreasure from './actions/huntingTreasure.js';
 import lightning from './actions/lightning.js';
 import looking from './actions/looking.js';
 import searching from './actions/searching.js';
 import shoveling from './actions/shoveling.js';
 import sleeping from './actions/sleeping.js';
 import slinging from './actions/slinging.js';
+import stopping from './actions/stopping.js';
+import undocking from './actions/undocking.js';
+import docking from './actions/docking.js';
 
 const actions = {
   [actionTypes.STOPPING_GAME]: {},
@@ -28,17 +30,16 @@ const actions = {
   [actionTypes.RESTARTING_DAY]: {},
   [actionTypes.ARRIVING]: {},
   [actionTypes.LEAVING]: {},
-  [actionTypes.STOPPING]: {},
-  [actionTypes.DOCKING]: {},
-  [actionTypes.UNDOCKING]: {},
+  [actionTypes.STOPPING]: stopping,
+  [actionTypes.DOCKING]: docking,
+  [actionTypes.UNDOCKING]: undocking,
   [actionTypes.SEARCHING]: searching,
-  [actionTypes.EATING_AND_DRINKING]: eatingAndDrinking,
+  [actionTypes.CONSUMING]: consuming,
   [actionTypes.SLEEPING]: sleeping,
   [actionTypes.CHOPPING]: chopping,
   [actionTypes.FISHING]: fishing,
   [actionTypes.LIGHTNING]: lightning,
   [actionTypes.LOOKING]: looking,
-  [actionTypes.HUNTING_TREASURE]: huntingTreasure,
   [actionTypes.SHOVELING]: shoveling,
   [actionTypes.SLINGING]: slinging,
   [actionTypes.CONSTRUCTING_TENT]: constructingTent,

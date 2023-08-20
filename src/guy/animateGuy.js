@@ -2,7 +2,7 @@ import sprites from '../images/sprites.js';
 import state from '../state/state.js';
 import animateRoute from './routing/animateRoute.js';
 
-const animateGuy = (frame, framesPerSecond, addTimeLegacy) => {
+const animateGuy = (frame, framesPerSecond) => {
   if (!state.guy.active) {
     return;
   }
@@ -14,7 +14,7 @@ const animateGuy = (frame, framesPerSecond, addTimeLegacy) => {
   }
 
   if (state.guy.route.length) {
-    animateRoute(frame, addTimeLegacy);
+    animateRoute(frame);
     return;
   }
    

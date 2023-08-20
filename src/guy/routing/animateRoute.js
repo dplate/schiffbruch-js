@@ -5,6 +5,7 @@ import changeWaterAndFood from '../changeWaterAndFood.js';
 import isOnSea from '../isOnSea.js';
 import getCostsOfTile from './getCostsOfTile.js';
 import state from '../../state/state.js';
+import spendMinutes from '../../action/spendMinutes.js';
 
 const getDirection = (wayPoint, distance) => {
   if (wayPoint.direction) {
@@ -36,7 +37,7 @@ const getSpriteForDirection = (direction) => {
   }
 };
 
-const animateRoute = (frame, addTimeLegacy) => {
+const animateRoute = (frame) => {
   const guy = state.guy;
   let routePoint = guy.route[0];
   let wayPoint = routePoint?.wayPoints[0];
@@ -54,7 +55,7 @@ const animateRoute = (frame, addTimeLegacy) => {
     guy.tile.x = routePoint.x;
     guy.tile.y = routePoint.y;
     
-    addTimeLegacy(tileCosts * (isOnSea() ? 3 : 5));
+    spendMinutes(tileCosts * (isOnSea() ? 3 : 5));
     changeWaterAndFood(-1, -1);
   }
   

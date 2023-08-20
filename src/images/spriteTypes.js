@@ -120,7 +120,7 @@ const spriteTypes = {
   BUTTON_INVENTORY: 'buttonInventory',
   BUTTON_INVENTORY_CHECKED: 'buttonInventoryChecked',
   BUTTON_SEARCHING: 'buttonSearching',
-  BUTTON_EATING_AND_DRINKING: 'buttonEatingAndDrinking',
+  BUTTON_CONSUMING: 'buttonConsuming',
   BUTTON_SLEEPING: 'buttonSleeping',
   BUTTON_CHOPPING: 'buttonChopping',
   BUTTON_FISHING: 'buttonFishing',

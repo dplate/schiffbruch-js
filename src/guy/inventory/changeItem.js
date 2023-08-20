@@ -7,7 +7,12 @@ const getMaxAmount = (item) => {
 
 const changeItem = (item, difference) => {
   const maxAmount = getMaxAmount(item);
-  state.guy.inventory[item] = Math.max(0, Math.min(maxAmount, state.guy.inventory[item] + difference));
+  const newAmount = Math.max(0, Math.min(maxAmount, state.guy.inventory[item] + difference));
+  if (newAmount !== state.guy.inventory[item]) {
+    state.guy.inventory[item] = newAmount;
+    return true;
+  }
+  return false;
 };
 
 export default changeItem;

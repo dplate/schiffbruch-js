@@ -18,21 +18,14 @@ import drawTerrain from './terrain/drawTerrain.js';
 import drawTreasureMap from './treasure/drawTreasureMap.js';
 import addPirateWreck from './terrain/addPirateWreck.js';
 import addShipWreck from './terrain/addShipWreck.js';
-import isNormalTree from './terrain/objects/isNormalTree.js';
-import isRiver from './terrain/objects/isRiver.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import findRoute from './guy/routing/findRoute.js';
 import goToOnTile from './guy/routing/goToOnTile.js';
 import goTo from './guy/routing/goTo.js';
 import goToCenterOfTile from './guy/routing/goToCenterOfTile.js';
-import goToWestOfTile from './guy/routing/goToWestOfTile.js';
 import goToStoredPosition from './guy/routing/goToStoredPosition.js';
-import goToObject from './guy/routing/goToObject.js';
 import goToEastOfTile from './guy/routing/goToEastOfTile.js';
-import goToNorthOfTile from './guy/routing/goToNorthOfTile.js';
-import goToSouthOfTile from './guy/routing/goToSouthOfTile.js';
-import goToOffset from './guy/routing/goToOffset.js';
 import isOnSea from './guy/isOnSea.js';
 import changeWaterAndFood from './guy/changeWaterAndFood.js';
 import changeHealth from './guy/changeHealth.js';
@@ -56,11 +49,8 @@ import finishConstruction from './construction/finishConstruction.js';
 import isUsableTent from './terrain/objects/isUsableTent.js';
 import isUsableTreeHouse from './terrain/objects/isUsableTreeHouse.js';
 import findNeighbor from './guy/findNeighbor.js';
-import directions from './terrain/directions.js';
 import pauseConstruction from './construction/pauseConstruction.js';
-import isBigTree from './terrain/objects/isBigTree.js';
 import updatePipes from './terrain/updatePipes.js';
-import createTreeFallObject from './terrain/objects/createTreeFallObject.js';
 import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
@@ -69,7 +59,6 @@ import blitText from './interface/text/blitText.js';
 import openPaper from './interface/text/openPaper.js';
 import canvases from './images/canvases.js';
 import getTileByPosition from './terrain/getTileByPosition.js';
-import calculatePositionInTile from './terrain/tiles/calculatePositionInTile.js';
 import texts from './interface/text/texts.js';
 import openDayEndPaper from './interface/text/openDayEndPaper.js';
 import drawStatusText from './interface/text/drawStatusText.js';
@@ -82,9 +71,10 @@ import handleButtonTaps from './interface/menu/handleButtonTaps.js';
 import handleButtonHovers from './interface/menu/handleButtonHovers.js';
 import startAction from './action/startAction.js';
 import actionTypes from './action/actionTypes.js';
-import isEatable from './terrain/objects/isEatable.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import drawPanel from './interface/drawPanel.js';
+import processAction from './action/processAction.js';
+import spendMinutes from './action/spendMinutes.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -142,7 +132,7 @@ let timestampInSeconds;            //Start der Sekunde
 let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
-let TwoClicks;                //Für Aktionen mit zwei Mausklicks
+let SelectedItem;                //Für Aktionen mit zwei Mausklicks
 let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
 let Spielbeenden = false;    //Wenn true wird das Spiel sofort beendet
 const pi = 3.1415926535;        //pi, was sonst
@@ -240,8 +230,6 @@ const initInput = (window) => {
 }
 
 const SaveGame = () => {
-  let i;
-
   window.localStorage.setItem('stateV9', JSON.stringify({
     ...state,
     Spielzustand
@@ -249,8 +237,6 @@ const SaveGame = () => {
 }
 
 const LoadGame = () => {
-  let i;
-
   const rawState = window.localStorage.getItem('stateV9');
   if (!rawState) {
     return false;
@@ -260,7 +246,7 @@ const LoadGame = () => {
   try {
     parsedState = JSON.parse(rawState);
   } catch (error) {
-    console.warn('Cannot parse saved gamed, ignoring...', error)
+    console.warn('Cannot parse saved game, ignoring...', error)
     return false;
   };
   for (const key in parsedState) {
@@ -523,7 +509,7 @@ const InitStructs = async () => {
 
   CursorTyp = CUPFEIL;
   MouseAktiv = true;
-  TwoClicks = -1;
+  SelectedItem = null;
   Nacht = false;
   framesPerSecond = 100;
   frame = 0;
@@ -575,7 +561,7 @@ const CheckMouse = () => {
   if (MousePosition.y < 0) MousePosition.y = 0;
   if (MousePosition.y > MAXY - 2) MousePosition.y = MAXY - 2;
 
-  if (TwoClicks === -1) {
+  if (!SelectedItem) {
     if (state.guy.active) {
       if (getButtonAtPosition(MousePosition)?.sprite === spriteTypes.BUTTON_STOPPING) {   
         CursorTyp = CUPFEIL;
@@ -785,49 +771,6 @@ const CheckKey = () => {
   return (1);
 }
 
-const AddTime = (m) => {
-  let x, y;
-
-  state.calendar.minutes += m;
-
-  for (y = 0; y < MAXYKACH; y++)
-    for (x = 0; x < MAXXKACH; x++) {
-      const tile = state.terrain[x][y];
-      //Feuer nach einer bestimmten Zeit ausgehen lassen
-      const object = tile.object;
-      if (object?.lifetime) {
-        object.lifetime -= m;
-        if (object.lifetime <= 0) {
-          if (object.chance) {
-            state.guy.chance -= object.chance;
-          }
-          tile.object = null;
-        }
-      }
-      //pro Minute Reifungsprozess fortführen
-      if (tile.object?.sprite === spriteTypes.FIELD && !tile.construction) {
-        tile.object.frame += m * 0.005;
-        tile.object.frame = Math.min(tile.object.frame, 2);
-      } else if (tile.object?.sprite === spriteTypes.BUSH) {
-        tile.object.frame += m * 0.0005;
-        tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
-      }
-    }
-  changeHealth(m * (state.guy.water - 50 + state.guy.food - 50) / 1000);
-  if (state.guy.health <= 0 && 
-    state.guy.action?.type !== actionTypes.DYING && 
-    state.guy.action?.type !== actionTypes.ENDING_DAY && 
-    Spielzustand === GAME_PLAY) {
-    startAction(actionTypes.DYING);
-  }
-
-  if ((Spielzustand === GAME_PLAY) && (!isOnSea())) {
-    if (Math.random() < (state.guy.chance / 100) * (m / 720)) {
-      startAction(actionTypes.LEAVING);
-    }
-  }
-}
-
 const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   const tilePosition = getTileByPosition({ x: MousePosition.x + state.camera.x, y: MousePosition.y + state.camera.y });
   if (tilePosition && state.terrain[tilePosition.x][tilePosition.y].discovered) {
@@ -867,18 +810,28 @@ const MouseInPanel = (Button, Push) => {
   //wenn die Maus in der Minimap ist .
   if ((InRect(MousePosition.x, MousePosition.y, rcKarte)) && (Button === 0) && (Push !== -1)) {
     moveCameraFromMinimap({ x: MousePosition.x - rcKarte.left, y: MousePosition.y - rcKarte.top });
-  } else if (state.options.openedMenu === menuTypes.INVENTORY) {
+    return;
+  } 
+  
+  if (state.options.openedMenu === menuTypes.INVENTORY) {
     const item = findItemUnderCursor(MousePosition);
-    if (item) {
-      if ((Button === 0) && (Push === 1)) {
-        if (TwoClicks === -1) {
-          CursorTyp = item;
-          TwoClicks = item;
-        } else CheckBenutze(item);
+    if (item || SelectedItem) {
+      if (item) {
+        if ((Button === 0) && (Push === 1)) {
+          if (!SelectedItem) {
+            CursorTyp = item;
+            SelectedItem = item;
+          } else {
+            CheckBenutze(item);
+          }
+        }
+        drawStatusText(texts[itemTextIds[item]]);
       }
-      drawStatusText(texts[itemTextIds[item]]);
+      return;
     };
-  } else if (InRect(
+  } 
+
+  if (InRect(
     MousePosition.x, 
     MousePosition.y, 
     {
@@ -889,7 +842,10 @@ const MouseInPanel = (Button, Push) => {
     }
   )) {
     drawStatusText(texts.SOSPAET);
-  } else if (InRect(
+    return;
+  } 
+
+  if (InRect(
     MousePosition.x, 
     MousePosition.y, 
     {
@@ -900,13 +856,14 @@ const MouseInPanel = (Button, Push) => {
     }
   )) {
     drawStatusText(texts.CHANCETEXT);
-  } else {
-    handleButtonHovers(MousePosition);
-    if ((Button === 0) && (Push === 1)) {
-      handleButtonTaps(MousePosition);
-    };
-    TwoClicks = -1;
+    return;
   }
+
+  handleButtonHovers(MousePosition);
+  if ((Button === 0) && (Push === 1)) {
+    handleButtonTaps(MousePosition);
+  };
+  SelectedItem = null;
 }
 
 const InRect = (x, y, rcRect) => {
@@ -1254,15 +1211,6 @@ const Event = () => {
   }
   state.guy.route = [];
   switch (state.guy.action.type) {
-    case actionTypes.SEARCHING:
-      AkSuchen();
-      break;
-    case actionTypes.EATING_AND_DRINKING:
-      AkEssen();
-      break;
-    case actionTypes.CHOPPING:
-      AkFaellen();
-      break;
     case actionTypes.CONSTRUCTING_FIELD:
       AkFeld();
       break;
@@ -1275,29 +1223,11 @@ const Event = () => {
     case actionTypes.CONSTRUCTING_TENT:
       AkZelt();
       break;
-    case actionTypes.SLEEPING:
-      AkSchlafen();
-      break;
-    case actionTypes.STOPPING:
-      AkAbbruch();
-      break;
-    case actionTypes.FISHING:
-      AkAngeln();
-      break;
     case actionTypes.CONSTRUCTING_BOAT:
       AkBoot();
       break;
-    case actionTypes.UNDOCKING:
-      AkAblegen();
-      break;
-    case actionTypes.DOCKING:
-      AkAnlegen();
-      break;
     case actionTypes.CONSTRUCTING_PIPE:
       AkRohr();
-      break;
-    case actionTypes.DESTROYING:
-      AkDestroy();
       break;
     case actionTypes.CONSTRUCTING_SOS:
       AkSOS();
@@ -1314,20 +1244,8 @@ const Event = () => {
     case actionTypes.CONSTRUCTING_FIREPLACE:
       AkFeuerstelle();
       break;
-    case actionTypes.LIGHTNING:
-      AkAnzuenden();
-      break;
-    case actionTypes.LOOKING:
-      AkAusschau();
-      break;
-    case actionTypes.SHOVELING:
-      AkSchatz();
-      break;
     case actionTypes.ARRIVING:
       AkIntro();
-      break;
-    case actionTypes.SLINGING:
-      AkSchleuder();
       break;
     case actionTypes.STOPPING_GAME:
       AkSpielverlassen();
@@ -1404,7 +1322,6 @@ const AkNeubeginnen = () => {
   switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
-      TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
       openPaper(texts.NEUBEGINNEN, true);
@@ -1425,7 +1342,6 @@ const AkTagNeubeginnen = () => {
   switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
-      TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
       openPaper(texts.TAGNEU, true);
@@ -1446,7 +1362,6 @@ const AkSpielverlassen = () => {
   switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
-      TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
       openPaper(texts.SPIELVERLASSEN, true);
@@ -1499,594 +1414,6 @@ const AkTod = () => {
   }
 }
 
-const AkAbbruch = () => {
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      pauseConstruction();
-      break;
-    case 2:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkDestroy = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x + 4,
-        y: tile.object.y + 2
-      });
-      break;
-    case 2:
-    case 4:
-      startGuyAnimation(spriteTypes.GUY_CHOPPING);
-      sounds.CHOPPING.instance.play();
-      changeWaterAndFood(-1, -1);
-      AddTime(5);
-      break;
-    case 3:
-    case 5:
-      startGuyAnimation(spriteTypes.GUY_HITTING);
-      sounds.HITTING.instance.play();
-      changeWaterAndFood(-1, -1);
-      AddTime(5);
-      break;
-    case 6:
-      const object = tile.object;
-      tile.object = tile.originalObject;
-      tile.originalObject = null
-      if (tile.construction) {
-        tile.construction = null;
-      } else {
-        if (object.chance) {
-          state.guy.chance -= object.chance;
-        }
-        if (object.sprite === spriteTypes.PIPE) {
-          updatePipes();
-        }
-      }
-      goToStoredPosition();
-      break;
-    case 7:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkSuchen = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-    case 3:
-    case 5:
-    case 7:
-      if (isOnSea()) {
-        if (state.guy.action.step === 1) {
-          startGuyAnimation(spriteTypes.GUY_DIVING_JUMPING);
-          sounds.SPLASH.instance.play();
-        }
-      } else {
-        const targetPosition = calculatePositionInTile(tile, Math.random(), Math.random());
-        goTo({ x: tile.position.x + targetPosition.x, y: tile.position.y + targetPosition.y });
-      }
-      break;
-    case 2:
-    case 4:
-    case 6:
-    case 8:
-      if (isOnSea()) {
-        startGuyAnimation(spriteTypes.GUY_DIVING);
-      } else {
-        startGuyAnimation(spriteTypes.GUY_SEARCHING);
-        sounds.CRACKLING.instance.play();
-      }
-      AddTime(4);
-      break;
-    case 9:
-      if (isOnSea()) {
-        startGuyAnimation(spriteTypes.GUY_DIVING_CLIMBING);
-        sounds.SPLASH.instance.play();
-      }
-      break;
-    case 10:
-      goToStoredPosition();
-      break;
-    case 11:
-      //Auf Strand und Fluss
-      if (tile.ground === grounds.BEACH || isRiver(tile.object)) {
-        if (state.guy.inventory[items.STONE] < 10) {
-          openPaper(texts.ROHSTEINGEFUNDEN, false);
-          changeItem(items.STONE, 3);
-        } else {
-          openPaper(texts.ROHSTEINZUVIEL, false);
-        }
-      } else if (tile.object?.sprite === spriteTypes.BUSH) {
-        switch (Math.floor(Math.random() * 2)) {
-          case 0:
-            if (state.guy.inventory[items.BRANCH] < 10) {
-              openPaper(texts.ROHASTGEFUNDEN, false);
-              changeItem(items.BRANCH, 1);
-            } else {
-              openPaper(texts.ROHASTZUVIEL, false);
-            }
-            break;
-          case 1:
-            if (state.guy.inventory[items.LEAF] < 10) {
-              openPaper(texts.ROHBLATTGEFUNDEN, false);
-              changeItem(items.LEAF, 1);
-            } else {
-              openPaper(texts.ROHBLATTZUVIEL, false);
-            }
-            break;
-        }
-      } else if (isNormalTree(tile.object) || isBigTree(tile.object)) {
-        switch (Math.floor(Math.random() * 3)) {
-          case 0:
-            if (state.guy.inventory[items.BRANCH] < 10) {
-              openPaper(texts.ROHASTGEFUNDEN, false);
-              changeItem(items.BRANCH, 1);
-            } else {
-              openPaper(texts.ROHASTZUVIEL, false);
-            }
-            break;
-          case 1:
-            if (state.guy.inventory[items.LEAF] < 10) {
-              openPaper(texts.ROHBLATTGEFUNDEN, false);
-              changeItem(items.LEAF, 1);
-            } else {
-              openPaper(texts.ROHBLATTZUVIEL, false);
-            }
-            break;
-          case 2:
-            if (state.guy.inventory[items.LIANA] < 10) {
-              openPaper(texts.ROHLIANEGEFUNDEN, false);
-              changeItem(items.LIANA, 1);
-            } else {
-              openPaper(texts.ROHLIANEZUVIEL, false);
-            }
-            break;
-        }
-      } else if (isOnSea()) {
-        if (tile.object?.sprite === spriteTypes.SHIP_WRECK) {
-          if (!state.guy.inventory[items.SPYGLASS]) {
-            openPaper(texts.FERNROHRGEFUNDEN, false);
-            changeItem(items.SPYGLASS, 1);
-            changeItem(items.HAMMER, 1);
-          } else {
-            openPaper(texts.NICHTSGEFUNDEN2, false);
-          }
-        } else if (tile.object?.sprite === spriteTypes.PIRATE_WRECK) {
-          if (!state.guy.inventory[items.MAP]) {
-            openPaper(texts.KARTEGEFUNDEN, false);
-            changeItem(items.MAP, 1);
-            changeItem(items.SHOVEL, 1);
-          } else {
-            openPaper(texts.NICHTSGEFUNDEN2, false);
-          }
-        } else {
-          openPaper(texts.NICHTSGEFUNDEN2, false);
-        }
-      } else {
-        openPaper(texts.NICHTSGEFUNDEN, false);
-      }
-      break;
-    case 12:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkEssen = () => {
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  const eatable = isEatable(tile.object);
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      if (eatable) {
-        goToObject(0, 2);
-      } else {
-        goToOffset(-4, -2);
-      }
-      break;
-    case 2:
-    case 3:
-      if (eatable) {
-        startGuyAnimation(spriteTypes.GUY_EATING);
-        sounds.CRACKLING.instance.play();
-        changeWaterAndFood(0, 15);
-        AddTime(2);
-      } else {
-        startGuyAnimation(spriteTypes.GUY_DRINKING);
-        sounds.DRINKING.instance.play();
-        changeWaterAndFood(30, 0);
-        AddTime(3);
-      }
-      break;
-    case 4:
-      if (eatable) {
-        tile.object.frame = 0;
-      }
-      goToStoredPosition();
-      break;
-    case 5:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkSchleuder = () => {
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToObject(-14, 9);
-      break;
-    case 2:
-      startGuyAnimation(spriteTypes.GUY_SLINGING);
-      AddTime(2);
-      sounds.SLINGING.instance.play();
-      break;
-    case 3:
-      goToObject(6, 2);
-      break;
-    case 4:
-      startGuyAnimation(spriteTypes.GUY_SEARCHING);
-      sounds.CRACKLING.instance.play();
-      changeWaterAndFood(0, 5);
-      AddTime(20);
-      break;
-    case 5:
-      goToStoredPosition();
-      break;
-    case 6:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkFaellen = () => {
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToObject(9, 3);
-      break;
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      startGuyAnimation(spriteTypes.GUY_CHOPPING);
-      sounds.CHOPPING.instance.play();
-      changeWaterAndFood(-2, -2);
-      AddTime(10);
-      break;
-    case 7:
-      startGuyAnimation(spriteTypes.GUY_WAITING);
-      createTreeFallObject(tile);
-      sounds.TREEFALL.instance.play();
-      changeItem(items.LOG, 1);
-      changeItem(items.BRANCH, 5);
-      changeItem(items.LEAF, 5);
-      changeItem(items.LIANA, 2);
-      break;
-    case 8:
-      goToStoredPosition();
-      break;
-    case 9:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkAngeln = () => {
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      if (tile.object) {
-        switch (tile.object.sprite) {
-          case spriteTypes.RIVER_SLOPE_NORTH:
-            goToOnTile({ x: 35, y: 26 });
-            break;
-          case spriteTypes.RIVER_SLOPE_WEST:
-            goToOnTile({ x: 19, y: 26 });
-            break;
-          case spriteTypes.RIVER_SLOPE_SOUTH:
-            goToOnTile({ x: 22, y: 20 });
-            break;
-          case spriteTypes.RIVER_SLOPE_EAST:
-            goToOnTile({ x: 34, y: 23 });
-            break;
-          case spriteTypes.RIVER_NORTH_SOUTH:
-          case spriteTypes.RIVER_WEST_SOUTH:
-          case spriteTypes.RIVER_MOUTH_NORTH:
-          case spriteTypes.RIVER_SPRING_SOUTH:
-          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
-          case spriteTypes.RIVER_DAM_WEST_SOUTH:
-            goToOnTile({ x: 34, y: 33 });
-            break;
-          case spriteTypes.RIVER_WEST_EAST:
-          case spriteTypes.RIVER_WEST_NORTH:
-          case spriteTypes.RIVER_MOUTH_WEST:
-          case spriteTypes.RIVER_SPRING_EAST:
-          case spriteTypes.RIVER_DAM_WEST_EAST:
-          case spriteTypes.RIVER_DAM_WEST_NORTH:    
-            goToOnTile({ x: 20, y: 33 });
-            break;
-          case spriteTypes.RIVER_NORTH_EAST:
-          case spriteTypes.RIVER_MOUTH_SOUTH:
-          case spriteTypes.RIVER_SPRING_NORTH:
-          case spriteTypes.RIVER_DAM_NORTH_EAST:  
-            goToOnTile({ x: 22, y: 26 });
-            break;
-          case spriteTypes.RIVER_SOUTH_EAST:
-          case spriteTypes.RIVER_MOUTH_EAST:
-          case spriteTypes.RIVER_SPRING_WEST:
-          case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            goToOnTile({ x: 32, y: 26 });
-            break;
-        }
-      }
-      break;
-    case 2:
-      sounds.FISHING.instance.play();
-      if (isOnSea()) {
-        startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_BOAT);
-      }
-      if (tile.object) {
-        switch (tile.object.sprite) {
-          case spriteTypes.RIVER_SLOPE_NORTH:
-          case spriteTypes.RIVER_NORTH_SOUTH:
-          case spriteTypes.RIVER_WEST_SOUTH:
-          case spriteTypes.RIVER_MOUTH_NORTH:
-          case spriteTypes.RIVER_SPRING_SOUTH:
-          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
-          case spriteTypes.RIVER_DAM_WEST_SOUTH:
-            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_WEST);
-            break;
-          case spriteTypes.RIVER_SLOPE_WEST:
-          case spriteTypes.RIVER_WEST_EAST:
-          case spriteTypes.RIVER_WEST_NORTH:
-          case spriteTypes.RIVER_MOUTH_WEST:
-          case spriteTypes.RIVER_SPRING_EAST:
-          case spriteTypes.RIVER_DAM_WEST_EAST:
-          case spriteTypes.RIVER_DAM_WEST_NORTH:  
-            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_NORTH);
-            break;
-          case spriteTypes.RIVER_SLOPE_SOUTH:
-          case spriteTypes.RIVER_NORTH_EAST:
-          case spriteTypes.RIVER_MOUTH_SOUTH:
-          case spriteTypes.RIVER_SPRING_NORTH:
-          case spriteTypes.RIVER_DAM_NORTH_EAST:  
-            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_EAST);
-            break;
-          case spriteTypes.RIVER_SLOPE_EAST:
-          case spriteTypes.RIVER_SOUTH_EAST:
-          case spriteTypes.RIVER_MOUTH_EAST:
-          case spriteTypes.RIVER_SPRING_WEST:
-          case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            startGuyAnimation(spriteTypes.GUY_FISHING_SWINGING_SOUTH);
-            break;
-        }
-      }
-      break;
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      if (isOnSea()) {
-        startGuyAnimation(spriteTypes.GUY_FISHING_BOAT);
-      }
-
-      if (tile.object) {
-        switch (tile.object.sprite) {
-          case spriteTypes.RIVER_SLOPE_NORTH:
-          case spriteTypes.RIVER_NORTH_SOUTH:
-          case spriteTypes.RIVER_WEST_SOUTH:
-          case spriteTypes.RIVER_MOUTH_NORTH:
-          case spriteTypes.RIVER_SPRING_SOUTH:
-          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
-          case spriteTypes.RIVER_DAM_WEST_SOUTH:
-            startGuyAnimation(spriteTypes.GUY_FISHING_WEST);
-            break;
-          case spriteTypes.RIVER_SLOPE_WEST:
-          case spriteTypes.RIVER_WEST_EAST:
-          case spriteTypes.RIVER_WEST_NORTH:
-          case spriteTypes.RIVER_MOUTH_WEST:
-          case spriteTypes.RIVER_SPRING_EAST:
-          case spriteTypes.RIVER_DAM_WEST_EAST:
-          case spriteTypes.RIVER_DAM_WEST_NORTH:  
-            startGuyAnimation(spriteTypes.GUY_FISHING_NORTH);
-            break;
-          case spriteTypes.RIVER_SLOPE_SOUTH:
-          case spriteTypes.RIVER_NORTH_EAST:
-          case spriteTypes.RIVER_MOUTH_SOUTH:
-          case spriteTypes.RIVER_SPRING_NORTH:
-          case spriteTypes.RIVER_DAM_NORTH_EAST:  
-            startGuyAnimation(spriteTypes.GUY_FISHING_EAST);
-            break;
-          case spriteTypes.RIVER_SLOPE_EAST:
-          case spriteTypes.RIVER_SOUTH_EAST:
-          case spriteTypes.RIVER_MOUTH_EAST:
-          case spriteTypes.RIVER_SPRING_WEST:
-          case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            startGuyAnimation(spriteTypes.GUY_FISHING_SOUTH);
-            break;
-        }
-      }
-      changeHealth(2);
-      AddTime(20);
-      break;
-    case 7:
-      if (isOnSea()) {
-        startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_BOAT);
-      }
-
-      if (tile.object) {
-        switch (tile.object.sprite) {
-          case spriteTypes.RIVER_SLOPE_NORTH:
-          case spriteTypes.RIVER_NORTH_SOUTH:
-          case spriteTypes.RIVER_WEST_SOUTH:
-          case spriteTypes.RIVER_MOUTH_NORTH:
-          case spriteTypes.RIVER_SPRING_SOUTH:
-          case spriteTypes.RIVER_DAM_NORTH_SOUTH:
-          case spriteTypes.RIVER_DAM_WEST_SOUTH:  
-            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_WEST);
-            break;
-          case spriteTypes.RIVER_SLOPE_WEST:
-          case spriteTypes.RIVER_WEST_EAST:
-          case spriteTypes.RIVER_WEST_NORTH:
-          case spriteTypes.RIVER_MOUTH_WEST:
-          case spriteTypes.RIVER_SPRING_EAST:
-          case spriteTypes.RIVER_DAM_WEST_EAST:
-          case spriteTypes.RIVER_DAM_WEST_NORTH:  
-            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_NORTH);
-            break;
-          case spriteTypes.RIVER_SLOPE_SOUTH:
-          case spriteTypes.RIVER_NORTH_EAST:
-          case spriteTypes.RIVER_MOUTH_SOUTH:
-          case spriteTypes.RIVER_SPRING_NORTH:
-          case spriteTypes.RIVER_DAM_NORTH_EAST: 
-            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_EAST);
-            break;
-          case spriteTypes.RIVER_SLOPE_EAST:
-          case spriteTypes.RIVER_SOUTH_EAST:
-          case spriteTypes.RIVER_MOUTH_EAST:
-          case spriteTypes.RIVER_SPRING_WEST:
-          case spriteTypes.RIVER_DAM_SOUTH_EAST:
-            startGuyAnimation(spriteTypes.GUY_FISHING_CATCHING_SOUTH);
-            break;
-        }
-      }
-      break;
-    case 8:
-      goToStoredPosition();
-      break;
-    case 9:
-      changeWaterAndFood(0, 20);
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkAnzuenden = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x - 12,
-        y: tile.object.y + 5
-      });
-      break;
-    case 2:
-      startGuyAnimation(spriteTypes.GUY_LIGHTNING);
-      AddTime(1);
-      break;
-    case 3:
-      startGuyAnimation(spriteTypes.GUY_WAITING);
-      tile.object.sprite = spriteTypes.FIRE;
-      tile.object.chance = 2 + 2 * tile.height;
-      tile.object.lifetime = 35 * 60;
-      state.guy.chance += tile.object.chance;
-      AddTime(2);
-      break;
-    case 4:
-      goToStoredPosition();
-      break;
-    case 5:
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkAusschau = () => {
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      startGuyAnimation(spriteTypes.GUY_LOOKING);
-      AddTime(40);
-      state.guy.chance += 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
-      break;
-    case 2:
-      startGuyAnimation(spriteTypes.GUY_WAITING);
-      AddTime(40);
-      break;
-    case 3:
-      startGuyAnimation(spriteTypes.GUY_LOOKING);
-      AddTime(40);
-      break;
-    case 4:
-      goToStoredPosition();
-      break;
-    case 5:
-      state.guy.chance -= 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkSchatz = () => {
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };
-  }
-  state.guy.action.step++;
-
-  switch (state.guy.action.step) {
-    case 1:
-      startGuyAnimation(spriteTypes.GUY_SHOVELING);
-      sounds.SHOVELING.instance.play();
-      break;
-    case 2:
-      AddTime(20);
-      changeWaterAndFood(-10, -10);
-      goToStoredPosition();
-      if (state.guy.tile.x === state.treasure.x && state.guy.tile.y === state.treasure.y && !state.treasure.found) {
-        openPaper(texts.SCHATZGEFUNDEN, false);
-        changeItem(items.MATCHES, 1);
-        state.treasure.found = true;
-      } else {
-        openPaper(texts.KEINSCHATZ, false);
-      }
-      break;
-    case 3:
-      state.guy.action = null;
-      break;
-  }
-}
-
 const AkFeld = () => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
 
@@ -2113,7 +1440,7 @@ const AkFeld = () => {
         y: tile.object.y + 5
       });
       changeWaterAndFood(-2, -2);
-      AddTime(30);
+      spendMinutes(30);
       break;
     case 7:
       construct(tile, 2);
@@ -2122,7 +1449,7 @@ const AkFeld = () => {
         y: tile.object.y + 3
       });
       changeWaterAndFood(-2, -2);
-      AddTime(30);
+      spendMinutes(30);
       break;
     case 10:
       construct(tile, 3);
@@ -2131,7 +1458,7 @@ const AkFeld = () => {
         y: tile.object.y + 1
       });
       changeWaterAndFood(-2, -2);
-      AddTime(30);
+      spendMinutes(30);
       break;
     case 13:
       construct(tile, 4);
@@ -2140,7 +1467,7 @@ const AkFeld = () => {
         y: tile.object.y - 1
       });
       changeWaterAndFood(-2, -2);
-      AddTime(30);
+      spendMinutes(30);
       break;
     case 16:
       construct(tile, 5);
@@ -2149,7 +1476,7 @@ const AkFeld = () => {
         y: tile.object.y - 3
       });
       changeWaterAndFood(-2, -2);
-      AddTime(30);
+      spendMinutes(30);
       break;
     case 2:
     case 3:
@@ -2192,7 +1519,6 @@ const AkTagEnde = () => {
   switch (state.guy.action.step) {
     case 1:
       state.calendar.minutes = 12 * 60;
-      TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       if (alreadyAtSleepPosition) break;
       pauseConstruction();
       break;
@@ -2346,7 +1672,6 @@ const AkGerettet = () => {
   switch (state.guy.action.step) {
     case 1:
       goToInitialPosition();
-      TwoClicks = -1; //Keine Ahnung warum ich das hier machen muß
       break;
     case 2:
       openPaper(texts.GERETTET, true);
@@ -2426,7 +1751,7 @@ const AkZelt = () => {
     case 13:
       startGuyAnimation(spriteTypes.GUY_KNOTTING_SOUTH);
       changeWaterAndFood(-2, -2);
-      AddTime(15);
+      spendMinutes(15);
       break;
     case 4:
       construct(tile, 1);
@@ -2448,7 +1773,7 @@ const AkZelt = () => {
     case 8:
       startGuyAnimation(spriteTypes.GUY_KNOTTING_NORTH);
       changeWaterAndFood(-2, -2);
-      AddTime(15);
+      spendMinutes(15);
       break;
     case 9:
       construct(tile, 2);
@@ -2516,7 +1841,7 @@ const AkBoot = () => {
       startGuyAnimation(spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
       changeWaterAndFood(-2, -2);
-      AddTime(15);
+      spendMinutes(15);
       break;
     case 5:
       goToOnTile({
@@ -2593,7 +1918,7 @@ const AkRohr = () => {
       startGuyAnimation(spriteTypes.GUY_HITTING);
       sounds.HITTING.instance.play();
       changeWaterAndFood(-1, -1);
-      AddTime(5);
+      spendMinutes(5);
       break;
     case 5:
     case 6:
@@ -2604,7 +1929,7 @@ const AkRohr = () => {
       startGuyAnimation(spriteTypes.GUY_CHOPPING);
       sounds.CHOPPING.instance.play();
       changeWaterAndFood(-1, -1);
-      AddTime(5);
+      spendMinutes(5);
       break;
     case 8:
       goToOnTile({
@@ -2689,7 +2014,7 @@ const AkSOS = () => {
     case 17:
       startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 3:
     case 6:
@@ -2699,7 +2024,7 @@ const AkSOS = () => {
     case 18:
       startGuyAnimation(spriteTypes.GUY_STANDING_UP);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 19:
       goToStoredPosition();
@@ -2744,12 +2069,12 @@ const AkFeuerstelle = () => {
     case 2:
       startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 3:
       startGuyAnimation(spriteTypes.GUY_STANDING_UP);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       construct(tile, 1);
       break;
     case 4:
@@ -2763,7 +2088,7 @@ const AkFeuerstelle = () => {
     case 7:
       startGuyAnimation(spriteTypes.GUY_KNOTTING_NORTH);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       if (tile.construction.actionStep !== 5) {
         construct(tile, 2);
       }
@@ -2807,7 +2132,7 @@ const AkHaus1 = () => {
       startGuyAnimation(spriteTypes.GUY_HAMMERING);
       sounds.HAMMERING.instance.play();
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 6:
     case 7:
@@ -2817,7 +2142,7 @@ const AkHaus1 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
       changeWaterAndFood(-0.5, 0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 10:
     case 11:
@@ -2827,7 +2152,7 @@ const AkHaus1 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 14:
     case 15:
@@ -2837,7 +2162,7 @@ const AkHaus1 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 18:
       goToStoredPosition();
@@ -2869,7 +2194,7 @@ const AkHaus2 = () => {
     case 2:
       startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 3:
     case 4:
@@ -2878,7 +2203,7 @@ const AkHaus2 = () => {
       startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 7:
     case 8:
@@ -2888,7 +2213,7 @@ const AkHaus2 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 11:
     case 12:
@@ -2898,7 +2223,7 @@ const AkHaus2 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 15:
     case 16:
@@ -2908,13 +2233,13 @@ const AkHaus2 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 19:
       startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
       construct(tile, 4);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 20:
       goToStoredPosition();
@@ -2946,7 +2271,7 @@ const AkHaus3 = () => {
     case 2:
       startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 3:
     case 4:
@@ -2955,7 +2280,7 @@ const AkHaus3 = () => {
       startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
       sounds.HAMMERING.instance.play();
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 7:
     case 8:
@@ -2965,7 +2290,7 @@ const AkHaus3 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 1);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 11:
     case 12:
@@ -2975,7 +2300,7 @@ const AkHaus3 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 2);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 15:
     case 16:
@@ -2985,13 +2310,13 @@ const AkHaus3 = () => {
       sounds.HAMMERING.instance.play();
       construct(tile, 3);
       changeWaterAndFood(-0.5, -0.5);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 19:
       startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
       construct(tile, 4);
       changeWaterAndFood(-1, -1);
-      AddTime(1);
+      spendMinutes(1);
       break;
     case 20:
       goToStoredPosition();
@@ -3007,144 +2332,14 @@ const AkHaus3 = () => {
   }
 }
 
-const AkSchlafen = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  const tent = isUsableTent(tile);
-  const house = isUsableTreeHouse(tile);
-  if (state.guy.action.step === 0) {
-    state.guy.storedPosition = { ...state.guy.position };  //Die Originalposition merken
-  }
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      if (tent)
-        goToOnTile({
-          x: tile.object.x - 10,
-          y: tile.object.y + 5
-        });
-      else if (house)
-        goToOnTile({
-          x: tile.object.x + 1,
-          y: tile.object.y + 1
-        });
-      break;
-    case 2:
-      if (house) {
-        startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
-        changeWaterAndFood(-1, -1);
-      }
-      break;
-    case 3:
-      if (tent) {
-        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_TENT);
-      } else if (house) {
-        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_HOUSE);
-      } else {
-        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
-      }
-      break;
-    case 4:
-    case 5:
-      if (tent) {
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
-      } else if (house) {
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
-      } else startGuyAnimation(spriteTypes.GUY_SLEEPING);
-      sounds.SNORING.instance.play();
-      changeHealth(5);
-      AddTime(30);
-      break;
-    case 6:
-      sounds.SNORING.instance.stop();
-      if (house) {
-        startGuyAnimation(spriteTypes.GUY_STANDING_UP_HOUSE);
-      } else startGuyAnimation(spriteTypes.GUY_STANDING_UP);
-      break;
-    case 7:
-      if (house) {
-        startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
-        changeWaterAndFood(-1, -1);
-      }
-      break;
-    case 8:
-      goToStoredPosition();
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkAblegen = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x,
-        y: tile.object.y
-      });
-      break;
-    case 2:
-      state.guy.position.x = tile.position.x + tile.object.x;
-      state.guy.position.y = tile.position.y + tile.object.y;
-      tile.object = null;
-      if (state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground === grounds.SEA) state.guy.tile.x--;
-      else if (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground === grounds.SEA) state.guy.tile.y--;
-      else if (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground === grounds.SEA) state.guy.tile.x++;
-      else if (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground === grounds.SEA) state.guy.tile.y++;
-      goToCenterOfTile();
-      break;
-    case 3:
-      state.guy.action = null;
-      state.guy.storedPosition.x = state.guy.position.x;
-      state.guy.storedPosition.y = state.guy.position.y;
-      break;
-  }
-}
-
-const AkAnlegen = () => {
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      if (state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground !== grounds.SEA) {
-        goToWestOfTile();
-      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground !== grounds.SEA) {
-        goToNorthOfTile();
-      } else if (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground !== grounds.SEA) {
-        goToEastOfTile();
-      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground !== grounds.SEA) {
-        goToSouthOfTile();
-      }
-      break;
-    case 2:
-      const neighbor = findNeighbor((tile) => tile.ground !== grounds.SEA);
-
-      neighbor.tile.object = {
-        sprite: spriteTypes.BOAT,
-        x: Math.round(state.guy.position.x - neighbor.tile.position.x),
-        y: Math.round(state.guy.position.y - neighbor.tile.position.y),
-        frame: (neighbor.direction === directions.WEST || neighbor.direction === directions.EAST) ? 0 : 1
-      };
-
-      state.guy.tile.x = neighbor.x;
-      state.guy.tile.y = neighbor.y;
-      goToCenterOfTile();
-      break;
-    case 3:
-      state.guy.action = null;
-      state.guy.storedPosition.x = state.guy.position.x;
-      state.guy.storedPosition.y = state.guy.position.y;
-      break;
-  }
-}
-
 const Fade = (intensity, smooth) => {
   canvases.PRIMARY.canvas.style.transition = `${smooth}s filter ease-in-out`;
   canvases.PRIMARY.canvas.style.filter = `brightness(${intensity}%) saturate(${intensity}%)`;
 }
 
 const CheckBenutze = (item) => {
-  if ((item === items.STONE && TwoClicks === items.BRANCH) ||
-    (item === items.BRANCH && TwoClicks === items.STONE)) {
+  if ((item === items.STONE && SelectedItem === items.BRANCH) ||
+    (item === items.BRANCH && SelectedItem === items.STONE)) {
     if (!state.guy.inventory[items.AXE]) {
       changeItem(items.STONE, -1);
       changeItem(items.BRANCH, -1);
@@ -3160,8 +2355,8 @@ const CheckBenutze = (item) => {
     } else {
       openPaper(texts.STEINPLUSASTNICHTS, false);
     }
-  } else if ((item === items.LIANA && TwoClicks === items.BRANCH) ||
-    (item === items.BRANCH && TwoClicks === items.LIANA)) {
+  } else if ((item === items.LIANA && SelectedItem === items.BRANCH) ||
+    (item === items.BRANCH && SelectedItem === items.LIANA)) {
     if (!state.guy.inventory[items.FISHING_ROD]) {
       changeItem(items.LIANA, -1);
       changeItem(items.BRANCH, -1);
@@ -3171,8 +2366,8 @@ const CheckBenutze = (item) => {
     } else {
       openPaper(texts.ASTPLUSLIANENICHTS, false);
     }
-  } else if (((item === items.LIANA) && (TwoClicks === items.STONE)) ||
-    ((item === items.STONE) && (TwoClicks === items.LIANA))) {
+  } else if (((item === items.LIANA) && (SelectedItem === items.STONE)) ||
+    ((item === items.STONE) && (SelectedItem === items.LIANA))) {
     if (!state.guy.inventory[items.SLING]) {
       changeItem(items.LIANA, -1);
       changeItem(items.STONE, -1);
@@ -3185,14 +2380,14 @@ const CheckBenutze = (item) => {
   } else {
     openPaper(texts.NICHTBASTELN, false);
   }
-  TwoClicks = -1;
+  SelectedItem = null;
 }
 
 const Animationen = () => {
   animateTerrain(frame, framesPerSecond);
   animateButtons(frame, framesPerSecond, MousePosition);
   if (!state.paper) {
-    animateGuy(frame, framesPerSecond, AddTime.bind(this));
+    animateGuy(frame, framesPerSecond);
   }
 }
 
@@ -3218,6 +2413,7 @@ const refresh = (timestamp) => {
     discoverTerrain();
     playTerrainSounds();
     updateCamera(state.guy.position, true);
+    processAction();
     Event(); //Aktionen starten
     drawTerrain(state.camera, false);
   } else if (Spielzustand === GAME_PLAY) {
@@ -3235,6 +2431,7 @@ const refresh = (timestamp) => {
     Animationen();            //Die Animationsphasen weiterschalten
     discoverTerrain();
     playTerrainSounds();
+    processAction();
     Event();  //Die Aktionen starten
     Zeige();//Das Bild zeichnen
     if (Spielbeenden) return false;

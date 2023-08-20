@@ -1247,7 +1247,7 @@ const sprites = {
     frameCount: 4,
     speed: 4
   },
-  [spriteTypes.BUTTON_EATING_AND_DRINKING]: {
+  [spriteTypes.BUTTON_CONSUMING]: {
     ...buttonDefault,
     x: 133,
     y: 0,

@@ -17,6 +17,9 @@ const startAction = (actionType) => {
     }
     state.guy.active = false;
   }
+  state.guy.storedPosition = { 
+    ...state.guy.position 
+  };
   state.guy.action = {
     type: actionType,
     step: 0

@@ -11,6 +11,7 @@ import drawStartConstructionText from '../../construction/drawStartConstructionT
 import grounds from '../../terrain/tiles/grounds.js';
 import isUsableBoat from '../../terrain/objects/isUsableBoat.js';
 import findNeighbor from '../../guy/findNeighbor.js';
+import openTreasureMap from '../../treasure/openTreasureMap.js';
 import isOnSea from '../../guy/isOnSea.js';
 import actions from '../../action/actions.js';
 import audio from '../../sounds/audio.js';
@@ -229,14 +230,14 @@ const buttons = [
   },
   {
     ...buttonDefault,
-    sprite: spriteTypes.BUTTON_EATING_AND_DRINKING,
+    sprite: spriteTypes.BUTTON_CONSUMING,
     position: {
       x: 70,
       y: 220
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS,
-    onTap: () => startAction(actionTypes.EATING_AND_DRINKING),
-    onHover: () => drawStatusText(texts.BUTTON_EATING_AND_DRINKING)
+    onTap: () => startAction(actionTypes.CONSUMING),
+    onHover: () => drawStatusText(texts.BUTTON_CONSUMING)
   },
   {
     ...buttonDefault,
@@ -337,7 +338,7 @@ const buttons = [
       y: 268
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.MAP],
-    onTap: () => startAction(actionTypes.openTreasureMap),
+    onTap: () => openTreasureMap(),
     onHover: () => drawStatusText(texts.BUTTON_HUNTING_TREASURE)
   },
   {
