@@ -9,7 +9,7 @@ import changeWaterAndFood from '../../guy/changeWaterAndFood.js';
 import sounds from '../../sounds/sounds.js';
 import changeHealth from '../../guy/changeHealth.js';
 import spendMinutes from '../spendMinutes.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const goToSleepingPlace = (tile) => {
   if (isUsableTent(tile))
@@ -85,7 +85,7 @@ const sleeping = {
     sleep,
     standUp,
     climbDownLadder,
-    goToStoredPosition
+    goToCenterOfTile
   ]
 };
 

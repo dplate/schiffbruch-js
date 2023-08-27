@@ -7,8 +7,8 @@ import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import sounds from '../../sounds/sounds.js';
 import changeHealth from '../../guy/changeHealth.js';
 import spendMinutes from '../spendMinutes.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
 import changeWaterAndFood from '../../guy/changeWaterAndFood.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const getDirection = (tile) => {
   switch (tile.object?.sprite) {
@@ -149,7 +149,7 @@ const fishing = {
     fish,
     fish,
     catchIt,
-    goToStoredPosition,
+    goToCenterOfTile,
     () => changeWaterAndFood(0, 20)
   ]
 };

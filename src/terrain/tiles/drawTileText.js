@@ -4,6 +4,7 @@ import drawStatusText from '../../interface/text/drawStatusText.js';
 import texts from '../../interface/text/texts.js';
 import getTextIdForObject from '../objects/getTextIdForObject.js';
 import groundTextIds from './groundTextIds.js';
+import actions from '../../action/actions.js';
 
 const createTileText = (tile) => {
   const groundText = texts[groundTextIds[tile.ground]];
@@ -16,7 +17,8 @@ const createTileText = (tile) => {
     return `${groundText} ${texts.WITH} ${objectText}`;
   }
 
-  const progress = Math.floor(tile.construction.actionStep * 100 / constructions[tile.construction.type].actionSteps);
+  const actionSteps = Object.values(actions).find(action => action.construction === tile.construction.type).steps?.length || constructions[tile.construction.type].actionSteps;
+  const progress = Math.floor(tile.construction.actionStep * 100 / actionSteps);
   const needItemsText = createNeededItemsText(tile.construction.neededItems);
   return `${groundText} ${texts.WITH} ${objectText} (${progress}%)${needItemsText}`;
 };

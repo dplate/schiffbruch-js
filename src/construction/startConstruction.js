@@ -1,15 +1,15 @@
 import state from '../state/state.js';
 import constructions from './constructions.js';
 
-const startConstruction = (constructionType, x, y) => {
+const startConstruction = (constructionType, position) => {
   const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
   const construction = constructions[constructionType];
 
   tile.originalObject = tile.object;
   tile.object = {
     sprite: construction.sprite,
-    x,
-    y,
+    x: position.x,
+    y: position.y,
     frame: construction.frames[0]
   };
   
@@ -21,8 +21,6 @@ const startConstruction = (constructionType, x, y) => {
     actionStep: 0,
     lastGuyPosition: null
   };
-
-  state.guy.storedPosition = { ...state.guy.position };
 };
 
 export default startConstruction;

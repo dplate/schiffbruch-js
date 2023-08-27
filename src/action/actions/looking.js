@@ -4,7 +4,7 @@ import spriteTypes from '../../images/spriteTypes.js';
 import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import state from '../../state/state.js';
 import spendMinutes from '../spendMinutes.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const look = () => {
   startGuyAnimation(spriteTypes.GUY_LOOKING);
@@ -26,7 +26,7 @@ const looking = {
       spendMinutes(40);
     },
     look,
-    goToStoredPosition,
+    goToCenterOfTile,
     (tile) => state.guy.chance -= 1 + tile.height
   ]
 };

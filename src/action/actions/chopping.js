@@ -11,7 +11,7 @@ import spendMinutes from '../spendMinutes.js';
 import createTreeFallObject from '../../terrain/objects/createTreeFallObject.js';
 import changeItem from '../../guy/inventory/changeItem.js';
 import items from '../../guy/inventory/items.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const chop = () => {
   startGuyAnimation(spriteTypes.GUY_CHOPPING);
@@ -51,7 +51,7 @@ const chopping = {
     chop,
     chop,
     watchTreeFall,
-    goToStoredPosition
+    goToCenterOfTile
   ]
 };
 

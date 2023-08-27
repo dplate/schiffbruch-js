@@ -7,7 +7,7 @@ import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import spendMinutes from '../spendMinutes.js';
 import sounds from '../../sounds/sounds.js';
 import changeWaterAndFood from '../../guy/changeWaterAndFood.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const sling = () => {
   startGuyAnimation(spriteTypes.GUY_SLINGING);
@@ -37,7 +37,7 @@ const slinging = {
     sling,
     () => goToObject(6, 2),
     search,
-    goToStoredPosition
+    goToCenterOfTile
   ]
 };
 

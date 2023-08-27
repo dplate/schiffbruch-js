@@ -7,9 +7,9 @@ import sounds from '../../sounds/sounds.js';
 import changeWaterAndFood from '../../guy/changeWaterAndFood.js';
 import spendMinutes from '../spendMinutes.js';
 import goToOffset from '../../guy/routing/goToOffset.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
 import goToObject from '../../guy/routing/goToObject.js';
 import startGuyAnimation from '../../guy/startGuyAnimation.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const goToPlace = (tile) => {
   if (isEatable(tile.object)) {
@@ -51,7 +51,7 @@ const consuming = {
     consume,
     consume,
     resetEatableObject,
-    goToStoredPosition
+    goToCenterOfTile
   ]
 };
 

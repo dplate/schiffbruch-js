@@ -1,3 +1,5 @@
+import finishConstruction from '../construction/finishConstruction.js';
+import useItemsForConstruction from '../construction/useItemsForConstruction.js';
 import state from '../state/state.js';
 import actions from './actions.js';
 
@@ -7,12 +9,30 @@ const processAction = () => {
 
     const action = actions[state.guy.action.type];
     if (action.steps) {
-      action.steps[state.guy.action.step](state.terrain[state.guy.tile.x][state.guy.tile.y]);
 
-      if (state.guy.action.step < action.steps.length - 1) {
-        state.guy.action.step++;
-      } else {
+      const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
+      const step = action.construction ? tile.construction?.actionStep : state.guy.action.step;
+
+      if (step >= action.steps.length) {
         state.guy.action = null;
+        if (action.construction) {
+          finishConstruction(tile);
+        }
+        if (action.finish) {
+          action.finish(tile);
+        }
+        return;
+      }
+    
+      if (action.construction && !useItemsForConstruction(tile)) {
+        return;
+      }
+      action.steps[step](tile);
+
+      if (action.construction) {
+        tile.construction.actionStep++;
+      } else {
+        state.guy.action.step++;
       }
     }
   };

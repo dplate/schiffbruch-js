@@ -24,10 +24,8 @@ import findRoute from './guy/routing/findRoute.js';
 import goToOnTile from './guy/routing/goToOnTile.js';
 import goTo from './guy/routing/goTo.js';
 import goToCenterOfTile from './guy/routing/goToCenterOfTile.js';
-import goToStoredPosition from './guy/routing/goToStoredPosition.js';
 import goToEastOfTile from './guy/routing/goToEastOfTile.js';
 import isOnSea from './guy/isOnSea.js';
-import changeWaterAndFood from './guy/changeWaterAndFood.js';
 import changeHealth from './guy/changeHealth.js';
 import createInventory from './guy/inventory/createInventory.js';
 import items from './guy/inventory/items.js';
@@ -41,16 +39,10 @@ import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
 import sounds from './sounds/sounds.js';
 import startGuyAnimation from './guy/startGuyAnimation.js';
-import constructions from './construction/constructions.js';
-import constructionTypes from './construction/constructionTypes.js';
-import startConstruction from './construction/startConstruction.js';
-import construct from './construction/construct.js';
-import finishConstruction from './construction/finishConstruction.js';
 import isUsableTent from './terrain/objects/isUsableTent.js';
 import isUsableTreeHouse from './terrain/objects/isUsableTreeHouse.js';
 import findNeighbor from './guy/findNeighbor.js';
 import pauseConstruction from './construction/pauseConstruction.js';
-import updatePipes from './terrain/updatePipes.js';
 import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
@@ -74,7 +66,6 @@ import actionTypes from './action/actionTypes.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import drawPanel from './interface/drawPanel.js';
 import processAction from './action/processAction.js';
-import spendMinutes from './action/spendMinutes.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -230,14 +221,14 @@ const initInput = (window) => {
 }
 
 const SaveGame = () => {
-  window.localStorage.setItem('stateV9', JSON.stringify({
+  window.localStorage.setItem('stateV10', JSON.stringify({
     ...state,
     Spielzustand
   }));
 }
 
 const LoadGame = () => {
-  const rawState = window.localStorage.getItem('stateV9');
+  const rawState = window.localStorage.getItem('stateV10');
   if (!rawState) {
     return false;
   }
@@ -707,7 +698,6 @@ const CheckKey = () => {
       state.guy.sprite = spriteTypes.GUY_WAITING;
       state.guy.action = null;
       Spielzustand = GAME_PLAY;
-      state.guy.storedPosition = { ...state.guy.position };
       SaveGame();
       return (2);
     }
@@ -921,7 +911,6 @@ const startGame = async (newGame) => {
   drawTreasureMap();
 
   updateMinimap();
-  state.guy.storedPosition = { ...state.guy.position };
 }
 
 const Zeige = () => {
@@ -1167,82 +1156,17 @@ const CalcRect = (rcBereich) => {
   rcRectdes.bottom = Math.max(rcRectdes.top, rcRectdes.bottom);
 }
 
-const CheckRohstoff = () => {
-  let Benoetigt; //Anzahl der Gesamtbenötigten Rohstoffe
-  let GebrauchtTmp; //Soviel Rohstoffe werden für diesen Schritt benötigt
-  let Gebraucht; //Soviel Rohstoffe werden für diesen Schritt benötigt
-  let Check;     //Wenn kein Rohstoff mehr vorhanden nur noch einmal die While-Schleife
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-
-  Benoetigt = 0;
-  Object.entries(constructions[tile.construction.type].items).forEach(([, amount]) => Benoetigt += amount);
-
-  // This is buggy and starts building boat without any items!
-  GebrauchtTmp = Benoetigt / constructions[tile.construction.type].actionSteps;
-  Gebraucht = Math.floor(GebrauchtTmp * (tile.construction.actionStep + 1)) - Math.floor(GebrauchtTmp * tile.construction.actionStep);
-  if (Gebraucht === 0) {
-    return true;
-  }
-
-  while (1) {
-    Check = false;
-    const neededItems = Object.entries(tile.construction.neededItems).filter(([, amount]) => amount).map(([item]) => item);
-    for (const neededItem of neededItems) {
-      if (state.guy.inventory[neededItem] > 0) {
-        changeItem(neededItem, -1);
-        tile.construction.neededItems[neededItem]--;
-        Gebraucht--;
-        if (Gebraucht === 0) {
-          return true;
-        }
-        Check = true;
-      }
-    }
-    if (Check === false) break;
-  }
-  openPaper(texts.ROHSTOFFNICHT, false);
-  startAction(actionTypes.STOPPING);
-  return false;
-}
-
 const Event = () => {
   if (state.guy.active || !state.guy.action) {
     return;
   }
   state.guy.route = [];
   switch (state.guy.action.type) {
-    case actionTypes.CONSTRUCTING_FIELD:
-      AkFeld();
-      break;
     case actionTypes.ENDING_DAY:
       AkTagEnde();
       break;
     case actionTypes.LEAVING:
       AkGerettet();
-      break;
-    case actionTypes.CONSTRUCTING_TENT:
-      AkZelt();
-      break;
-    case actionTypes.CONSTRUCTING_BOAT:
-      AkBoot();
-      break;
-    case actionTypes.CONSTRUCTING_PIPE:
-      AkRohr();
-      break;
-    case actionTypes.CONSTRUCTING_SOS:
-      AkSOS();
-      break;
-    case actionTypes.CONSTRUCTING_LADDER:
-      AkHaus1();
-      break;
-    case actionTypes.CONSTRUCTING_PLATFORM:
-      AkHaus2();
-      break;
-    case actionTypes.CONSTRUCTING_TREE_HOUSE:
-      AkHaus3();
-      break;
-    case actionTypes.CONSTRUCTING_FIREPLACE:
-      AkFeuerstelle();
       break;
     case actionTypes.ARRIVING:
       AkIntro();
@@ -1261,15 +1185,6 @@ const Event = () => {
       break;
   }
 }
-
-const goToInitialPosition = () => {
-  const tilePosition = getTileByPosition(state.guy.storedPosition);
-  if (tilePosition && tilePosition.x === state.guy.tile.x && tilePosition.y === state.guy.tile.y) {
-    goTo(state.guy.storedPosition);
-  } else {
-    goToCenterOfTile();
-  }
-};
 
 const AkIntro = () => {
   let x;
@@ -1308,7 +1223,6 @@ const AkIntro = () => {
       break;
     case 5:
       updateCamera(state.guy.position, false);
-      state.guy.storedPosition = { ...state.guy.position };
       Spielzustand = GAME_PLAY;
       state.guy.action = null;
       openPaper(texts.INTROTEXT, false);
@@ -1321,7 +1235,7 @@ const AkNeubeginnen = () => {
   state.guy.action.step++;
   switch (state.guy.action.step) {
     case 1:
-      goToInitialPosition();
+      goToCenterOfTile();
       break;
     case 2:
       openPaper(texts.NEUBEGINNEN, true);
@@ -1341,7 +1255,7 @@ const AkTagNeubeginnen = () => {
   state.guy.action.step++;
   switch (state.guy.action.step) {
     case 1:
-      goToInitialPosition();
+      goToCenterOfTile();
       break;
     case 2:
       openPaper(texts.TAGNEU, true);
@@ -1361,7 +1275,7 @@ const AkSpielverlassen = () => {
   state.guy.action.step++;
   switch (state.guy.action.step) {
     case 1:
-      goToInitialPosition();
+      goToCenterOfTile();
       break;
     case 2:
       openPaper(texts.SPIELVERLASSEN, true);
@@ -1410,98 +1324,6 @@ const AkTod = () => {
         Spielzustand = GAME_CREDITS;
       };
       closePaper();
-      break;
-  }
-}
-
-const AkFeld = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-
-  if (!tile.construction) {
-    const center = tileEdges[tile.type].center;
-    startConstruction(constructionTypes.FIELD, center.x, center.y);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x + 6,
-        y: tile.object.y + 7
-      });
-      break;
-    case 4:
-      construct(tile, 1);
-      goToOnTile({
-        x: tile.object.x + 9,
-        y: tile.object.y + 5
-      });
-      changeWaterAndFood(-2, -2);
-      spendMinutes(30);
-      break;
-    case 7:
-      construct(tile, 2);
-      goToOnTile({
-        x: tile.object.x + 12,
-        y: tile.object.y + 3
-      });
-      changeWaterAndFood(-2, -2);
-      spendMinutes(30);
-      break;
-    case 10:
-      construct(tile, 3);
-      goToOnTile({
-        x: tile.object.x + 15,
-        y: tile.object.y + 1
-      });
-      changeWaterAndFood(-2, -2);
-      spendMinutes(30);
-      break;
-    case 13:
-      construct(tile, 4);
-      goToOnTile({
-        x: tile.object.x + 18,
-        y: tile.object.y - 1
-      });
-      changeWaterAndFood(-2, -2);
-      spendMinutes(30);
-      break;
-    case 16:
-      construct(tile, 5);
-      goToOnTile({
-        x: tile.object.x + 20,
-        y: tile.object.y - 3
-      });
-      changeWaterAndFood(-2, -2);
-      spendMinutes(30);
-      break;
-    case 2:
-    case 3:
-    case 5:
-    case 6:
-    case 8:
-    case 9:
-    case 11:
-    case 12:
-    case 14:
-    case 15:
-    case 17:
-    case 18:
-      startGuyAnimation(spriteTypes.GUY_HARROWING);
-      break;
-    case 19:
-      goToStoredPosition();
-      break;
-    case 20:
-      finishConstruction(tile);
-      if (!state.constructionHints[constructionTypes.FIELD]) {
-        openPaper(texts.FELDHILFE, false);
-        state.constructionHints[constructionTypes.FIELD] = true;
-      }
-      state.guy.action = null;
       break;
   }
 }
@@ -1671,7 +1493,7 @@ const AkGerettet = () => {
   state.guy.action.step++;
   switch (state.guy.action.step) {
     case 1:
-      goToInitialPosition();
+      goToCenterOfTile();
       break;
     case 2:
       openPaper(texts.GERETTET, true);
@@ -1724,610 +1546,6 @@ const AkGerettet = () => {
       audio.stopAll();
       state.guy.action = null;
       Spielzustand = GAME_CREDITS;
-      break;
-  }
-}
-
-const AkZelt = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  if (!tile.construction) {
-    startConstruction(constructionTypes.TENT, 28, 22);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x + 9,
-        y: tile.object.y - 4
-      });
-      break;
-    case 2:
-    case 3:
-    case 12:
-    case 13:
-      startGuyAnimation(spriteTypes.GUY_KNOTTING_SOUTH);
-      changeWaterAndFood(-2, -2);
-      spendMinutes(15);
-      break;
-    case 4:
-      construct(tile, 1);
-      goToOnTile({
-        x: tile.object.x + 18,
-        y: tile.object.y + 4
-      });
-      break;
-    case 5:
-      goToStoredPosition();
-      break;
-    case 6:
-      goToOnTile({
-        x: tile.object.x - 10,
-        y: tile.object.y + 4
-      });
-      break;
-    case 7:
-    case 8:
-      startGuyAnimation(spriteTypes.GUY_KNOTTING_NORTH);
-      changeWaterAndFood(-2, -2);
-      spendMinutes(15);
-      break;
-    case 9:
-      construct(tile, 2);
-      goToStoredPosition();
-      break;
-    case 10:
-      goToOnTile({
-        x: tile.object.x + 18,
-        y: tile.object.y + 4
-      });
-      break;
-    case 11:
-      goToOnTile({
-        x: tile.object.x + 9,
-        y: tile.object.y - 4
-      });
-      break;
-    case 14:
-      goToOnTile({
-        x: tile.object.x + 18,
-        y: tile.object.y + 4
-      });
-      break;
-    case 15:
-      goToStoredPosition();
-      break;
-    case 16:
-      finishConstruction(tile);
-      if (!state.constructionHints[constructionTypes.TENT]) {
-        openPaper(texts.ZELTHILFE, false);
-        state.constructionHints[constructionTypes.TENT] = true;
-      }
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkBoot = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  if (!tile.construction) {
-    startConstruction(constructionTypes.BOAT, 20, 33);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x + 17,
-        y: tile.object.y + 5
-      });
-      tile.object.frame++
-      break;
-    case 2:
-    case 3:
-    case 4:
-    case 6:
-    case 7:
-    case 8:
-    case 10:
-    case 11:
-    case 12:
-      startGuyAnimation(spriteTypes.GUY_HITTING);
-      sounds.HITTING.instance.play();
-      changeWaterAndFood(-2, -2);
-      spendMinutes(15);
-      break;
-    case 5:
-      goToOnTile({
-        x: tile.object.x + 9,
-        y: tile.object.y
-      });
-      tile.object.frame++
-      break;
-    case 9:
-      goToOnTile({
-        x: tile.object.x - 3,
-        y: tile.object.y - 5
-      });
-      tile.object.frame++
-      break;
-    case 13:
-      goToStoredPosition();
-      break;
-    case 14:
-      finishConstruction(tile);
-      if (state.terrain[state.guy.tile.x - 1][state.guy.tile.y].ground === grounds.SEA) {
-        const west = tileEdges[tile.type].west;
-        tile.object.x = west.x;
-        tile.object.y = west.y;
-      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y - 1].ground === grounds.SEA) {
-        tile.object.frame = 1;
-        const north = tileEdges[tile.type].north;
-        tile.object.x = north.x;
-        tile.object.y = north.y;
-      } else if (state.terrain[state.guy.tile.x + 1][state.guy.tile.y].ground === grounds.SEA) {
-        const east = tileEdges[tile.type].east;
-        tile.object.x = east.x;
-        tile.object.y = east.y;
-      } else if (state.terrain[state.guy.tile.x][state.guy.tile.y + 1].ground === grounds.SEA) {
-        tile.object.frame = 1;
-        const south = tileEdges[tile.type].south;
-        tile.object.x = south.x;
-        tile.object.y = south.y;
-      }
-      if (!state.constructionHints[constructionTypes.BOAT]) {
-        openPaper(texts.BOOTHILFE, false);
-        state.constructionHints[constructionTypes.BOAT] = true;
-      }
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkRohr = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  if (!tile.construction) {
-    const center = tileEdges[tile.type].center;
-    startConstruction(constructionTypes.PIPE, center.x, center.y);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x + 21,
-        y: tile.object.y + 4
-      });
-      construct(tile, 1);
-      break;
-    case 2:
-    case 3:
-    case 4:
-    case 9:
-    case 10:
-    case 11:
-      startGuyAnimation(spriteTypes.GUY_HITTING);
-      sounds.HITTING.instance.play();
-      changeWaterAndFood(-1, -1);
-      spendMinutes(5);
-      break;
-    case 5:
-    case 6:
-    case 7:
-    case 12:
-    case 13:
-    case 14:
-      startGuyAnimation(spriteTypes.GUY_CHOPPING);
-      sounds.CHOPPING.instance.play();
-      changeWaterAndFood(-1, -1);
-      spendMinutes(5);
-      break;
-    case 8:
-      goToOnTile({
-        x: tile.object.x + 8,
-        y: tile.object.y - 4
-      });
-      construct(tile, 2);
-      break;
-    case 15:
-      goToStoredPosition();
-      break;
-    case 16:
-      finishConstruction(tile);
-      updatePipes();
-      if (!state.constructionHints[constructionTypes.PIPE]) {
-        openPaper(texts.ROHRHILFE, false);
-        state.constructionHints[constructionTypes.PIPE] = true;
-      }
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkSOS = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  if (!tile.construction) {
-    const center = tileEdges[tile.type].center;
-    startConstruction(constructionTypes.SOS, center.x, center.y);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x - 12,
-        y: tile.object.y + 4
-      });
-      break;
-    case 4:
-      goToOnTile({
-        x: tile.object.x - 4,
-        y: tile.object.y + 8
-      });
-      construct(tile, 1);
-      break;
-    case 7:
-      goToOnTile({
-        x: tile.object.x - 4,
-        y: tile.object.y
-      });
-      construct(tile, 2);
-      break;
-    case 10:
-      goToOnTile({
-        x: tile.object.x + 3,
-        y: tile.object.y + 3
-      });
-      construct(tile, 3);
-      break;
-    case 13:
-      goToOnTile({
-        x: tile.object.x + 5,
-        y: tile.object.y - 4
-      });
-      construct(tile, 4);
-      break;
-    case 16:
-      goToOnTile({
-        x: tile.object.x + 12,
-        y: tile.object.y - 1
-      });
-      construct(tile, 5);
-      break;
-    case 2:
-    case 5:
-    case 8:
-    case 11:
-    case 14:
-    case 17:
-      startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      break;
-    case 3:
-    case 6:
-    case 9:
-    case 12:
-    case 15:
-    case 18:
-      startGuyAnimation(spriteTypes.GUY_STANDING_UP);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      break;
-    case 19:
-      goToStoredPosition();
-      break;
-    case 20:
-      finishConstruction(tile);
-      if ((tile.ground === grounds.GRASS) || (tile.ground === grounds.WETLAND)) {
-        tile.object.chance = 1;
-      }
-      else {
-        //Dürfte nur noch der Strand übrig sein
-        tile.object.chance = 2;
-      }
-      state.guy.chance += tile.object.chance;
-      if (!state.constructionHints[constructionTypes.SOS]) {
-        openPaper(texts.SOSHILFE, false);
-        state.constructionHints[constructionTypes.SOS] = true;
-      }
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkFeuerstelle = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  if (!tile.construction) {
-    const center = tileEdges[tile.type].center;
-    startConstruction(constructionTypes.FIREPLACE, center.x, center.y - 5);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x - 4,
-        y: tile.object.y + 2
-      });
-      break;
-    case 2:
-      startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      break;
-    case 3:
-      startGuyAnimation(spriteTypes.GUY_STANDING_UP);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      construct(tile, 1);
-      break;
-    case 4:
-      goToOnTile({
-        x: tile.object.x - 6,
-        y: tile.object.y + 3
-      });
-      break;
-    case 5:
-    case 6:
-    case 7:
-      startGuyAnimation(spriteTypes.GUY_KNOTTING_NORTH);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      if (tile.construction.actionStep !== 5) {
-        construct(tile, 2);
-      }
-      break;
-    case 8:
-      goToStoredPosition();
-      break;
-    case 9:
-      finishConstruction(tile);
-      if (!state.constructionHints[constructionTypes.FIREPLACE]) {
-        openPaper(texts.FEUERSTELLEHILFE, false);
-        state.constructionHints[constructionTypes.FIREPLACE] = true;
-      }
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkHaus1 = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-
-  if (!tile.construction) {
-    startConstruction(constructionTypes.LADDER, tile.object.x, tile.object.y);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-  
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x - 2,
-        y: tile.object.y + 2
-      });
-      break;
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING);
-      sounds.HAMMERING.instance.play();
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 6:
-    case 7:
-    case 8:
-    case 9:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 1);
-      changeWaterAndFood(-0.5, 0.5);
-      spendMinutes(1);
-      break;
-    case 10:
-    case 11:
-    case 12:
-    case 13:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 2);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 14:
-    case 15:
-    case 16:
-    case 17:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 3);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 18:
-      goToStoredPosition();
-      break;
-    case 19:
-      finishConstruction(tile);
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkHaus2 = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  if (!tile.construction) {
-    startConstruction(constructionTypes.PLATFORM, tile.object.x, tile.object.y);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-  
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x,
-        y: tile.object.y + 1
-      });
-      break;
-    case 2:
-      startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      break;
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 7:
-    case 8:
-    case 9:
-    case 10:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 1);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 11:
-    case 12:
-    case 13:
-    case 14:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 2);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 15:
-    case 16:
-    case 17:
-    case 18:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 3);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 19:
-      startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
-      construct(tile, 4);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      break;
-    case 20:
-      goToStoredPosition();
-      break;
-    case 21:
-      finishConstruction(tile);
-      state.guy.action = null;
-      break;
-  }
-}
-
-const AkHaus3 = () => {
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  if (!tile.construction) {
-    startConstruction(constructionTypes.TREE_HOUSE, tile.object.x, tile.object.y);
-  }
-  if (!CheckRohstoff()) {
-    return;
-  }
-  tile.construction.actionStep++;
-
-  switch (tile.construction.actionStep) {
-    case 1:
-      goToOnTile({
-        x: tile.object.x,
-        y: tile.object.y + 1
-      });
-      break;
-    case 2:
-      startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      break;
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 7:
-    case 8:
-    case 9:
-    case 10:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 1);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 11:
-    case 12:
-    case 13:
-    case 14:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 2);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 15:
-    case 16:
-    case 17:
-    case 18:
-      startGuyAnimation(spriteTypes.GUY_HAMMERING_TOP);
-      sounds.HAMMERING.instance.play();
-      construct(tile, 3);
-      changeWaterAndFood(-0.5, -0.5);
-      spendMinutes(1);
-      break;
-    case 19:
-      startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
-      construct(tile, 4);
-      changeWaterAndFood(-1, -1);
-      spendMinutes(1);
-      break;
-    case 20:
-      goToStoredPosition();
-      break;
-    case 21:
-      finishConstruction(tile);
-      if (!state.constructionHints[constructionTypes.TREE_HOUSE]) {
-        openPaper(texts.HAUS3HILFE, false);
-        state.constructionHints[constructionTypes.TREE_HOUSE] = true;
-      }
-      state.guy.action = null;
       break;
   }
 }

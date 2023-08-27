@@ -964,7 +964,7 @@ const sprites = {
     image: images.GUY,
     x: 622,
     y: 0,
-    width: 7,
+    width: 9,
     height: 34,
     offsetX: -3,
     offsetY: -34,

@@ -5,7 +5,6 @@ import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import calculatePositionInTile from '../../terrain/tiles/calculatePositionInTile.js';
 import goTo from '../../guy/routing/goTo.js';
 import spendMinutes from '../spendMinutes.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
 import changeItem from '../../guy/inventory/changeItem.js';
 import items from '../../guy/inventory/items.js';
 import texts from '../../interface/text/texts.js';
@@ -14,6 +13,7 @@ import isRiver from '../../terrain/objects/isRiver.js';
 import isNormalTree from '../../terrain/objects/isNormalTree.js';
 import isBigTree from '../../terrain/objects/isBigTree.js';
 import openPaper from '../../interface/text/openPaper.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const startDiving = () => {
   startGuyAnimation(spriteTypes.GUY_DIVING_JUMPING);
@@ -86,7 +86,7 @@ const searching = {
     search,
     walkToRandomPosition,
     search,
-    () => isOnSea() ? endDiving() : goToStoredPosition(),
+    () => isOnSea() ? endDiving() : goToCenterOfTile(),
     (tile) => openPaper(find(tile))
   ]
 };

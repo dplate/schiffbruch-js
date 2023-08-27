@@ -1,3 +1,4 @@
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 import goToObject from '../../guy/routing/goToObject.js';
 import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import spriteTypes from '../../images/spriteTypes.js';
@@ -5,7 +6,6 @@ import texts from '../../interface/text/texts.js';
 import state from '../../state/state.js';
 import isUsableFireplace from '../../terrain/objects/isUsableFireplace.js';
 import spendMinutes from '../spendMinutes.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
 
 const lightIt = () => {
   startGuyAnimation(spriteTypes.GUY_LIGHTNING);
@@ -32,7 +32,7 @@ const lightning = {
     () => goToObject(-12, 5),
     lightIt,
     watchFire,
-    goToStoredPosition
+    goToCenterOfTile
   ]
 };
 

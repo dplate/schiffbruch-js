@@ -1,11 +1,13 @@
 import changeWaterAndFood from '../../guy/changeWaterAndFood.js';
+import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 import goToObject from '../../guy/routing/goToObject.js';
-import goToStoredPosition from '../../guy/routing/goToStoredPosition.js';
 import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import spriteTypes from '../../images/spriteTypes.js';
 import texts from '../../interface/text/texts.js';
 import sounds from '../../sounds/sounds.js';
+import state from '../../state/state.js';
 import isDestroyable from '../../terrain/objects/isDestroyable.js';
+import updatePipes from '../../terrain/updatePipes.js';
 import spendMinutes from '../spendMinutes.js';
 
 const chop = () => {
@@ -52,7 +54,7 @@ const destroying = {
     chop,
     hit,
     destroy,
-    goToStoredPosition
+    goToCenterOfTile
   ]
 };
 
