@@ -42,6 +42,10 @@ const images = {
   BUTTONS: {
     file: 'buttons.png',
     instance: null
+  },
+  CREDITS: {
+    file: 'credits.png',
+    instance: null
   }
 };
 

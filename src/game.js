@@ -4,7 +4,6 @@ import setGrounds from './terrain/setGrounds.js';
 import grounds from './terrain/tiles/grounds.js';
 import tileEdges from './terrain/tiles/tileEdges.js';
 import loadImages from './images/loadImages.js';
-import drawSprite from './images/drawSprite.js';
 import createWaves from './terrain/objects/createWaves.js';
 import animateTerrain from './terrain/animateTerrain.js';
 import loadSounds from './sounds/loadSounds.js';
@@ -12,7 +11,6 @@ import playTerrainSounds from './terrain/playTerrainSounds.js';
 import addRiver from './terrain/addRiver.js';
 import spriteTypes from './images/spriteTypes.js';
 import addTrees from './terrain/addTrees.js';
-import sprites from './images/sprites.js';
 import hideTreasure from './treasure/hideTreasure.js';
 import drawTerrain from './terrain/drawTerrain.js';
 import drawTreasureMap from './treasure/drawTreasureMap.js';
@@ -22,7 +20,6 @@ import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import findRoute from './guy/routing/findRoute.js';
 import goToOnTile from './guy/routing/goToOnTile.js';
-import goTo from './guy/routing/goTo.js';
 import goToCenterOfTile from './guy/routing/goToCenterOfTile.js';
 import goToEastOfTile from './guy/routing/goToEastOfTile.js';
 import isOnSea from './guy/isOnSea.js';
@@ -66,31 +63,17 @@ import actionTypes from './action/actionTypes.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import drawPanel from './interface/drawPanel.js';
 import processAction from './action/processAction.js';
+import drawCredits from './credits/drawCredits.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
 const MAXX = 800; //Bildschirmauflösung
 const MAXY = 600;
 
-const CUPFEIL = 34;
-const CURICHTUNG = CUPFEIL + 1;
-const CUUHR = CUPFEIL + 2;
-const PROGRAMMIERUNG = 164;
-const DIRKPLATE = PROGRAMMIERUNG + 1;
-const MATTHIAS = PROGRAMMIERUNG + 2;
-const TOBIAS = PROGRAMMIERUNG + 3;
-const SIGRID = PROGRAMMIERUNG + 4;
-const SOUNDS = PROGRAMMIERUNG + 5;
-const PATHFINDING = PROGRAMMIERUNG + 6;
-const JOHN = PROGRAMMIERUNG + 7;
-const HEIKO = PROGRAMMIERUNG + 8;
-const GISELA = PROGRAMMIERUNG + 9;
-const WEITEREHILFE = PROGRAMMIERUNG + 10;
-const TESTSPIELER = PROGRAMMIERUNG + 11;
-const SCHWARZ = PROGRAMMIERUNG + 12;
-const MUSIK = PROGRAMMIERUNG + 13;
-const DPSOFTWARE = PROGRAMMIERUNG + 14;
-const BILDANZ = DPSOFTWARE + 1; //Wieviele Bilder
+const CUPFEIL = 0;
+const CURICHTUNG = 1;
+const CUUHR = 2;
+const BILDANZ = CUUHR + 1; //Wieviele Bilder
 
 //Spielzustände
 const GAME_WAIT = 'wait';
@@ -102,7 +85,6 @@ const GAME_LOGO = 'logo';
 
 //ddraw
 let textfieldImage = null;
-let creditsImage = null;
 let logoImage = null;
 let cursorsImage = null;
 
@@ -126,9 +108,6 @@ let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig
 let SelectedItem;                //Für Aktionen mit zwei Mausklicks
 let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
 let Spielbeenden = false;    //Wenn true wird das Spiel sofort beendet
-const pi = 3.1415926535;        //pi, was sonst
-let AbspannNr = 0;            //Zähler für Abspann
-let AbspannZustand = 0;            //Wo im Abspann
 
 //Bereiche
 const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
@@ -146,11 +125,6 @@ const Bmp = Array.from(Array(BILDANZ), () => ({
   Hoehe: null,    //Die Hoehe des Bildes
 }));
 
-const AbspannListe = Array.from(Array(10), () => Array.from(Array(10), () => ({
-  Aktiv: null,       //Bewegt sich gerade
-  Bild: null,        //welches Bild
-})));    //Namenabfolge im Abspann
-
 //Bilder
 const loadImage = async (file) => {
   return new Promise((resolve) => {
@@ -163,7 +137,6 @@ const loadImage = async (file) => {
 const initCanvases = async (window) => {
   cursorsImage = await loadImage('cursors.png');
   textfieldImage = await loadImage('textfield.png');
-  creditsImage = await loadImage('credits.png');
   logoImage = await loadImage('logo.png');
 
   const primaryCanvas = window.document.createElement('canvas');
@@ -251,7 +224,7 @@ const LoadGame = () => {
 }
 
 const InitStructs = async () => {
-  let i, k;
+  let i;
 
   //BILD
   //Standardbildinitialisierung
@@ -279,224 +252,6 @@ const InitStructs = async () => {
     Bmp[i].Breite = 18;
     Bmp[i].Hoehe = 18;
   }
-
-  //PROGRAMMIERUNG
-  Bmp[PROGRAMMIERUNG].rcSrc.left = 0;
-  Bmp[PROGRAMMIERUNG].rcSrc.top = 0;
-  Bmp[PROGRAMMIERUNG].rcSrc.right = Bmp[PROGRAMMIERUNG].rcSrc.left + 348;
-  Bmp[PROGRAMMIERUNG].rcSrc.bottom = Bmp[PROGRAMMIERUNG].rcSrc.top + 49;
-  Bmp[PROGRAMMIERUNG].Breite = (Bmp[PROGRAMMIERUNG].rcSrc.right - Bmp[PROGRAMMIERUNG].rcSrc.left);
-  Bmp[PROGRAMMIERUNG].Hoehe = (Bmp[PROGRAMMIERUNG].rcSrc.bottom - Bmp[PROGRAMMIERUNG].rcSrc.top);
-  Bmp[PROGRAMMIERUNG].rcDes.left = Math.floor(MAXX / 2 - Bmp[PROGRAMMIERUNG].Breite / 2);
-  Bmp[PROGRAMMIERUNG].rcDes.top = Math.floor(MAXY - Bmp[PROGRAMMIERUNG].Hoehe / 2);
-  Bmp[PROGRAMMIERUNG].rcDes.right = Bmp[PROGRAMMIERUNG].rcDes.left + Bmp[PROGRAMMIERUNG].Breite;
-  Bmp[PROGRAMMIERUNG].rcDes.bottom = Bmp[PROGRAMMIERUNG].rcDes.top + Bmp[PROGRAMMIERUNG].Hoehe;
-  Bmp[PROGRAMMIERUNG].Surface = creditsImage;
-
-  //DIRKPLATE
-  Bmp[DIRKPLATE].rcSrc.left = 0;
-  Bmp[DIRKPLATE].rcSrc.top = 49;
-  Bmp[DIRKPLATE].rcSrc.right = Bmp[DIRKPLATE].rcSrc.left + 196;
-  Bmp[DIRKPLATE].rcSrc.bottom = Bmp[DIRKPLATE].rcSrc.top + 47;
-  Bmp[DIRKPLATE].Breite = (Bmp[DIRKPLATE].rcSrc.right - Bmp[DIRKPLATE].rcSrc.left);
-  Bmp[DIRKPLATE].Hoehe = (Bmp[DIRKPLATE].rcSrc.bottom - Bmp[DIRKPLATE].rcSrc.top);
-  Bmp[DIRKPLATE].rcDes.left = Math.floor(MAXX / 2 - Bmp[DIRKPLATE].Breite / 2);
-  Bmp[DIRKPLATE].rcDes.top = Math.floor(MAXY - Bmp[DIRKPLATE].Hoehe / 2);
-  Bmp[DIRKPLATE].rcDes.right = Bmp[DIRKPLATE].rcDes.left + Bmp[DIRKPLATE].Breite;
-  Bmp[DIRKPLATE].rcDes.bottom = Bmp[DIRKPLATE].rcDes.top + Bmp[DIRKPLATE].Hoehe;
-  Bmp[DIRKPLATE].Surface = creditsImage;
-
-  //MATTHIAS
-  Bmp[MATTHIAS].rcSrc.left = 0;
-  Bmp[MATTHIAS].rcSrc.top = 96;
-  Bmp[MATTHIAS].rcSrc.right = Bmp[MATTHIAS].rcSrc.left + 379;
-  Bmp[MATTHIAS].rcSrc.bottom = Bmp[MATTHIAS].rcSrc.top + 47;
-  Bmp[MATTHIAS].Breite = (Bmp[MATTHIAS].rcSrc.right - Bmp[MATTHIAS].rcSrc.left);
-  Bmp[MATTHIAS].Hoehe = (Bmp[MATTHIAS].rcSrc.bottom - Bmp[MATTHIAS].rcSrc.top);
-  Bmp[MATTHIAS].rcDes.left = Math.floor(MAXX / 2 - Bmp[MATTHIAS].Breite / 2);
-  Bmp[MATTHIAS].rcDes.top = Math.floor(MAXY - Bmp[MATTHIAS].Hoehe / 2);
-  Bmp[MATTHIAS].rcDes.right = Bmp[MATTHIAS].rcDes.left + Bmp[MATTHIAS].Breite;
-  Bmp[MATTHIAS].rcDes.bottom = Bmp[MATTHIAS].rcDes.top + Bmp[MATTHIAS].Hoehe;
-  Bmp[MATTHIAS].Surface = creditsImage;
-
-  //TESTSPIELER
-  Bmp[TESTSPIELER].rcSrc.left = 0;
-  Bmp[TESTSPIELER].rcSrc.top = 143;
-  Bmp[TESTSPIELER].rcSrc.right = Bmp[TESTSPIELER].rcSrc.left + 210;
-  Bmp[TESTSPIELER].rcSrc.bottom = Bmp[TESTSPIELER].rcSrc.top + 55;
-  Bmp[TESTSPIELER].Breite = (Bmp[TESTSPIELER].rcSrc.right - Bmp[TESTSPIELER].rcSrc.left);
-  Bmp[TESTSPIELER].Hoehe = (Bmp[TESTSPIELER].rcSrc.bottom - Bmp[TESTSPIELER].rcSrc.top);
-  Bmp[TESTSPIELER].rcDes.left = Math.floor(MAXX / 2 - Bmp[TESTSPIELER].Breite / 2);
-  Bmp[TESTSPIELER].rcDes.top = Math.floor(MAXY - Bmp[TESTSPIELER].Hoehe / 2);
-  Bmp[TESTSPIELER].rcDes.right = Bmp[TESTSPIELER].rcDes.left + Bmp[TESTSPIELER].Breite;
-  Bmp[TESTSPIELER].rcDes.bottom = Bmp[TESTSPIELER].rcDes.top + Bmp[TESTSPIELER].Hoehe;
-  Bmp[TESTSPIELER].Surface = creditsImage;
-
-  //TOBIAS
-  Bmp[TOBIAS].rcSrc.left = 0;
-  Bmp[TOBIAS].rcSrc.top = 198;
-  Bmp[TOBIAS].rcSrc.right = Bmp[TOBIAS].rcSrc.left + 273;
-  Bmp[TOBIAS].rcSrc.bottom = Bmp[TOBIAS].rcSrc.top + 56;
-  Bmp[TOBIAS].Breite = (Bmp[TOBIAS].rcSrc.right - Bmp[TOBIAS].rcSrc.left);
-  Bmp[TOBIAS].Hoehe = (Bmp[TOBIAS].rcSrc.bottom - Bmp[TOBIAS].rcSrc.top);
-  Bmp[TOBIAS].rcDes.left = Math.floor(MAXX / 2 - Bmp[TOBIAS].Breite / 2);
-  Bmp[TOBIAS].rcDes.top = Math.floor(MAXY - Bmp[TOBIAS].Hoehe / 2);
-  Bmp[TOBIAS].rcDes.right = Bmp[TOBIAS].rcDes.left + Bmp[TOBIAS].Breite;
-  Bmp[TOBIAS].rcDes.bottom = Bmp[TOBIAS].rcDes.top + Bmp[TOBIAS].Hoehe;
-  Bmp[TOBIAS].Surface = creditsImage;
-
-  //SIGRID
-  Bmp[SIGRID].rcSrc.left = 0;
-  Bmp[SIGRID].rcSrc.top = 254;
-  Bmp[SIGRID].rcSrc.right = Bmp[SIGRID].rcSrc.left + 226;
-  Bmp[SIGRID].rcSrc.bottom = Bmp[SIGRID].rcSrc.top + 56;
-  Bmp[SIGRID].Breite = (Bmp[SIGRID].rcSrc.right - Bmp[SIGRID].rcSrc.left);
-  Bmp[SIGRID].Hoehe = (Bmp[SIGRID].rcSrc.bottom - Bmp[SIGRID].rcSrc.top);
-  Bmp[SIGRID].rcDes.left = Math.floor(MAXX / 2 - Bmp[SIGRID].Breite / 2);
-  Bmp[SIGRID].rcDes.top = Math.floor(MAXY - Bmp[SIGRID].Hoehe / 2);
-  Bmp[SIGRID].rcDes.right = Bmp[SIGRID].rcDes.left + Bmp[SIGRID].Breite;
-  Bmp[SIGRID].rcDes.bottom = Bmp[SIGRID].rcDes.top + Bmp[SIGRID].Hoehe;
-  Bmp[SIGRID].Surface = creditsImage;
-
-  //PATHFINDING
-  Bmp[PATHFINDING].rcSrc.left = 0;
-  Bmp[PATHFINDING].rcSrc.top = 353;
-  Bmp[PATHFINDING].rcSrc.right = Bmp[PATHFINDING].rcSrc.left + 233;
-  Bmp[PATHFINDING].rcSrc.bottom = Bmp[PATHFINDING].rcSrc.top + 59;
-  Bmp[PATHFINDING].Breite = (Bmp[PATHFINDING].rcSrc.right - Bmp[PATHFINDING].rcSrc.left);
-  Bmp[PATHFINDING].Hoehe = (Bmp[PATHFINDING].rcSrc.bottom - Bmp[PATHFINDING].rcSrc.top);
-  Bmp[PATHFINDING].rcDes.left = Math.floor(MAXX / 2 - Bmp[PATHFINDING].Breite / 2);
-  Bmp[PATHFINDING].rcDes.top = Math.floor(MAXY - Bmp[PATHFINDING].Hoehe / 2);
-  Bmp[PATHFINDING].rcDes.right = Bmp[PATHFINDING].rcDes.left + Bmp[PATHFINDING].Breite;
-  Bmp[PATHFINDING].rcDes.bottom = Bmp[PATHFINDING].rcDes.top + Bmp[PATHFINDING].Hoehe;
-  Bmp[PATHFINDING].Surface = creditsImage;
-
-  //JOHN
-  Bmp[JOHN].rcSrc.left = 0;
-  Bmp[JOHN].rcSrc.top = 412;
-  Bmp[JOHN].rcSrc.right = Bmp[JOHN].rcSrc.left + 347;
-  Bmp[JOHN].rcSrc.bottom = Bmp[JOHN].rcSrc.top + 56;
-  Bmp[JOHN].Breite = (Bmp[JOHN].rcSrc.right - Bmp[JOHN].rcSrc.left);
-  Bmp[JOHN].Hoehe = (Bmp[JOHN].rcSrc.bottom - Bmp[JOHN].rcSrc.top);
-  Bmp[JOHN].rcDes.left = Math.floor(MAXX / 2 - Bmp[JOHN].Breite / 2);
-  Bmp[JOHN].rcDes.top = Math.floor(MAXY - Bmp[JOHN].Hoehe / 2);
-  Bmp[JOHN].rcDes.right = Bmp[JOHN].rcDes.left + Bmp[JOHN].Breite;
-  Bmp[JOHN].rcDes.bottom = Bmp[JOHN].rcDes.top + Bmp[JOHN].Hoehe;
-  Bmp[JOHN].Surface = creditsImage;
-
-  //HEIKO
-  Bmp[HEIKO].rcSrc.left = 0;
-  Bmp[HEIKO].rcSrc.top = 468;
-  Bmp[HEIKO].rcSrc.right = Bmp[HEIKO].rcSrc.left + 236;
-  Bmp[HEIKO].rcSrc.bottom = Bmp[HEIKO].rcSrc.top + 47;
-  Bmp[HEIKO].Breite = (Bmp[HEIKO].rcSrc.right - Bmp[HEIKO].rcSrc.left);
-  Bmp[HEIKO].Hoehe = (Bmp[HEIKO].rcSrc.bottom - Bmp[HEIKO].rcSrc.top);
-  Bmp[HEIKO].rcDes.left = Math.floor(MAXX / 2 - Bmp[HEIKO].Breite / 2);
-  Bmp[HEIKO].rcDes.top = Math.floor(MAXY - Bmp[HEIKO].Hoehe / 2);
-  Bmp[HEIKO].rcDes.right = Bmp[HEIKO].rcDes.left + Bmp[HEIKO].Breite;
-  Bmp[HEIKO].rcDes.bottom = Bmp[HEIKO].rcDes.top + Bmp[HEIKO].Hoehe;
-  Bmp[HEIKO].Surface = creditsImage;
-
-  //GISELA
-  Bmp[GISELA].rcSrc.left = 0;
-  Bmp[GISELA].rcSrc.top = 515;
-  Bmp[GISELA].rcSrc.right = Bmp[GISELA].rcSrc.left + 232;
-  Bmp[GISELA].rcSrc.bottom = Bmp[GISELA].rcSrc.top + 47;
-  Bmp[GISELA].Breite = (Bmp[GISELA].rcSrc.right - Bmp[GISELA].rcSrc.left);
-  Bmp[GISELA].Hoehe = (Bmp[GISELA].rcSrc.bottom - Bmp[GISELA].rcSrc.top);
-  Bmp[GISELA].rcDes.left = Math.floor(MAXX / 2 - Bmp[GISELA].Breite / 2);
-  Bmp[GISELA].rcDes.top = Math.floor(MAXY - Bmp[GISELA].Hoehe / 2);
-  Bmp[GISELA].rcDes.right = Bmp[GISELA].rcDes.left + Bmp[GISELA].Breite;
-  Bmp[GISELA].rcDes.bottom = Bmp[GISELA].rcDes.top + Bmp[GISELA].Hoehe;
-  Bmp[GISELA].Surface = creditsImage;
-
-  //WEITEREHILFE
-  Bmp[WEITEREHILFE].rcSrc.left = 0;
-  Bmp[WEITEREHILFE].rcSrc.top = 562;
-  Bmp[WEITEREHILFE].rcSrc.right = Bmp[WEITEREHILFE].rcSrc.left + 258;
-  Bmp[WEITEREHILFE].rcSrc.bottom = Bmp[WEITEREHILFE].rcSrc.top + 46;
-  Bmp[WEITEREHILFE].Breite = (Bmp[WEITEREHILFE].rcSrc.right - Bmp[WEITEREHILFE].rcSrc.left);
-  Bmp[WEITEREHILFE].Hoehe = (Bmp[WEITEREHILFE].rcSrc.bottom - Bmp[WEITEREHILFE].rcSrc.top);
-  Bmp[WEITEREHILFE].rcDes.left = Math.floor(MAXX / 2 - Bmp[WEITEREHILFE].Breite / 2);
-  Bmp[WEITEREHILFE].rcDes.top = Math.floor(MAXY - Bmp[WEITEREHILFE].Hoehe / 2);
-  Bmp[WEITEREHILFE].rcDes.right = Bmp[WEITEREHILFE].rcDes.left + Bmp[WEITEREHILFE].Breite;
-  Bmp[WEITEREHILFE].rcDes.bottom = Bmp[WEITEREHILFE].rcDes.top + Bmp[WEITEREHILFE].Hoehe;
-  Bmp[WEITEREHILFE].Surface = creditsImage;
-
-  //DPSOFTWARE
-  Bmp[DPSOFTWARE].rcSrc.left = 0;
-  Bmp[DPSOFTWARE].rcSrc.top = 608;
-  Bmp[DPSOFTWARE].rcSrc.right = Bmp[DPSOFTWARE].rcSrc.left + 291;
-  Bmp[DPSOFTWARE].rcSrc.bottom = Bmp[DPSOFTWARE].rcSrc.top + 99;
-  Bmp[DPSOFTWARE].Breite = (Bmp[DPSOFTWARE].rcSrc.right - Bmp[DPSOFTWARE].rcSrc.left);
-  Bmp[DPSOFTWARE].Hoehe = (Bmp[DPSOFTWARE].rcSrc.bottom - Bmp[DPSOFTWARE].rcSrc.top);
-  Bmp[DPSOFTWARE].rcDes.left = Math.floor(MAXX / 2 - Bmp[DPSOFTWARE].Breite / 2);
-  Bmp[DPSOFTWARE].rcDes.top = Math.floor(MAXY - Bmp[DPSOFTWARE].Hoehe / 2);
-  Bmp[DPSOFTWARE].rcDes.right = Bmp[DPSOFTWARE].rcDes.left + Bmp[DPSOFTWARE].Breite;
-  Bmp[DPSOFTWARE].rcDes.bottom = Bmp[DPSOFTWARE].rcDes.top + Bmp[DPSOFTWARE].Hoehe;
-  Bmp[DPSOFTWARE].Surface = creditsImage;
-
-  //SCHWARZ
-  Bmp[SCHWARZ].rcSrc.left = 0;
-  Bmp[SCHWARZ].rcSrc.top = 608;
-  Bmp[SCHWARZ].rcSrc.right = Bmp[SCHWARZ].rcSrc.left + 1;
-  Bmp[SCHWARZ].rcSrc.bottom = Bmp[SCHWARZ].rcSrc.top + 1;
-  Bmp[SCHWARZ].Breite = (Bmp[SCHWARZ].rcSrc.right - Bmp[SCHWARZ].rcSrc.left);
-  Bmp[SCHWARZ].Hoehe = (Bmp[SCHWARZ].rcSrc.bottom - Bmp[SCHWARZ].rcSrc.top);
-  Bmp[SCHWARZ].rcDes.left = Math.floor(MAXX / 2 - Bmp[SCHWARZ].Breite / 2);
-  Bmp[SCHWARZ].rcDes.top = Math.floor(MAXY - Bmp[SCHWARZ].Hoehe / 2);
-  Bmp[SCHWARZ].rcDes.right = Bmp[SCHWARZ].rcDes.left + Bmp[SCHWARZ].Breite;
-  Bmp[SCHWARZ].rcDes.bottom = Bmp[SCHWARZ].rcDes.top + Bmp[SCHWARZ].Hoehe;
-  Bmp[SCHWARZ].Surface = creditsImage;
-
-  //SOUNDS
-  Bmp[SOUNDS].rcSrc.left = 0;
-  Bmp[SOUNDS].rcSrc.top = 310;
-  Bmp[SOUNDS].rcSrc.right = Bmp[SOUNDS].rcSrc.left + 144;
-  Bmp[SOUNDS].rcSrc.bottom = Bmp[SOUNDS].rcSrc.top + 43;
-  Bmp[SOUNDS].Breite = (Bmp[SOUNDS].rcSrc.right - Bmp[SOUNDS].rcSrc.left);
-  Bmp[SOUNDS].Hoehe = (Bmp[SOUNDS].rcSrc.bottom - Bmp[SOUNDS].rcSrc.top);
-  Bmp[SOUNDS].rcDes.left = Math.floor(MAXX / 2 - Bmp[SOUNDS].Breite / 2);
-  Bmp[SOUNDS].rcDes.top = Math.floor(MAXY - Bmp[SOUNDS].Hoehe / 2);
-  Bmp[SOUNDS].rcDes.right = Bmp[SOUNDS].rcDes.left + Bmp[SOUNDS].Breite;
-  Bmp[SOUNDS].rcDes.bottom = Bmp[SOUNDS].rcDes.top + Bmp[SOUNDS].Hoehe;
-  Bmp[SOUNDS].Surface = creditsImage;
-
-  //MUSIK
-  Bmp[MUSIK].rcSrc.left = 160;
-  Bmp[MUSIK].rcSrc.top = 310;
-  Bmp[MUSIK].rcSrc.right = Bmp[MUSIK].rcSrc.left + 124;
-  Bmp[MUSIK].rcSrc.bottom = Bmp[MUSIK].rcSrc.top + 39;
-  Bmp[MUSIK].Breite = (Bmp[MUSIK].rcSrc.right - Bmp[MUSIK].rcSrc.left);
-  Bmp[MUSIK].Hoehe = (Bmp[MUSIK].rcSrc.bottom - Bmp[MUSIK].rcSrc.top);
-  Bmp[MUSIK].rcDes.left = Math.floor(MAXX / 2 - Bmp[MUSIK].Breite / 2);
-  Bmp[MUSIK].rcDes.top = Math.floor(MAXY - Bmp[MUSIK].Hoehe / 2);
-  Bmp[MUSIK].rcDes.right = Bmp[MUSIK].rcDes.left + Bmp[MUSIK].Breite;
-  Bmp[MUSIK].rcDes.bottom = Bmp[MUSIK].rcDes.top + Bmp[MUSIK].Hoehe;
-  Bmp[MUSIK].Surface = creditsImage;
-
-  for (i = 0; i < 10; i++) for (k = 0; k < 10; k++) {
-    AbspannListe[i][k].Aktiv = false;
-    AbspannListe[i][k].Bild = -1;
-  }
-  AbspannListe[0][0].Bild = PROGRAMMIERUNG;
-  AbspannListe[0][1].Aktiv = true; //nur den hier true setzen, löst dann alles andere aus
-  AbspannListe[0][1].Bild = DIRKPLATE;
-  AbspannListe[1][0].Bild = MUSIK;
-  AbspannListe[1][1].Bild = HEIKO;
-  AbspannListe[2][0].Bild = SOUNDS;
-  AbspannListe[2][1].Bild = DIRKPLATE;
-  AbspannListe[3][0].Bild = TESTSPIELER;
-  AbspannListe[3][1].Bild = MATTHIAS;
-  AbspannListe[3][2].Bild = TOBIAS;
-  AbspannListe[3][3].Bild = SIGRID;
-  AbspannListe[4][0].Bild = PATHFINDING;
-  AbspannListe[4][1].Bild = JOHN;
-  AbspannListe[5][0].Bild = WEITEREHILFE;
-  AbspannListe[5][1].Bild = HEIKO;
-  AbspannListe[5][2].Bild = GISELA;
-  AbspannListe[6][0].Bild = SCHWARZ;
-  AbspannListe[6][1].Bild = DPSOFTWARE;
 
   CursorTyp = CUPFEIL;
   MouseAktiv = true;
@@ -964,32 +719,6 @@ const Zeige = () => {
   if (Nacht) Fade(100, 0); //Das muß hier stehen, damit man die Textnachricht in der Nacht lesen kann
 }
 
-const ZeigeAbspann = () => {
-  let z;
-
-  sounds.OUTRO.instance.play(true);
-
-  rcRectdes.left = 0;
-  rcRectdes.top = 0;
-  rcRectdes.right = MAXX;
-  rcRectdes.bottom = MAXY;
-  fillCanvas(rcRectdes, 0, 0, 0, 1, canvases.PRIMARY);
-
-  if (AbspannZustand === 0) {
-    ZeichneBilder(Math.floor(MAXX / 2 - Bmp[AbspannListe[AbspannNr][0].Bild].Breite / 2), 100,
-      AbspannListe[AbspannNr][0].Bild, rcGesamt);
-    for (z = 1; z < 10; z++) {
-      if (AbspannListe[AbspannNr][z].Aktiv)
-        AbspannBlt(AbspannListe[AbspannNr][z].Bild,
-          (100 * Math.sin(pi / MAXY * (Bmp[AbspannListe[AbspannNr][z].Bild].rcDes.top +
-            Bmp[AbspannListe[AbspannNr][z].Bild].Hoehe / 2))));
-    }
-  }
-  else if (AbspannZustand === 1) {
-    drawSprite(guySpritesForAbspann[Math.floor(AbspannNr / 10)], AbspannNr % 10, MAXX / 2, MAXY / 2 + 50, 10)
-  }
-}
-
 const ZeigeLogo = () => {
   fillCanvas({ left: 0, top: 0, right: MAXX, bottom: MAXY }, 0, 0, 0, 1, canvases.PRIMARY);
 
@@ -1005,123 +734,6 @@ const ZeigeLogo = () => {
   drawImage(logoImage, canvases.PRIMARY);
 
   sounds.LOGO.instance.play(true);
-}
-
-const AbspannBlt = (Bild, Prozent) => {
-  rcRectsrc.left = Bmp[Bild].rcSrc.left;
-  rcRectsrc.top = Bmp[Bild].rcSrc.top;
-  rcRectsrc.right = Bmp[Bild].rcSrc.right;
-  rcRectsrc.bottom = Bmp[Bild].rcSrc.bottom;
-  rcRectdes.left = Bmp[Bild].rcDes.left;
-  rcRectdes.top = Bmp[Bild].rcDes.top;
-  rcRectdes.right = Bmp[Bild].rcDes.right;
-  rcRectdes.bottom = Bmp[Bild].rcDes.bottom;
-  canvases.PRIMARY.globalAlpha = Prozent / 100;
-  drawImage(creditsImage, canvases.PRIMARY);
-  canvases.PRIMARY.globalAlpha = 1;
-}
-
-const guySpritesForAbspann = [
-  spriteTypes.GUY_WALKING_WEST,
-  spriteTypes.GUY_WALKING_NORTH,
-  spriteTypes.GUY_WALKING_EAST,
-  spriteTypes.GUY_WALKING_SOUTH,
-  spriteTypes.GUY_SEARCHING,
-  spriteTypes.GUY_EATING,
-  spriteTypes.GUY_DRINKING,
-  spriteTypes.GUY_CHOPPING,
-  spriteTypes.GUY_HARROWING,
-  spriteTypes.GUY_LIGHTNING,
-  spriteTypes.GUY_LOOKING,
-  spriteTypes.GUY_SHOVELING,
-  spriteTypes.GUY_KNOTTING_NORTH,
-  spriteTypes.GUY_KNOTTING_SOUTH,
-  spriteTypes.GUY_SLINGING,
-  spriteTypes.GUY_LAYING_DOWN,
-  spriteTypes.GUY_SLEEPING,
-  spriteTypes.GUY_STANDING_UP,
-  spriteTypes.GUY_FISHING_SWINGING_WEST,
-  spriteTypes.GUY_FISHING_WEST,
-  spriteTypes.GUY_FISHING_CATCHING_WEST,
-  spriteTypes.GUY_FISHING_SWINGING_NORTH,
-  spriteTypes.GUY_FISHING_NORTH,
-  spriteTypes.GUY_FISHING_CATCHING_NORTH,
-  spriteTypes.GUY_FISHING_SWINGING_EAST,
-  spriteTypes.GUY_FISHING_EAST,
-  spriteTypes.GUY_FISHING_CATCHING_EAST,
-  spriteTypes.GUY_FISHING_SWINGING_SOUTH,
-  spriteTypes.GUY_FISHING_SOUTH,
-  spriteTypes.GUY_FISHING_CATCHING_SOUTH,
-  spriteTypes.GUY_HITTING,
-  spriteTypes.GUY_HAMMERING,
-  spriteTypes.GUY_CLIMBING_UP,
-  spriteTypes.GUY_CLIMBING_DOWN,
-  spriteTypes.GUY_WAITING,
-  spriteTypes.GUY_LAYING_DOWN,
-  spriteTypes.GUY_DYING,
-  spriteTypes.GUY_SAILING,
-  spriteTypes.GUY_TANKING,
-  spriteTypes.GUY_SWIMMING,
-  spriteTypes.GUY_PADDLING_WEST,
-  spriteTypes.GUY_PADDLING_NORTH,
-  spriteTypes.GUY_PADDLING_EAST,
-  spriteTypes.GUY_PADDLING_SOUTH,
-  spriteTypes.GUY_FISHING_SWINGING_BOAT,
-  spriteTypes.GUY_FISHING_BOAT,
-  spriteTypes.GUY_FISHING_CATCHING_BOAT,
-  spriteTypes.GUY_DIVING_JUMPING,
-  spriteTypes.GUY_DIVING,
-  spriteTypes.GUY_DIVING_CLIMBING,
-  spriteTypes.GUY_WAITING_BOAT,
-  spriteTypes.GUY_DYING_BOAT,
-];
-
-const AbspannCalc = () => {
-  let i, k;
-
-  if (AbspannZustand === 0) {
-    for (k = 1; k < 10; k++) {
-      if (AbspannListe[AbspannNr][k].Bild === -1) break;
-      if (!AbspannListe[AbspannNr][k].Aktiv) continue;
-      i = Math.floor(150 / framesPerSecond);
-      Bmp[AbspannListe[AbspannNr][k].Bild].rcDes.top -= i;
-      Bmp[AbspannListe[AbspannNr][k].Bild].rcDes.bottom -= i;
-
-      if (Bmp[AbspannListe[AbspannNr][k].Bild].rcDes.top < MAXY - 400) {
-        if ((!AbspannListe[AbspannNr][k + 1].Aktiv) &&
-          (AbspannListe[AbspannNr][k + 1].Bild !== -1))
-          AbspannListe[AbspannNr][k + 1].Aktiv = true;
-      }
-      if (Bmp[AbspannListe[AbspannNr][k].Bild].rcDes.top < 0) {
-        AbspannListe[AbspannNr][k].Aktiv = false;
-        Bmp[AbspannListe[AbspannNr][k].Bild].rcDes.top = Math.floor(MAXY - Bmp[AbspannListe[AbspannNr][k].Bild].Hoehe / 2);
-        Bmp[AbspannListe[AbspannNr][k].Bild].rcDes.bottom = Bmp[AbspannListe[AbspannNr][k].Bild].rcDes.top + Bmp[AbspannListe[AbspannNr][k].Bild].Hoehe;
-        if (!AbspannListe[AbspannNr][k + 1].Aktiv) {
-          if (AbspannListe[AbspannNr + 1][0].Bild !== -1) {
-            AbspannNr++;
-            AbspannListe[AbspannNr][1].Aktiv = true;
-          } else {
-            AbspannNr = 0;
-            AbspannZustand = 1;
-            break;
-          }
-        }
-      }
-    }
-  }
-  else if (AbspannZustand === 1) {
-    const sprite = sprites[guySpritesForAbspann[Math.floor(AbspannNr / 10)]];
-    i = Math.round(framesPerSecond / sprite.speed);
-    if (i < 1) i = 1;
-    if (frame % i === 0) {
-      AbspannNr++;
-      const frame = AbspannNr % 10;
-      if (frame >= sprite.frameCount) {
-        AbspannNr = Math.floor(AbspannNr / 10) * 10 + 10;
-        if (Math.floor(AbspannNr / 10) >= guySpritesForAbspann.length) AbspannNr = 0;
-      }
-    }
-  }
 }
 
 const ZeichneBilder = (x, y, i, Ziel) => {
@@ -1656,8 +1268,7 @@ const refresh = (timestamp) => {
 
   } else if (Spielzustand === GAME_CREDITS) {
     if (CheckKey() === 0) return false;
-    AbspannCalc();
-    ZeigeAbspann();
+    drawCredits(frame, framesPerSecond);
   }
   return true;
 }
