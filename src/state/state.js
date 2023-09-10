@@ -1,3 +1,5 @@
+import phases from './phases.js';
+
 const state = {
   terrain: Array.from(
     Array(61), () => Array.from(
@@ -40,7 +42,8 @@ const state = {
     day: null,
     minutes: null,
   },
-  paper: null
+  paper: null,
+  phase: phases.LOGO,
 };
 
 export default state;

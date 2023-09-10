@@ -64,6 +64,7 @@ import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import drawPanel from './interface/drawPanel.js';
 import processAction from './action/processAction.js';
 import drawCredits from './credits/drawCredits.js';
+import phases from './state/phases.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -74,14 +75,6 @@ const CUPFEIL = 0;
 const CURICHTUNG = 1;
 const CUUHR = 2;
 const BILDANZ = CUUHR + 1; //Wieviele Bilder
-
-//Spielzustände
-const GAME_WAIT = 'wait';
-const GAME_INTRO = 'intro';
-const GAME_PLAY = 'play';
-const GAME_CREDITS = 'credits';
-const GAME_OUTRO = 'outro';
-const GAME_LOGO = 'logo';
 
 //ddraw
 let textfieldImage = null;
@@ -96,7 +89,6 @@ const mouseUpdates = {
 };
 const pressedKeyCodes = {};
 
-let Spielzustand = GAME_LOGO;       // in welchem Zustand ist das Spiel?
 let MouseAktiv = false;    // Mouse angestellt?
 let CursorTyp;        //Welcher Cursortyp?
 let Button0down;    //linke Maustaste gedrückt gehalten
@@ -194,10 +186,7 @@ const initInput = (window) => {
 }
 
 const SaveGame = () => {
-  window.localStorage.setItem('stateV10', JSON.stringify({
-    ...state,
-    Spielzustand
-  }));
+  window.localStorage.setItem('stateV10', JSON.stringify(state));
 }
 
 const LoadGame = () => {
@@ -213,12 +202,8 @@ const LoadGame = () => {
     console.warn('Cannot parse saved game, ignoring...', error)
     return false;
   };
-  for (const key in parsedState) {
-    state[key] = parsedState[key];
-  }
+  Object.assign(state, parsedState);
   state.paper = null;
-
-  Spielzustand = state.Spielzustand;
 
   return true;
 }
@@ -424,14 +409,14 @@ const CheckKey = () => {
   const DIK_I = 'KeyI';
   const DIK_W = 'KeyW';
 
-  if (Spielzustand === GAME_LOGO) {
+  if (state.phase === phases.LOGO) {
     //Logo Abbrechen
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
       sounds.LOGO.instance.stop();
       startGame(false);
       return (2);
     }
-  } else if (Spielzustand === GAME_INTRO) {
+  } else if (state.guy.action?.type === actionTypes.ARRIVING) {
     //Intro Abbrechen
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
       sounds.STORM.instance.stop();
@@ -452,17 +437,17 @@ const CheckKey = () => {
 
       state.guy.sprite = spriteTypes.GUY_WAITING;
       state.guy.action = null;
-      Spielzustand = GAME_PLAY;
+      state.phase = phases.PLAY;
       SaveGame();
       return (2);
     }
-  } else if (Spielzustand === GAME_OUTRO) {
+  } else if (state.guy.action?.type === actionTypes.LEAVING) {
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
       audio.stopAll();
-      Spielzustand = GAME_CREDITS;
+      state.phase = phases.CREDITS;
       return (2);
     }
-  } else if (Spielzustand === GAME_PLAY) {
+  } else if (state.phase === phases.PLAY) {
     if (pressedKeyCodes[DIK_RIGHT]) state.camera.x += 10;
     if (pressedKeyCodes[DIK_LEFT]) state.camera.x -= 10;
     if (pressedKeyCodes[DIK_DOWN]) state.camera.y += 10;
@@ -508,7 +493,7 @@ const CheckKey = () => {
 
       state.guy.chance += 10;
     }
-  } else if (Spielzustand === GAME_CREDITS) {
+  } else if (state.phase === phases.CREDITS) {
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
       return (0);
     }
@@ -617,8 +602,6 @@ const InRect = (x, y, rcRect) => {
 }
 
 const startGame = async (newGame) => {
-  Spielzustand = GAME_WAIT;
-
   await InitStructs();
 
   if (newGame || !LoadGame()) {
@@ -656,7 +639,7 @@ const startGame = async (newGame) => {
     state.calendar.day = 1;
     state.calendar.minutes = 0;
 
-    Spielzustand = GAME_INTRO;
+    state.phase = phases.PLAY;
     state.guy.sprite = spriteTypes.GUY_SAILING;
     startAction(actionTypes.ARRIVING);
   }
@@ -667,6 +650,19 @@ const startGame = async (newGame) => {
 
   updateMinimap();
 }
+
+const ZeigeCursor = () => {
+  if (CursorTyp === CUPFEIL) ZeichneBilder(MousePosition.x, MousePosition.y, CursorTyp, rcGesamt);
+  else if (items.list.includes(CursorTyp)) {
+    const position = {
+      x: MousePosition.x - itemSprites[CursorTyp].width / 2,
+      y: MousePosition.y - itemSprites[CursorTyp].height / 2
+    };
+    drawItem(CursorTyp, position);
+  } else {
+    ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2, MousePosition.y - Bmp[CursorTyp].Hoehe / 2, CursorTyp, rcGesamt);
+  }
+};
 
 const Zeige = () => {
   drawTerrain(state.camera, false);
@@ -705,16 +701,7 @@ const Zeige = () => {
   }
 
   //Cursor
-  if (CursorTyp === CUPFEIL) ZeichneBilder(MousePosition.x, MousePosition.y, CursorTyp, rcGesamt);
-  else if (items.list.includes(CursorTyp)) {
-    const position = {
-      x: MousePosition.x - itemSprites[CursorTyp].width / 2,
-      y: MousePosition.y - itemSprites[CursorTyp].height / 2
-    };
-    drawItem(CursorTyp, position);
-  } else {
-    ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2, MousePosition.y - Bmp[CursorTyp].Hoehe / 2, CursorTyp, rcGesamt);
-  }
+  ZeigeCursor();
 
   if (Nacht) Fade(100, 0); //Das muß hier stehen, damit man die Textnachricht in der Nacht lesen kann
 }
@@ -835,7 +822,7 @@ const AkIntro = () => {
       break;
     case 5:
       updateCamera(state.guy.position, false);
-      Spielzustand = GAME_PLAY;
+      state.phase = phases.PLAY
       state.guy.action = null;
       openPaper(texts.INTROTEXT, false);
       SaveGame();
@@ -899,7 +886,7 @@ const AkSpielverlassen = () => {
           SaveGame();
         }
         audio.stopAll();
-        Spielzustand = GAME_CREDITS;
+        state.phase = phases.CREDITS;
       }
       closePaper();
       break;
@@ -933,7 +920,7 @@ const AkTod = () => {
         startGame(false)
       } else {
         audio.stopAll();
-        Spielzustand = GAME_CREDITS;
+        state.phase = phases.CREDITS;
       };
       closePaper();
       break;
@@ -1111,9 +1098,7 @@ const AkGerettet = () => {
       openPaper(texts.GERETTET, true);
       break;
     case 3:
-      if (state.paper.question.answer) {
-        Spielzustand = GAME_OUTRO;
-      } else {
+      if (!state.paper.question.answer) {
         state.guy.action = null;
       }
       closePaper();
@@ -1157,7 +1142,7 @@ const AkGerettet = () => {
       sounds.STORM.instance.stop();
       audio.stopAll();
       state.guy.action = null;
-      Spielzustand = GAME_CREDITS;
+      state.phase = phases.CREDITS;
       break;
   }
 }
@@ -1231,13 +1216,11 @@ const refresh = (timestamp) => {
     if (framesPerSecond === 0) framesPerSecond = 50;
   }
 
-  if (Spielzustand === GAME_WAIT) {
-    return true;
-  } else if (Spielzustand === GAME_LOGO) {
+  if (state.phase === phases.LOGO) {
     if (CheckKey() === 2) return true;    //Das Keyboard abfragen
     ZeigeLogo(); //Bild auffrischen
 
-  } else if ((Spielzustand === GAME_INTRO) || (Spielzustand === GAME_OUTRO)) {
+  } else if (state.guy.action?.type === actionTypes.ARRIVING || state.guy.action?.type === actionTypes.LEAVING) {
     if (CheckKey() === 2) return true;    //Das Keyboard abfragen
     Animationen();  //Animationen weiterschalten
     discoverTerrain();
@@ -1246,7 +1229,14 @@ const refresh = (timestamp) => {
     processAction();
     Event(); //Aktionen starten
     drawTerrain(state.camera, false);
-  } else if (Spielzustand === GAME_PLAY) {
+
+    if (state.paper) {
+      if (MouseAktiv) CheckMouse();    //Den MouseZustand abchecken
+      drawPaper();
+      ZeigeCursor();
+    };
+
+  } else if (state.phase === phases.PLAY) {
     if (state.calendar.minutes > (12 * 60) && (state.guy.action?.type !== actionTypes.ENDING_DAY))  //Hier ist der Tag zuende
     {
       if (state.guy.action?.type === actionTypes.LOOKING) {
@@ -1266,7 +1256,7 @@ const refresh = (timestamp) => {
     Zeige();//Das Bild zeichnen
     if (Spielbeenden) return false;
 
-  } else if (Spielzustand === GAME_CREDITS) {
+  } else if (state.phase === phases.CREDITS) {
     if (CheckKey() === 0) return false;
     drawCredits(frame, framesPerSecond);
   }

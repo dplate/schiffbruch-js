@@ -36,6 +36,9 @@ const checkForRescue = (minutes) => {
 };
 
 const spendMinutes = (minutes) => {
+  if (state.guy?.action.type === actionTypes.ARRIVING || state.guy?.action.type === actionTypes.LEAVING) {
+    return;
+  }
   state.calendar.minutes += minutes;
 
   state.terrain.forEach((terrainColumn) => {
