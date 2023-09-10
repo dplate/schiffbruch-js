@@ -5,6 +5,7 @@ import changeHealth from '../guy/changeHealth.js';
 import state from '../state/state.js';
 import startAction from './startAction.js';
 import actionTypes from './actionTypes.js';
+import actions from './actions.js';
 
 const removeObjectsWithLifetime = (minutes, tile) => {
   if (tile.object?.lifetime) {
@@ -36,7 +37,7 @@ const checkForRescue = (minutes) => {
 };
 
 const spendMinutes = (minutes) => {
-  if (state.guy?.action.type === actionTypes.ARRIVING || state.guy?.action.type === actionTypes.LEAVING) {
+  if (actions[state.guy.action?.type]?.noTimeProgress) {
     return;
   }
   state.calendar.minutes += minutes;

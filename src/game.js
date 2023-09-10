@@ -19,11 +19,9 @@ import addShipWreck from './terrain/addShipWreck.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import findRoute from './guy/routing/findRoute.js';
-import goToOnTile from './guy/routing/goToOnTile.js';
 import goToCenterOfTile from './guy/routing/goToCenterOfTile.js';
 import goToEastOfTile from './guy/routing/goToEastOfTile.js';
 import isOnSea from './guy/isOnSea.js';
-import changeHealth from './guy/changeHealth.js';
 import createInventory from './guy/inventory/createInventory.js';
 import items from './guy/inventory/items.js';
 import changeItem from './guy/inventory/changeItem.js';
@@ -36,10 +34,6 @@ import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
 import sounds from './sounds/sounds.js';
 import startGuyAnimation from './guy/startGuyAnimation.js';
-import isUsableTent from './terrain/objects/isUsableTent.js';
-import isUsableTreeHouse from './terrain/objects/isUsableTreeHouse.js';
-import findNeighbor from './guy/findNeighbor.js';
-import pauseConstruction from './construction/pauseConstruction.js';
 import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
@@ -49,7 +43,6 @@ import openPaper from './interface/text/openPaper.js';
 import canvases from './images/canvases.js';
 import getTileByPosition from './terrain/getTileByPosition.js';
 import texts from './interface/text/texts.js';
-import openDayEndPaper from './interface/text/openDayEndPaper.js';
 import drawStatusText from './interface/text/drawStatusText.js';
 import drawTileText from './terrain/tiles/drawTileText.js';
 import moveCameraFromMinimap from './interface/minimap/moveCameraFromMinimap.js';
@@ -65,6 +58,9 @@ import drawPanel from './interface/drawPanel.js';
 import processAction from './action/processAction.js';
 import drawCredits from './credits/drawCredits.js';
 import phases from './state/phases.js';
+import saveState from './state/saveState.js';
+import loadState from './state/loadState.js';
+import fade from './images/fade.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -98,8 +94,6 @@ let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
 let SelectedItem;                //Für Aktionen mit zwei Mausklicks
-let Nacht;                    //Wird die Tageszusammenfassung angezeigt?
-let Spielbeenden = false;    //Wenn true wird das Spiel sofort beendet
 
 //Bereiche
 const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
@@ -185,29 +179,6 @@ const initInput = (window) => {
   });
 }
 
-const SaveGame = () => {
-  window.localStorage.setItem('stateV10', JSON.stringify(state));
-}
-
-const LoadGame = () => {
-  const rawState = window.localStorage.getItem('stateV10');
-  if (!rawState) {
-    return false;
-  }
-
-  let parsedState = null;
-  try {
-    parsedState = JSON.parse(rawState);
-  } catch (error) {
-    console.warn('Cannot parse saved game, ignoring...', error)
-    return false;
-  };
-  Object.assign(state, parsedState);
-  state.paper = null;
-
-  return true;
-}
-
 const InitStructs = async () => {
   let i;
 
@@ -241,11 +212,9 @@ const InitStructs = async () => {
   CursorTyp = CUPFEIL;
   MouseAktiv = true;
   SelectedItem = null;
-  Nacht = false;
   framesPerSecond = 100;
   frame = 0;
   timestampInSeconds = 0;
-  Spielbeenden = false;
   MousePosition.x = MAXX / 2;
   MousePosition.y = MAXY / 2;
   Button0down = false;
@@ -438,7 +407,7 @@ const CheckKey = () => {
       state.guy.sprite = spriteTypes.GUY_WAITING;
       state.guy.action = null;
       state.phase = phases.PLAY;
-      SaveGame();
+      saveState();
       return (2);
     }
   } else if (state.guy.action?.type === actionTypes.LEAVING) {
@@ -604,7 +573,7 @@ const InRect = (x, y, rcRect) => {
 const startGame = async (newGame) => {
   await InitStructs();
 
-  if (newGame || !LoadGame()) {
+  if (newGame || !loadState()) {
     //Für die Statusanzeige
     rcRectdes.left = 0;
     rcRectdes.top = 0;
@@ -621,6 +590,9 @@ const startGame = async (newGame) => {
 
     state.treasure = hideTreasure();
     addPirateWreck();
+
+    drawTreasureMap();
+    updateMinimap();
 
     //Guy Position
     state.guy.tile.x = 1;
@@ -643,12 +615,6 @@ const startGame = async (newGame) => {
     state.guy.sprite = spriteTypes.GUY_SAILING;
     startAction(actionTypes.ARRIVING);
   }
-
-  closePaper();
-
-  drawTreasureMap();
-
-  updateMinimap();
 }
 
 const ZeigeCursor = () => {
@@ -686,24 +652,19 @@ const Zeige = () => {
   blitText(textAreas.TIME);
 
   //Alles schwarz übermalen und nur das Papier mit Text anzeigen
-  if (Nacht) {
+  if ((state.guy.action?.type === actionTypes.ENDING_DAY ||
+    state.guy.action?.type === actionTypes.DYING) && state.paper) {
     rcRectdes.left = 0;
     rcRectdes.top = 0;
     rcRectdes.right = MAXX;
     rcRectdes.bottom = MAXY;
     fillCanvas(rcRectdes, 0, 0, 0, 1, canvases.PRIMARY);
-
-    if (state.paper) {
-      drawPaper();
-    };
-  
-    Fade(100, 0);
+    fade(100, 0);
+    drawPaper();
   }
 
   //Cursor
   ZeigeCursor();
-
-  if (Nacht) Fade(100, 0); //Das muß hier stehen, damit man die Textnachricht in der Nacht lesen kann
 }
 
 const ZeigeLogo = () => {
@@ -761,9 +722,6 @@ const Event = () => {
   }
   state.guy.route = [];
   switch (state.guy.action.type) {
-    case actionTypes.ENDING_DAY:
-      AkTagEnde();
-      break;
     case actionTypes.LEAVING:
       AkGerettet();
       break;
@@ -825,7 +783,7 @@ const AkIntro = () => {
       state.phase = phases.PLAY
       state.guy.action = null;
       openPaper(texts.INTROTEXT, false);
-      SaveGame();
+      saveState();
       break;
   }
 }
@@ -843,7 +801,6 @@ const AkNeubeginnen = () => {
       state.guy.action = null;
       if (state.paper.question.answer) {
         startGame(true);
-        return;
       }
       closePaper();
       break;
@@ -883,7 +840,7 @@ const AkSpielverlassen = () => {
       state.guy.action = null;
       if (state.paper.question.answer) {
         if (state.guy.health > 10) {
-          SaveGame();
+          saveState();
         }
         audio.stopAll();
         state.phase = phases.CREDITS;
@@ -905,16 +862,13 @@ const AkTod = () => {
       }
       break;
     case 3:
-      Nacht = false;
-      Fade(100, 1);
+      fade(100, 1);
       startGuyAnimation(isOnSea() ? spriteTypes.GUY_DYING_BOAT : spriteTypes.GUY_DYING);
       break;
     case 4:
-      Nacht = true;
       openPaper(texts.TAGNEU, true);
       break;
     case 5:
-      Nacht = false;
       state.guy.action = null;
       if (state.paper.question.answer) {
         startGame(false)
@@ -923,165 +877,6 @@ const AkTod = () => {
         state.phase = phases.CREDITS;
       };
       closePaper();
-      break;
-  }
-}
-
-const AkTagEnde = () => {
-  const alreadyAtSleepPosition = state.guy.sprite === spriteTypes.GUY_SLEEPING_TENT ||
-    state.guy.sprite === spriteTypes.GUY_SLEEPING ||
-    state.guy.sprite === spriteTypes.GUY_SLEEPING_HOUSE ||
-    isOnSea();
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-  const tent = isUsableTent(tile);
-  const house = isUsableTreeHouse(tile);
-
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      state.calendar.minutes = 12 * 60;
-      if (alreadyAtSleepPosition) break;
-      pauseConstruction();
-      break;
-    case 2:
-      state.calendar.minutes = 12 * 60;
-      if (alreadyAtSleepPosition) break;
-      const neighborWithHouse = findNeighbor(isUsableTreeHouse, false);
-      const neighborWithTent = findNeighbor(isUsableTent, false);
-      const neighbor = neighborWithHouse || neighborWithTent;
-      if (neighbor) {
-        state.guy.tile.x = neighbor.x;
-        state.guy.tile.y = neighbor.y;
-        const tile = state.terrain[neighbor.x][neighbor.y];
-        if (neighborWithHouse) {
-          goToOnTile({
-            x: tile.object.x + 1,
-            y: tile.object.y + 1
-          });
-        } else {
-          goToOnTile({
-            x: tile.object.x - 10,
-            y: tile.object.y + 5
-          });
-        }
-      }
-      break;
-    case 3:
-      state.calendar.minutes = 12 * 60;
-      if (alreadyAtSleepPosition) break;
-      if (house) {
-        startGuyAnimation(spriteTypes.GUY_CLIMBING_UP);
-      }
-      break;
-    case 4:
-      Fade(0, 3);
-      state.calendar.minutes = 12 * 60;
-      if (alreadyAtSleepPosition) break;
-      if (tent) {
-        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_TENT);
-      } else if (house) {
-        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN_HOUSE);
-      } else {
-        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
-      }
-      break;
-    case 5:
-      state.calendar.minutes = 12 * 60;
-      if (isOnSea()) break;
-      if (tent) {
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
-      } else if (house) {
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
-      } else startGuyAnimation(spriteTypes.GUY_SLEEPING);
-      sounds.SNORING.instance.play();
-      break;
-    case 6:
-      state.calendar.minutes = 12 * 60;
-      if (isOnSea()) break;
-      if (tent)
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
-      else if (house)
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
-      else startGuyAnimation(spriteTypes.GUY_SLEEPING);
-      sounds.SNORING.instance.play();
-      break;
-    case 7:
-      Nacht = true;
-      state.calendar.minutes = 12 * 60;
-      sounds.WOLF.instance.play();
-
-      //Je nach Schlafort Zustand verändern
-      if (tent) {
-        changeHealth(-5);
-        if (state.guy.health <= 0) {
-          openDayEndPaper(texts.TAGENDE5);
-          startAction(actionTypes.DYING);
-          state.guy.action.step = 2;
-          state.calendar.minutes = 0;
-        } else {
-          openPaper(texts.TAGENDE2, false);
-        }
-      } else if (house) {
-        changeHealth(20);
-        openDayEndPaper(texts.TAGENDE4);
-      } else if (isOnSea()) {
-        openDayEndPaper(texts.TAGENDE3);
-        startAction(actionTypes.DYING);
-        state.guy.action.step = 2;
-        state.calendar.minutes = 0;
-      } else {
-        changeHealth(-20);
-        if (state.guy.health <= 0) {
-          openDayEndPaper(texts.TAGENDE5);
-          startAction(actionTypes.DYING);
-          state.guy.action.step = 2;
-          state.calendar.minutes = 0;
-        } else {
-          openDayEndPaper(texts.TAGENDE1);
-        }
-      }
-      break;
-    case 8:
-      Fade(0, 0);
-      Nacht = false;
-      state.calendar.day++;
-      state.calendar.minutes = 0;
-      if (tent)
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
-      else if (house)
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
-      else startGuyAnimation(spriteTypes.GUY_SLEEPING);
-      sounds.SNORING.instance.play();
-      break;
-    case 9:
-      Fade(100, 2);
-      state.calendar.minutes = 0;
-      if (tent)
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_TENT);
-      else if (house)
-        startGuyAnimation(spriteTypes.GUY_SLEEPING_HOUSE);
-      else startGuyAnimation(spriteTypes.GUY_SLEEPING);
-      sounds.SNORING.instance.play();
-      break;
-    case 10:
-      state.calendar.minutes = 0;
-      sounds.SNORING.instance.stop();
-      if (house) {
-        startGuyAnimation(spriteTypes.GUY_STANDING_UP_HOUSE);
-      } else startGuyAnimation(spriteTypes.GUY_STANDING_UP);
-      break;
-    case 11:
-      state.calendar.minutes = 0;
-      if (house) {
-        startGuyAnimation(spriteTypes.GUY_CLIMBING_DOWN);
-      }
-      break;
-    case 12:
-      state.calendar.minutes = 0;
-
-      goToCenterOfTile();
-      state.guy.action = null;
-      if (state.guy.health > 10) SaveGame();
       break;
   }
 }
@@ -1145,11 +940,6 @@ const AkGerettet = () => {
       state.phase = phases.CREDITS;
       break;
   }
-}
-
-const Fade = (intensity, smooth) => {
-  canvases.PRIMARY.canvas.style.transition = `${smooth}s filter ease-in-out`;
-  canvases.PRIMARY.canvas.style.filter = `brightness(${intensity}%) saturate(${intensity}%)`;
 }
 
 const CheckBenutze = (item) => {
@@ -1254,7 +1044,6 @@ const refresh = (timestamp) => {
     processAction();
     Event();  //Die Aktionen starten
     Zeige();//Das Bild zeichnen
-    if (Spielbeenden) return false;
 
   } else if (state.phase === phases.CREDITS) {
     if (CheckKey() === 0) return false;

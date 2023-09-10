@@ -21,12 +21,13 @@ import slinging from './actions/slinging.js';
 import stopping from './actions/stopping.js';
 import undocking from './actions/undocking.js';
 import docking from './actions/docking.js';
+import endingDay from './actions/endingDay.js';
 
 const actions = {
   [actionTypes.STOPPING_GAME]: {},
   [actionTypes.RESTARTING_GAME]: {},
   [actionTypes.DYING]: {},
-  [actionTypes.ENDING_DAY]: {},
+  [actionTypes.ENDING_DAY]: endingDay,
   [actionTypes.RESTARTING_DAY]: {},
   [actionTypes.ARRIVING]: {},
   [actionTypes.LEAVING]: {},
