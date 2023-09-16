@@ -725,9 +725,6 @@ const Event = () => {
     case actionTypes.LEAVING:
       AkGerettet();
       break;
-    case actionTypes.ARRIVING:
-      AkIntro();
-      break;
     case actionTypes.STOPPING_GAME:
       AkSpielverlassen();
       break;
@@ -739,51 +736,6 @@ const Event = () => {
       break;
     case actionTypes.DYING:
       AkTod();
-      break;
-  }
-}
-
-const AkIntro = () => {
-  let x;
-  const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      //Intro Route herstellen
-      state.guy.active = true;
-      for (x = state.guy.tile.x; x < MAXXKACH; x++)//Zielkoordinate für Introroute finden
-      {
-        if (state.terrain[x][state.guy.tile.y].ground !== grounds.SEA) break;
-      }
-      state.guy.route = findRoute({ x: x - 2, y: state.guy.tile.y });
-      sounds.STORM.instance.play(true);
-      break;
-    case 2:
-      startGuyAnimation(spriteTypes.GUY_TANKING);
-      sounds.STORM.instance.stop();
-      sounds.SPLASH.instance.play();
-      sounds.CRASHING.instance.play();
-      break;
-    case 3:
-      addShipWreck(tile);
-      state.guy.tile.x += 1;
-      goToEastOfTile();
-      discoverTerrain();
-      state.guy.sprite = spriteTypes.GUY_SWIMMING;
-      sounds.SWIMMING.instance.play(true);
-      break;
-    case 4:
-      state.guy.tile.x += 1;
-      sounds.SWIMMING.instance.stop();
-      goToCenterOfTile();
-      break;
-    case 5:
-      updateCamera(state.guy.position, false);
-      state.phase = phases.PLAY
-      state.guy.action = null;
-      openPaper(texts.INTROTEXT, false);
-      saveState();
       break;
   }
 }

@@ -22,6 +22,7 @@ import stopping from './actions/stopping.js';
 import undocking from './actions/undocking.js';
 import docking from './actions/docking.js';
 import endingDay from './actions/endingDay.js';
+import arriving from './actions/arriving.js';
 
 const actions = {
   [actionTypes.STOPPING_GAME]: {},
@@ -29,7 +30,7 @@ const actions = {
   [actionTypes.DYING]: {},
   [actionTypes.ENDING_DAY]: endingDay,
   [actionTypes.RESTARTING_DAY]: {},
-  [actionTypes.ARRIVING]: {},
+  [actionTypes.ARRIVING]: arriving,
   [actionTypes.LEAVING]: {},
   [actionTypes.STOPPING]: stopping,
   [actionTypes.DOCKING]: docking,

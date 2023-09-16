@@ -100,7 +100,7 @@ export default {
   SHOVELING_NOTHING: 'Obwohl ich die ganze Gegend hier umgegraben habe, habe ich keinen Schatz gefunden. Vielleicht sollte ich mir erst eine Schatzkarte anschauen.',
   OBJECT_SHIP_WRECK: 'Schiffswrack',
   SEARCHING_SPYGLASS_AND_HAMMER: 'Ich habe das gesamte Wrack abgesucht.Als ich in die Kapitaenskajuete getaucht bin, habe ich mein altes Fernrohr gefunden. Damit kann ich nach Schiffen Ausschau halten und meine Chance, gerettet zu werden, steigt. /z Auf dem Weg nach draussen entdeckte ich noch den Hammer und einige Naegel vom Schiffszimmermann. Damit kann ich mir eine stabilere Behausung bauen.',
-  INTROTEXT: 'Jetzt habe ich den Schlamassel: Gestrandet auf einer einsamen Insel mitten im Pazifik. Ich sollte mich schnellstens nach Suesswasser und Nahrung umsehen. Vielleicht kann ich mir auch ein paar Werkzeuge bauen.',
+  ARRIVING: 'Jetzt habe ich den Schlamassel: Gestrandet auf einer einsamen Insel mitten im Pazifik. Ich sollte mich schnellstens nach Trinkwasser und Nahrung umsehen. Vielleicht kann ich mir auch ein paar Werkzeuge bauen.',
   SEARCHING_NOTHING_ON_SEA: 'Ich habe den ganzen Grund abgesucht, aber nichts von Interesse gefunden.',
   ITEM_MAP: 'Schatzkarte',
   KARTEGEFUNDEN: 'Ich tauchte durch das uralte Piratenschiff, allerdings ohne etwas zu finden, bis ich ploetzlich das Skelett des Kapitaens fand. In der Hand hielt er noch eine erstaunlich gut erhaltene Schatzkarte. Nachdem ich sie an mich genommen hatte, nahm ich mir noch eine Schaufel mit. Jetzt kann ich mir die Zeit mit einer Schatzsuche vertreiben.',
