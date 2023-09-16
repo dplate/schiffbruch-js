@@ -31,7 +31,7 @@ const processAction = () => {
 
       if (action.construction) {
         tile.construction.actionStep++;
-      } else {
+      } else if (state.guy.action) {
         state.guy.action.step++;
       }
     }

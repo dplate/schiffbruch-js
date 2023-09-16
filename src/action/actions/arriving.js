@@ -5,7 +5,6 @@ import sounds from '../../sounds/sounds.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 import state from '../../state/state.js';
 import openPaper from '../../interface/text/openPaper.js';
-import phases from '../../state/phases.js';
 import saveState from '../../state/saveState.js';
 import addShipWreck from '../../terrain/addShipWreck.js';
 import goToEastOfTile from '../../guy/routing/goToEastOfTile.js';
@@ -47,7 +46,6 @@ const walk = () => {
 
 const arrive = () => {
   updateCamera(state.guy.position, false);
-  state.phase = phases.PLAY
   saveState();
 };
 

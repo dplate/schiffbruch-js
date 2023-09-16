@@ -1,28 +1,16 @@
 import audio from './sounds/audio.js';
-import generateIsland from './terrain/generateIsland.js';
-import setGrounds from './terrain/setGrounds.js';
 import grounds from './terrain/tiles/grounds.js';
 import tileEdges from './terrain/tiles/tileEdges.js';
 import loadImages from './images/loadImages.js';
-import createWaves from './terrain/objects/createWaves.js';
 import animateTerrain from './terrain/animateTerrain.js';
 import loadSounds from './sounds/loadSounds.js';
 import playTerrainSounds from './terrain/playTerrainSounds.js';
-import addRiver from './terrain/addRiver.js';
 import spriteTypes from './images/spriteTypes.js';
-import addTrees from './terrain/addTrees.js';
-import hideTreasure from './treasure/hideTreasure.js';
 import drawTerrain from './terrain/drawTerrain.js';
-import drawTreasureMap from './treasure/drawTreasureMap.js';
-import addPirateWreck from './terrain/addPirateWreck.js';
 import addShipWreck from './terrain/addShipWreck.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import findRoute from './guy/routing/findRoute.js';
-import goToCenterOfTile from './guy/routing/goToCenterOfTile.js';
-import goToEastOfTile from './guy/routing/goToEastOfTile.js';
-import isOnSea from './guy/isOnSea.js';
-import createInventory from './guy/inventory/createInventory.js';
 import items from './guy/inventory/items.js';
 import changeItem from './guy/inventory/changeItem.js';
 import findItemUnderCursor from './guy/inventory/findItemUnderCursor.js';
@@ -33,7 +21,6 @@ import updateMinimap from './interface/minimap/updateMinimap.js';
 import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
 import sounds from './sounds/sounds.js';
-import startGuyAnimation from './guy/startGuyAnimation.js';
 import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
@@ -61,6 +48,7 @@ import phases from './state/phases.js';
 import saveState from './state/saveState.js';
 import loadState from './state/loadState.js';
 import fade from './images/fade.js';
+import startNewGame from './state/startNewGame.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -238,12 +226,6 @@ const fillCanvas = (rectangle, red, green, blue, alpha, canvasContext) => {
   const height = rectangle.bottom - rectangle.top;
   canvasContext.fillStyle = `rgba(${red}, ${green}, ${blue}, ${alpha})`;
   canvasContext.fillRect(rectangle.left, rectangle.top, width, height);
-}
-
-const clearCanvas = (rectangle, canvasContext) => {
-  const width = rectangle.right - rectangle.left;
-  const height = rectangle.bottom - rectangle.top;
-  canvasContext.clearRect(rectangle.left, rectangle.top, width, height);
 }
 
 const CheckMouse = () => {
@@ -574,46 +556,7 @@ const startGame = async (newGame) => {
   await InitStructs();
 
   if (newGame || !loadState()) {
-    //Für die Statusanzeige
-    rcRectdes.left = 0;
-    rcRectdes.top = 0;
-    rcRectdes.right = MAXX;
-    rcRectdes.bottom = MAXY;
-    fillCanvas(rcRectdes, 70, 70, 100, 1, canvases.PRIMARY);
-    clearCanvas(rcRectdes, canvases.TEXT);
-
-    //Landschaft erzeugen
-    generateIsland();
-    setGrounds();
-    addRiver();
-    addTrees();
-
-    state.treasure = hideTreasure();
-    addPirateWreck();
-
-    drawTreasureMap();
-    updateMinimap();
-
-    //Guy Position
-    state.guy.tile.x = 1;
-    state.guy.tile.y = Math.floor(MAXYKACH / 2);
-    const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-    state.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
-    state.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
-
-    state.guy.water = 100;
-    state.guy.food = 100;
-    state.guy.health = 100;
-    state.guy.inventory = createInventory();
-
-    state.guy.chance = 0;
-
-    state.calendar.day = 1;
-    state.calendar.minutes = 0;
-
-    state.phase = phases.PLAY;
-    state.guy.sprite = spriteTypes.GUY_SAILING;
-    startAction(actionTypes.ARRIVING);
+    startNewGame();
   }
 }
 
@@ -652,8 +595,10 @@ const Zeige = () => {
   blitText(textAreas.TIME);
 
   //Alles schwarz übermalen und nur das Papier mit Text anzeigen
-  if ((state.guy.action?.type === actionTypes.ENDING_DAY ||
-    state.guy.action?.type === actionTypes.DYING) && state.paper) {
+  if (
+    (state.guy.action?.type === actionTypes.ENDING_DAY && state.paper) ||
+    (state.guy.action?.type === actionTypes.DYING && state.paper?.question) 
+  ) {
     rcRectdes.left = 0;
     rcRectdes.top = 0;
     rcRectdes.right = MAXX;
@@ -714,184 +659,6 @@ const CalcRect = (rcBereich) => {
   }
   rcRectdes.right = Math.max(rcRectdes.left, rcRectdes.right);
   rcRectdes.bottom = Math.max(rcRectdes.top, rcRectdes.bottom);
-}
-
-const Event = () => {
-  if (state.guy.active || !state.guy.action) {
-    return;
-  }
-  state.guy.route = [];
-  switch (state.guy.action.type) {
-    case actionTypes.LEAVING:
-      AkGerettet();
-      break;
-    case actionTypes.STOPPING_GAME:
-      AkSpielverlassen();
-      break;
-    case actionTypes.RESTARTING_GAME:
-      AkNeubeginnen();
-      break;
-    case actionTypes.RESTARTING_DAY:
-      AkTagNeubeginnen();
-      break;
-    case actionTypes.DYING:
-      AkTod();
-      break;
-  }
-}
-
-const AkNeubeginnen = () => {
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToCenterOfTile();
-      break;
-    case 2:
-      openPaper(texts.NEUBEGINNEN, true);
-      break;
-    case 3:
-      state.guy.action = null;
-      if (state.paper.question.answer) {
-        startGame(true);
-      }
-      closePaper();
-      break;
-  }
-}
-
-const AkTagNeubeginnen = () => {
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToCenterOfTile();
-      break;
-    case 2:
-      openPaper(texts.TAGNEU, true);
-      break;
-    case 3:
-      state.guy.action = null;
-      if (state.paper.question.answer) {
-        startGame(false);
-        return;
-      }
-      closePaper();
-      break;
-  }
-}
-
-const AkSpielverlassen = () => {
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToCenterOfTile();
-      break;
-    case 2:
-      openPaper(texts.SPIELVERLASSEN, true);
-      break;
-    case 3:
-      state.guy.action = null;
-      if (state.paper.question.answer) {
-        if (state.guy.health > 10) {
-          saveState();
-        }
-        audio.stopAll();
-        state.phase = phases.CREDITS;
-      }
-      closePaper();
-      break;
-  }
-}
-
-const AkTod = () => {
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      openPaper(texts.TOD, false);
-      break;
-    case 2:
-      if (!isOnSea()) {
-        startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
-      }
-      break;
-    case 3:
-      fade(100, 1);
-      startGuyAnimation(isOnSea() ? spriteTypes.GUY_DYING_BOAT : spriteTypes.GUY_DYING);
-      break;
-    case 4:
-      openPaper(texts.TAGNEU, true);
-      break;
-    case 5:
-      state.guy.action = null;
-      if (state.paper.question.answer) {
-        startGame(false)
-      } else {
-        audio.stopAll();
-        state.phase = phases.CREDITS;
-      };
-      closePaper();
-      break;
-  }
-}
-
-const AkGerettet = () => {
-  let x;
-
-  state.guy.action.step++;
-  switch (state.guy.action.step) {
-    case 1:
-      goToCenterOfTile();
-      break;
-    case 2:
-      openPaper(texts.GERETTET, true);
-      break;
-    case 3:
-      if (!state.paper.question.answer) {
-        state.guy.action = null;
-      }
-      closePaper();
-      break;
-    case 4:
-      // Route herstellen
-      for (x = MAXXKACH - 1; x > 1; x--)//Position des Rettungsschiffs festlegen
-      {
-        if (state.terrain[x][state.guy.tile.y].ground !== grounds.SEA) break;
-      }
-      //Schiff hinbauen
-      const shipTile = state.terrain[x + 2][state.guy.tile.y];
-      shipTile.object = {
-        sprite: spriteTypes.GUY_SAILING,
-        x: tileEdges[shipTile.type].center.x,
-        y: tileEdges[shipTile.type].center.y,
-        frame: 0
-      };
-      state.guy.route = findRoute({ x, y: state.guy.tile.y });
-      state.guy.active = true;
-      break;
-    case 5:
-      goToEastOfTile();
-      break;
-    case 6:
-      state.guy.tile.x += 2;
-      discoverTerrain();
-      state.guy.sprite = spriteTypes.GUY_SWIMMING;
-      sounds.SWIMMING.instance.play(true);
-      goToCenterOfTile();
-      break;
-    case 7:
-      state.guy.sprite = spriteTypes.GUY_SAILING;
-      sounds.SWIMMING.instance.stop();
-      sounds.STORM.instance.play(true);
-      state.guy.route = findRoute({ x: state.terrain.length - 1, y: state.guy.tile.y });
-      state.guy.active = true;
-      state.terrain[state.guy.tile.x][state.guy.tile.y].object = createWaves();
-      break;
-    case 8:
-      sounds.STORM.instance.stop();
-      audio.stopAll();
-      state.guy.action = null;
-      state.phase = phases.CREDITS;
-      break;
-  }
 }
 
 const CheckBenutze = (item) => {
@@ -969,7 +736,6 @@ const refresh = (timestamp) => {
     playTerrainSounds();
     updateCamera(state.guy.position, true);
     processAction();
-    Event(); //Aktionen starten
     drawTerrain(state.camera, false);
 
     if (state.paper) {
@@ -994,7 +760,6 @@ const refresh = (timestamp) => {
     discoverTerrain();
     playTerrainSounds();
     processAction();
-    Event();  //Die Aktionen starten
     Zeige();//Das Bild zeichnen
 
   } else if (state.phase === phases.CREDITS) {

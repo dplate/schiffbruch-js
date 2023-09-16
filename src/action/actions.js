@@ -23,15 +23,20 @@ import undocking from './actions/undocking.js';
 import docking from './actions/docking.js';
 import endingDay from './actions/endingDay.js';
 import arriving from './actions/arriving.js';
+import restartingGame from './actions/restartingGame.js';
+import restartingDay from './actions/restartingDay.js';
+import stoppingGame from './actions/stoppingGame.js';
+import dying from './actions/dying.js';
+import leaving from './actions/leaving.js';
 
 const actions = {
-  [actionTypes.STOPPING_GAME]: {},
-  [actionTypes.RESTARTING_GAME]: {},
-  [actionTypes.DYING]: {},
+  [actionTypes.STOPPING_GAME]: stoppingGame,
+  [actionTypes.RESTARTING_GAME]: restartingGame,
+  [actionTypes.DYING]: dying,
   [actionTypes.ENDING_DAY]: endingDay,
-  [actionTypes.RESTARTING_DAY]: {},
+  [actionTypes.RESTARTING_DAY]: restartingDay,
   [actionTypes.ARRIVING]: arriving,
-  [actionTypes.LEAVING]: {},
+  [actionTypes.LEAVING]: leaving,
   [actionTypes.STOPPING]: stopping,
   [actionTypes.DOCKING]: docking,
   [actionTypes.UNDOCKING]: undocking,
