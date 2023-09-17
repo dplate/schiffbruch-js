@@ -7,7 +7,7 @@ import interfaceTypes from '../interfaceTypes.js';
 import interfaces from '../interfaces.js';
 
 const drawMinimap = () => {
-  const panelPosition = interfaces[interfaceTypes.INTERFACE_PANEL].position;
+  const panelPosition = interfaces[interfaceTypes.PANEL].position;
   const position = {
     x: panelPosition.x + 47,
     y: panelPosition.y + 23

@@ -6,6 +6,7 @@ import spriteTypes from '../../images/spriteTypes.js';
 import drawText from './drawText.js';
 import textAreas from './textAreas.js';
 import state from '../../state/state.js';
+import fade from '../../images/fade.js';
 
 const drawYes = (yes) => {
   canvases.TEXT.drawImage(
@@ -66,6 +67,11 @@ const openPaper = (text, question) => {
   }
 
   startGuyAnimation(isOnSea() ? spriteTypes.GUY_WAITING_BOAT : spriteTypes.GUY_WAITING);
+  
+  const filter = canvases.PRIMARY.canvas.style.filter;
+  state.paper.darkMode = filter && !filter.includes('100%') && state.paper;
+
+  fade(100, 0);
 };
 
 export default openPaper;

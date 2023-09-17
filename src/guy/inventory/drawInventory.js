@@ -8,7 +8,7 @@ const width = 178;
 const height = 114;
 
 const drawInventory = () => {
-  const panelPosition = interfaces[interfaceTypes.INTERFACE_PANEL].position;
+  const panelPosition = interfaces[interfaceTypes.PANEL].position;
 
   canvases.PRIMARY.drawImage(
     images.INVENTORY.instance,

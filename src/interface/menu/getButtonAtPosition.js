@@ -9,8 +9,8 @@ const getButtonAtPosition = (position) => {
       return false;
     }
     const absoluteButtonPosition = {
-      x: interfaces[interfaceTypes.INTERFACE_PANEL].position.x + button.position.x,
-      y: interfaces[interfaceTypes.INTERFACE_PANEL].position.y + button.position.y
+      x: interfaces[interfaceTypes.PANEL].position.x + button.position.x,
+      y: interfaces[interfaceTypes.PANEL].position.y + button.position.y
     };
     const buttonSprite = sprites[button.sprite];
 

@@ -9,8 +9,8 @@ const drawButtons = () => {
       drawSprite(
         button.sprite, 
         button.frame, 
-        interfaces[interfaceTypes.INTERFACE_PANEL].position.x + button.position.x, 
-        interfaces[interfaceTypes.INTERFACE_PANEL].position.y + button.position.y
+        interfaces[interfaceTypes.PANEL].position.x + button.position.x, 
+        interfaces[interfaceTypes.PANEL].position.y + button.position.y
       );
     }
   });

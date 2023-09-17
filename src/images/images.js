@@ -46,6 +46,10 @@ const images = {
   CREDITS: {
     file: 'credits.png',
     instance: null
+  },
+  STATUS_BAR: {
+    file: 'statusBar.png',
+    instance: null
   }
 };
 

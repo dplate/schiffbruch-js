@@ -1,4 +1,5 @@
 import canvases from '../../images/canvases.js';
+import fade from '../../images/fade.js';
 import images from '../../images/images.js';
 import state from '../../state/state.js';
 import blitText from './blitText.js';
@@ -10,6 +11,10 @@ const paperColor = `rgba(236, 215, 179, 1)`
 const middleOffsetX = 34;
 
 const drawPaper = () => {
+  if (!state.paper) {
+    return;
+  }
+
   const paperHeight = Math.max(state.paper.height - 90, 0);
 
   const x = textAreas.PAPER.x - 60;

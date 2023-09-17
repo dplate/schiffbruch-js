@@ -25,7 +25,6 @@ import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
 import drawPaper from './interface/text/drawPaper.js';
-import blitText from './interface/text/blitText.js';
 import openPaper from './interface/text/openPaper.js';
 import canvases from './images/canvases.js';
 import getTileByPosition from './terrain/getTileByPosition.js';
@@ -41,14 +40,13 @@ import handleButtonHovers from './interface/menu/handleButtonHovers.js';
 import startAction from './action/startAction.js';
 import actionTypes from './action/actionTypes.js';
 import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
-import drawPanel from './interface/drawPanel.js';
 import processAction from './action/processAction.js';
 import drawCredits from './credits/drawCredits.js';
 import phases from './state/phases.js';
 import saveState from './state/saveState.js';
 import loadState from './state/loadState.js';
-import fade from './images/fade.js';
 import startNewGame from './state/startNewGame.js';
+import drawInterface from './interface/drawInterface.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -61,7 +59,6 @@ const CUUHR = 2;
 const BILDANZ = CUUHR + 1; //Wieviele Bilder
 
 //ddraw
-let textfieldImage = null;
 let logoImage = null;
 let cursorsImage = null;
 
@@ -87,7 +84,6 @@ let SelectedItem;                //Für Aktionen mit zwei Mausklicks
 const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
 const rcPanel = { left: MAXX - 205, top: 0, right: MAXX, bottom: MAXY };
 const rcKarte = { left: MAXX - 158, top: 23, right: MAXX - 158 + MAXXKACH * 2, bottom: 23 + MAXYKACH * 2 };
-const rcTextFeld1 = { left: 0, top: MAXY - 20, right: MAXX - 195, bottom: MAXY };
 
 const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
 
@@ -110,7 +106,6 @@ const loadImage = async (file) => {
 
 const initCanvases = async (window) => {
   cursorsImage = await loadImage('cursors.png');
-  textfieldImage = await loadImage('textfield.png');
   logoImage = await loadImage('logo.png');
 
   const primaryCanvas = window.document.createElement('canvas');
@@ -167,7 +162,7 @@ const initInput = (window) => {
   });
 }
 
-const InitStructs = async () => {
+const InitStructs = () => {
   let i;
 
   //BILD
@@ -553,7 +548,7 @@ const InRect = (x, y, rcRect) => {
 }
 
 const startGame = async (newGame) => {
-  await InitStructs();
+  InitStructs();
 
   if (newGame || !loadState()) {
     startNewGame();
@@ -574,39 +569,14 @@ const ZeigeCursor = () => {
 };
 
 const Zeige = () => {
-  drawTerrain(state.camera, false);
+  canvases.PRIMARY.fillStyle = `rgba(0, 0, 0, 1)`;
+  canvases.PRIMARY.fillRect(0, 0, canvases.PRIMARY.canvas.width, canvases.PRIMARY.canvas.height);
 
-  drawPanel();
-  
-  //TextFeld malen
-  rcRectsrc.left = 0;
-  rcRectsrc.top = 0;
-  rcRectsrc.right = 605;
-  rcRectsrc.bottom = 20;
-  rcRectdes = { ...rcTextFeld1 };
-  drawImage(textfieldImage, canvases.PRIMARY);
-
-  if (state.paper) {
-    drawPaper();
-  };
-
-  blitText(textAreas.CHANCE);
-  blitText(textAreas.STATUS);
-  blitText(textAreas.TIME);
-
-  //Alles schwarz übermalen und nur das Papier mit Text anzeigen
-  if (
-    (state.guy.action?.type === actionTypes.ENDING_DAY && state.paper) ||
-    (state.guy.action?.type === actionTypes.DYING && state.paper?.question) 
-  ) {
-    rcRectdes.left = 0;
-    rcRectdes.top = 0;
-    rcRectdes.right = MAXX;
-    rcRectdes.bottom = MAXY;
-    fillCanvas(rcRectdes, 0, 0, 0, 1, canvases.PRIMARY);
-    fade(100, 0);
-    drawPaper();
+  if (!state.paper?.darkMode) {
+    drawTerrain(state.camera, false);
   }
+
+  drawInterface();
 
   //Cursor
   ZeigeCursor();
@@ -776,7 +746,7 @@ const run = async (window) => {
   initInput(window);
   texts.init('de');
 
-  await InitStructs();
+  InitStructs();
 
   return new Promise((resolve) => {
     const loop = (timestamp) => {

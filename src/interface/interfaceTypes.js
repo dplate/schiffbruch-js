@@ -1,5 +1,6 @@
 const interfaceTypes = {
-  INTERFACE_PANEL: 'interfacePanel'
+  PANEL: 'pPanel',
+  STATUS_BAR: 'statusBar'
 };
 
 export default interfaceTypes;

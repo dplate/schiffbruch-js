@@ -4,9 +4,6 @@ import drawTile from './tiles/drawTile.js';
 import state from '../state/state.js';
 
 const drawTerrain = (area, forTreasureMap, canvasContext = canvases.PRIMARY) => {
-  canvasContext.fillStyle = `rgba(0, 0, 0, 1)`;
-  canvasContext.fillRect(0, 0, area.width, area.height);
-
   state.terrain.forEach((terrainColumn, x) => {
     terrainColumn.forEach((tile, y) => {
       drawTile(area, x, y, forTreasureMap, canvasContext);

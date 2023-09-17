@@ -3,6 +3,7 @@ import images from '../images/images.js';
 import state from '../state/state.js';
 import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
+import blitText from './text/blitText.js';
 import drawText from './text/drawText.js';
 import textAreas from './text/textAreas.js';
 
@@ -10,7 +11,7 @@ const width = 37;
 const height = 150;
 
 const drawChance = () => {
-  const panelPosition = interfaces[interfaceTypes.INTERFACE_PANEL].position;
+  const panelPosition = interfaces[interfaceTypes.PANEL].position;
 
   const positionY = panelPosition.y - 113 + Math.floor(100 * Math.sin(Math.PI / 200 * state.guy.chance));
 
@@ -28,6 +29,7 @@ const drawChance = () => {
 
   textAreas.CHANCE.y = Math.floor(positionY + height - 25);
   drawText(state.guy.chance.toFixed(0), textAreas.CHANCE);
+  blitText(textAreas.CHANCE);
 };
 
 export default drawChance;

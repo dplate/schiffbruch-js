@@ -14,7 +14,7 @@ import menuTypes from './menu/menuTypes.js';
 const drawPanel = () => {
   drawMinimap();
 
-  const panelPosition = interfaces[interfaceTypes.INTERFACE_PANEL].position;
+  const panelPosition = interfaces[interfaceTypes.PANEL].position;
   canvases.PRIMARY.drawImage(
     images.PANEL.instance,
     0, 
