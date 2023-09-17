@@ -50,6 +50,14 @@ const images = {
   STATUS_BAR: {
     file: 'statusBar.png',
     instance: null
+  },
+  CURSORS: {
+    file: 'cursors.png',
+    instance: null
+  },
+  LOGO: {
+    file: 'logo.png',
+    instance: null
   }
 };
 

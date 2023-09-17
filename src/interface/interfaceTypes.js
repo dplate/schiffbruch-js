@@ -1,5 +1,5 @@
 const interfaceTypes = {
-  PANEL: 'pPanel',
+  PANEL: 'panel',
   STATUS_BAR: 'statusBar'
 };
 

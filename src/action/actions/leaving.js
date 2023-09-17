@@ -50,7 +50,7 @@ const sail = (tile) => {
   tile.object = createWaves();
   state.guy.sprite = spriteTypes.GUY_SAILING;
   sounds.STORM.instance.play(true);
-  state.guy.route = findRoute({ x: state.terrain.length - 1, y: state.guy.tile.y });
+  state.guy.route = findRoute({ x: state.terrain.length - 2, y: state.guy.tile.y });
   state.guy.active = true;
 };
 
@@ -70,7 +70,8 @@ const leaving = {
     sail
   ],
   finish: switchToCredits,
-  noTimeProgress: true
+  noTimeProgress: true,
+  movie: true
 };
 
 export default leaving;

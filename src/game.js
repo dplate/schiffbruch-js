@@ -6,7 +6,6 @@ import animateTerrain from './terrain/animateTerrain.js';
 import loadSounds from './sounds/loadSounds.js';
 import playTerrainSounds from './terrain/playTerrainSounds.js';
 import spriteTypes from './images/spriteTypes.js';
-import drawTerrain from './terrain/drawTerrain.js';
 import addShipWreck from './terrain/addShipWreck.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
@@ -15,8 +14,6 @@ import items from './guy/inventory/items.js';
 import changeItem from './guy/inventory/changeItem.js';
 import findItemUnderCursor from './guy/inventory/findItemUnderCursor.js';
 import itemTextIds from './guy/inventory/itemTextIds.js';
-import itemSprites from './guy/inventory/itemSprites.js';
-import drawItem from './guy/inventory/drawItem.js';
 import updateMinimap from './interface/minimap/updateMinimap.js';
 import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
@@ -24,7 +21,6 @@ import sounds from './sounds/sounds.js';
 import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
-import drawPaper from './interface/text/drawPaper.js';
 import openPaper from './interface/text/openPaper.js';
 import canvases from './images/canvases.js';
 import getTileByPosition from './terrain/getTileByPosition.js';
@@ -44,23 +40,18 @@ import processAction from './action/processAction.js';
 import drawCredits from './credits/drawCredits.js';
 import phases from './state/phases.js';
 import saveState from './state/saveState.js';
-import loadState from './state/loadState.js';
 import startNewGame from './state/startNewGame.js';
-import drawInterface from './interface/drawInterface.js';
+import workbench from './guy/inventory/workbench.js';
+import cursor from './interface/cursor/cursor.js';
+import drawLogo from './state/drawLogo.js';
+import drawPlay from './state/drawPlay.js';
+import loadState from './state/loadState.js';
+import actions from './action/actions.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
 const MAXX = 800; //Bildschirmauflösung
 const MAXY = 600;
-
-const CUPFEIL = 0;
-const CURICHTUNG = 1;
-const CUUHR = 2;
-const BILDANZ = CUUHR + 1; //Wieviele Bilder
-
-//ddraw
-let logoImage = null;
-let cursorsImage = null;
 
 // Input
 const mouseUpdates = {
@@ -69,45 +60,18 @@ const mouseUpdates = {
   rgbButtons: []
 };
 const pressedKeyCodes = {};
-
-let MouseAktiv = false;    // Mouse angestellt?
-let CursorTyp;        //Welcher Cursortyp?
 let Button0down;    //linke Maustaste gedrückt gehalten
 let Button1down;    //rechte Maustaste gedrückt gehalten
 let timestampInSeconds;            //Start der Sekunde
 let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
-let rcRectdes = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
-let rcRectsrc = { left: null, top: null, right: null, bottom: null }; //Ständig benötigte Variable zum Blitten
-let SelectedItem;                //Für Aktionen mit zwei Mausklicks
 
 //Bereiche
-const rcGesamt = { left: 0, top: 0, right: MAXX, bottom: MAXY };
 const rcPanel = { left: MAXX - 205, top: 0, right: MAXX, bottom: MAXY };
 const rcKarte = { left: MAXX - 158, top: 23, right: MAXX - 158 + MAXXKACH * 2, bottom: 23 + MAXYKACH * 2 };
 
 const MousePosition = { x: null, y: null }; // Aktuelle Mauskoordinaten
 
-const Bmp = Array.from(Array(BILDANZ), () => ({
-  Surface: null, //in welcher Surface gespeichert?
-  rcSrc: { left: null, top: null, right: null, bottom: null },     //Quelle des 1. Bildes
-  rcDes: { left: null, top: null, right: null, bottom: null },        //Falls es immer an die gleiche Stelle gezeichnet wird. (Buttons)
-  Breite: null,   //Die Breite des Bildes
-  Hoehe: null,    //Die Hoehe des Bildes
-}));
-
-//Bilder
-const loadImage = async (file) => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.addEventListener('load', () => resolve(img), false);
-    img.src = `./images/${file}`;
-  });
-};
-
 const initCanvases = async (window) => {
-  cursorsImage = await loadImage('cursors.png');
-  logoImage = await loadImage('logo.png');
-
   const primaryCanvas = window.document.createElement('canvas');
   primaryCanvas.id = 'primaryCanvas';
   primaryCanvas.width = MAXX;
@@ -134,7 +98,6 @@ const initCanvases = async (window) => {
   treasureMapCanvas.height = 370;
   canvases.TREASURE_MAP = treasureMapCanvas.getContext('2d');
 }
-
 
 const initInput = (window) => {
   window.document.onmousemove = (event) => {
@@ -163,38 +126,6 @@ const initInput = (window) => {
 }
 
 const InitStructs = () => {
-  let i;
-
-  //BILD
-  //Standardbildinitialisierung
-  for (i = 0; i < BILDANZ; i++) {
-    Bmp[i].Surface = null;
-    Bmp[i].rcSrc.left = 0;
-    Bmp[i].rcSrc.right = 0;
-    Bmp[i].rcSrc.top = 0;
-    Bmp[i].rcSrc.bottom = 0;
-    Bmp[i].rcDes.left = 0;
-    Bmp[i].rcDes.right = 0;
-    Bmp[i].rcDes.top = 0;
-    Bmp[i].rcDes.bottom = 0;
-    Bmp[i].Breite = 0;
-    Bmp[i].Hoehe = 0;
-  }
-
-  //Cursor
-  for (i = CUPFEIL; i <= CUUHR; i++) {
-    Bmp[i].Surface = cursorsImage;
-    Bmp[i].rcSrc.left = (i - CUPFEIL) * 18;
-    Bmp[i].rcSrc.top = 0;
-    Bmp[i].rcSrc.right = Bmp[i].rcSrc.left + 18;
-    Bmp[i].rcSrc.bottom = 18;
-    Bmp[i].Breite = 18;
-    Bmp[i].Hoehe = 18;
-  }
-
-  CursorTyp = CUPFEIL;
-  MouseAktiv = true;
-  SelectedItem = null;
   framesPerSecond = 100;
   frame = 0;
   timestampInSeconds = 0;
@@ -202,25 +133,6 @@ const InitStructs = () => {
   MousePosition.y = MAXY / 2;
   Button0down = false;
   Button1down = false;
-}
-
-const drawImage = (image, canvasContext) => {
-  const sourceWidth = rcRectsrc.right - rcRectsrc.left;
-  const sourceHeight = rcRectsrc.bottom - rcRectsrc.top;
-  const destinationWidth = rcRectdes.right - rcRectdes.left;
-  const destinationHeight = rcRectdes.bottom - rcRectdes.top;
-  canvasContext.drawImage(
-    image,
-    rcRectsrc.left, rcRectsrc.top, sourceWidth, sourceHeight,
-    rcRectdes.left, rcRectdes.top, destinationWidth, destinationHeight
-  );
-}
-
-const fillCanvas = (rectangle, red, green, blue, alpha, canvasContext) => {
-  const width = rectangle.right - rectangle.left;
-  const height = rectangle.bottom - rectangle.top;
-  canvasContext.fillStyle = `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-  canvasContext.fillRect(rectangle.left, rectangle.top, width, height);
 }
 
 const CheckMouse = () => {
@@ -237,15 +149,17 @@ const CheckMouse = () => {
   MousePosition.y = mouseUpdates.y;
   if (MousePosition.y < 0) MousePosition.y = 0;
   if (MousePosition.y > MAXY - 2) MousePosition.y = MAXY - 2;
+  cursor.x = MousePosition.x;
+  cursor.y = MousePosition.y;
 
-  if (!SelectedItem) {
+  if (!workbench.selectedItem) {
     if (state.guy.active) {
       if (getButtonAtPosition(MousePosition)?.sprite === spriteTypes.BUTTON_STOPPING) {   
-        CursorTyp = CUPFEIL;
+        cursor.sprite = spriteTypes.CURSOR_ARROW;
       } else {
-        CursorTyp = CUUHR;
+        cursor.sprite = spriteTypes.CURSOR_WAIT;
       }
-    } else CursorTyp = CUPFEIL;
+    } else cursor.sprite = spriteTypes.CURSOR_ARROW;;
   }
   Button = -1;
 
@@ -292,7 +206,7 @@ const CheckMouse = () => {
           bottom: state.paper.question.yes.y + state.paper.question.yes.height,
         }
       )) {
-        CursorTyp = CUPFEIL;
+        cursor.sprite = spriteTypes.CURSOR_ARROW;
         if ((Button === 0) && (Push === 1)) {
           state.paper.question.answer = true;
           state.guy.active = false;
@@ -308,7 +222,7 @@ const CheckMouse = () => {
           bottom: state.paper.question.no.y + state.paper.question.no.height,
         }
       )) {
-        CursorTyp = CUPFEIL;
+        cursor.sprite = spriteTypes.CURSOR_ARROW;
         if ((Button === 0) && (Push === 1)) {
           state.paper.question.answer = false;
           state.guy.active = false;
@@ -359,7 +273,9 @@ const CheckKey = () => {
     //Logo Abbrechen
     if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
       sounds.LOGO.instance.stop();
-      startGame(false);
+      if (!loadState()) {
+        startNewGame();
+      }
       return (2);
     }
   } else if (state.guy.action?.type === actionTypes.ARRIVING) {
@@ -478,7 +394,7 @@ const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   if ((Button === 1) && (Push === 0)) {
     state.camera.x += xDiff;
     state.camera.y += yDiff;
-    CursorTyp = CURICHTUNG;
+    cursor.sprite = spriteTypes.CURSOR_MOVE;
   }
 }
 
@@ -491,12 +407,11 @@ const MouseInPanel = (Button, Push) => {
   
   if (state.options.openedMenu === menuTypes.INVENTORY) {
     const item = findItemUnderCursor(MousePosition);
-    if (item || SelectedItem) {
+    if (item || workbench.selectedItem) {
       if (item) {
         if ((Button === 0) && (Push === 1)) {
-          if (!SelectedItem) {
-            CursorTyp = item;
-            SelectedItem = item;
+          if (!workbench.selectedItem) {
+            workbench.selectedItem = item;
           } else {
             CheckBenutze(item);
           }
@@ -539,7 +454,7 @@ const MouseInPanel = (Button, Push) => {
   if ((Button === 0) && (Push === 1)) {
     handleButtonTaps(MousePosition);
   };
-  SelectedItem = null;
+  workbench.selectedItem = null;
 }
 
 const InRect = (x, y, rcRect) => {
@@ -547,93 +462,9 @@ const InRect = (x, y, rcRect) => {
     (y <= rcRect.bottom) && (y >= rcRect.top);
 }
 
-const startGame = async (newGame) => {
-  InitStructs();
-
-  if (newGame || !loadState()) {
-    startNewGame();
-  }
-}
-
-const ZeigeCursor = () => {
-  if (CursorTyp === CUPFEIL) ZeichneBilder(MousePosition.x, MousePosition.y, CursorTyp, rcGesamt);
-  else if (items.list.includes(CursorTyp)) {
-    const position = {
-      x: MousePosition.x - itemSprites[CursorTyp].width / 2,
-      y: MousePosition.y - itemSprites[CursorTyp].height / 2
-    };
-    drawItem(CursorTyp, position);
-  } else {
-    ZeichneBilder(MousePosition.x - Bmp[CursorTyp].Breite / 2, MousePosition.y - Bmp[CursorTyp].Hoehe / 2, CursorTyp, rcGesamt);
-  }
-};
-
-const Zeige = () => {
-  canvases.PRIMARY.fillStyle = `rgba(0, 0, 0, 1)`;
-  canvases.PRIMARY.fillRect(0, 0, canvases.PRIMARY.canvas.width, canvases.PRIMARY.canvas.height);
-
-  if (!state.paper?.darkMode) {
-    drawTerrain(state.camera, false);
-  }
-
-  drawInterface();
-
-  //Cursor
-  ZeigeCursor();
-}
-
-const ZeigeLogo = () => {
-  fillCanvas({ left: 0, top: 0, right: MAXX, bottom: MAXY }, 0, 0, 0, 1, canvases.PRIMARY);
-
-  rcRectsrc.left = 0;
-  rcRectsrc.right = 500;
-  rcRectsrc.top = 0;
-  rcRectsrc.bottom = 500;
-  rcRectdes.left = MAXX / 2 - 250;
-  rcRectdes.right = MAXX / 2 + 250;
-  rcRectdes.top = MAXY / 2 - 250;
-  rcRectdes.bottom = MAXY / 2 + 250;
-
-  drawImage(logoImage, canvases.PRIMARY);
-
-  sounds.LOGO.instance.play(true);
-}
-
-const ZeichneBilder = (x, y, i, Ziel) => {
-  rcRectsrc = { ...Bmp[i].rcSrc };
-  rcRectsrc.bottom = rcRectsrc.top + Bmp[i].Hoehe;
-  rcRectdes.left = Math.round(x);
-  rcRectdes.top = Math.round(y);
-  rcRectdes.right = Math.round(x) + Bmp[i].Breite;
-  rcRectdes.bottom = Math.round(y) + Bmp[i].Hoehe;
-  CalcRect(Ziel);
-  drawImage(Bmp[i].Surface, canvases.PRIMARY);
-}
-
-const CalcRect = (rcBereich) => {
-  if (rcRectdes.left < rcBereich.left) {
-    rcRectsrc.left = rcRectsrc.left + rcBereich.left - rcRectdes.left;
-    rcRectdes.left = rcBereich.left;
-  }
-  if (rcRectdes.top < rcBereich.top) {
-    rcRectsrc.top = rcRectsrc.top + rcBereich.top - rcRectdes.top;
-    rcRectdes.top = rcBereich.top;
-  }
-  if (rcRectdes.right > rcBereich.right) {
-    rcRectsrc.right = rcRectsrc.right + rcBereich.right - rcRectdes.right;
-    rcRectdes.right = rcBereich.right;
-  }
-  if (rcRectdes.bottom > rcBereich.bottom) {
-    rcRectsrc.bottom = rcRectsrc.bottom + rcBereich.bottom - rcRectdes.bottom;
-    rcRectdes.bottom = rcBereich.bottom;
-  }
-  rcRectdes.right = Math.max(rcRectdes.left, rcRectdes.right);
-  rcRectdes.bottom = Math.max(rcRectdes.top, rcRectdes.bottom);
-}
-
 const CheckBenutze = (item) => {
-  if ((item === items.STONE && SelectedItem === items.BRANCH) ||
-    (item === items.BRANCH && SelectedItem === items.STONE)) {
+  if ((item === items.STONE && workbench.selectedItem === items.BRANCH) ||
+    (item === items.BRANCH && workbench.selectedItem === items.STONE)) {
     if (!state.guy.inventory[items.AXE]) {
       changeItem(items.STONE, -1);
       changeItem(items.BRANCH, -1);
@@ -649,8 +480,8 @@ const CheckBenutze = (item) => {
     } else {
       openPaper(texts.STEINPLUSASTNICHTS, false);
     }
-  } else if ((item === items.LIANA && SelectedItem === items.BRANCH) ||
-    (item === items.BRANCH && SelectedItem === items.LIANA)) {
+  } else if ((item === items.LIANA && workbench.selectedItem === items.BRANCH) ||
+    (item === items.BRANCH && workbench.selectedItem === items.LIANA)) {
     if (!state.guy.inventory[items.FISHING_ROD]) {
       changeItem(items.LIANA, -1);
       changeItem(items.BRANCH, -1);
@@ -660,8 +491,8 @@ const CheckBenutze = (item) => {
     } else {
       openPaper(texts.ASTPLUSLIANENICHTS, false);
     }
-  } else if (((item === items.LIANA) && (SelectedItem === items.STONE)) ||
-    ((item === items.STONE) && (SelectedItem === items.LIANA))) {
+  } else if (((item === items.LIANA) && (workbench.selectedItem === items.STONE)) ||
+    ((item === items.STONE) && (workbench.selectedItem === items.LIANA))) {
     if (!state.guy.inventory[items.SLING]) {
       changeItem(items.LIANA, -1);
       changeItem(items.STONE, -1);
@@ -674,7 +505,7 @@ const CheckBenutze = (item) => {
   } else {
     openPaper(texts.NICHTBASTELN, false);
   }
-  SelectedItem = null;
+  workbench.selectedItem = null;
 }
 
 const Animationen = () => {
@@ -697,23 +528,7 @@ const refresh = (timestamp) => {
 
   if (state.phase === phases.LOGO) {
     if (CheckKey() === 2) return true;    //Das Keyboard abfragen
-    ZeigeLogo(); //Bild auffrischen
-
-  } else if (state.guy.action?.type === actionTypes.ARRIVING || state.guy.action?.type === actionTypes.LEAVING) {
-    if (CheckKey() === 2) return true;    //Das Keyboard abfragen
-    Animationen();  //Animationen weiterschalten
-    discoverTerrain();
-    playTerrainSounds();
-    updateCamera(state.guy.position, true);
-    processAction();
-    drawTerrain(state.camera, false);
-
-    if (state.paper) {
-      if (MouseAktiv) CheckMouse();    //Den MouseZustand abchecken
-      drawPaper();
-      ZeigeCursor();
-    };
-
+    drawLogo()
   } else if (state.phase === phases.PLAY) {
     if (state.calendar.minutes > (12 * 60) && (state.guy.action?.type !== actionTypes.ENDING_DAY))  //Hier ist der Tag zuende
     {
@@ -723,14 +538,24 @@ const refresh = (timestamp) => {
       startAction(actionTypes.ENDING_DAY);
     }
 
-    if (MouseAktiv) CheckMouse();    //Den MouseZustand abchecken
+    if (!actions[state.guy.action?.type]?.movie || state.paper) {
+      CheckMouse();    //Den MouseZustand abchecken
+    }
     CheckKey();
     restrictCamera();            //Das Scrollen an die Grenzen der Landschaft anpassen
     Animationen();            //Die Animationsphasen weiterschalten
     discoverTerrain();
     playTerrainSounds();
     processAction();
-    Zeige();//Das Bild zeichnen
+
+    if (state.phase !== phases.PLAY) {
+      return true;
+    }
+
+    if (actions[state.guy.action?.type]?.movie) {
+      updateCamera(state.guy.position, true);
+    }
+    drawPlay();
 
   } else if (state.phase === phases.CREDITS) {
     if (CheckKey() === 0) return false;

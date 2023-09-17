@@ -34,6 +34,15 @@ const buttonDefault = {
   offsetY: 0,
 };
 
+const cursorDefault = {
+  image: images.CURSORS,
+  sound: null,
+  width: 18,
+  height: 18,
+  frameCount: 1,
+  speed: 0
+};
+
 const sprites = {
   [spriteTypes.WAVES]: {
     image: images.WATER,
@@ -1386,6 +1395,27 @@ const sprites = {
     y: 175,
     frameCount: 1,
     speed: 0
+  },
+  [spriteTypes.CURSOR_ARROW]: {
+    ...cursorDefault,
+    x: 0,
+    y: 0,
+    offsetX: 0,
+    offsetY: 0
+  },
+  [spriteTypes.CURSOR_MOVE]: {
+    ...cursorDefault,
+    x: 18,
+    y: 0,
+    offsetX: -9,
+    offsetY: -9
+  },
+  [spriteTypes.CURSOR_WAIT]: {
+    ...cursorDefault,
+    x: 36,
+    y: 0,
+    offsetX: -9,
+    offsetY: -9
   },
 };
 

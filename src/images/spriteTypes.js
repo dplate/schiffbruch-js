@@ -139,8 +139,10 @@ const spriteTypes = {
   BUTTON_TREE_HOUSE: 'buttonTreeHouse',
   BUTTON_FIREPLACE: 'buttonFireplace',
   BUTTON_DESTROYING: 'buttonDestroying',
-  BUTTON_UNKNOWN: 'buttonUnknown'
-
+  BUTTON_UNKNOWN: 'buttonUnknown',
+  CURSOR_ARROW: 'cursorArrow',
+  CURSOR_MOVE: 'cursorMove',
+  CURSOR_WAIT: 'cursorWait'
 };
 
 export default spriteTypes;
