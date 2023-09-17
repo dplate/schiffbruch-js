@@ -58,7 +58,6 @@ const arriving = {
     arrive
   ],
   finish: () => openPaper(texts.ARRIVING, false),
-  noTimeProgress: true,
   movie: true
 };
 

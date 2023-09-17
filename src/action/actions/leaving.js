@@ -70,7 +70,6 @@ const leaving = {
     sail
   ],
   finish: switchToCredits,
-  noTimeProgress: true,
   movie: true
 };
 

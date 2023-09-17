@@ -37,7 +37,7 @@ const checkForRescue = (minutes) => {
 };
 
 const spendMinutes = (minutes) => {
-  if (actions[state.guy.action?.type]?.noTimeProgress) {
+  if (actions[state.guy.action?.type]?.movie) {
     return;
   }
   state.calendar.minutes += minutes;

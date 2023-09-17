@@ -39,7 +39,7 @@ const dying = {
     () => openPaper(texts.RESTARTING_DAY, true),
   ],
   finish: processAnswer,
-  noTimeProgress: true
+  movie: true
 };
 
 export default dying;

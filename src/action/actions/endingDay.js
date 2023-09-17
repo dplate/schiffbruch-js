@@ -180,7 +180,7 @@ const endingDay = {
     goToCenterOfTile,
     saveState,
   ],
-  noTimeProgress: true
+  movie: true
 };
 
 export default endingDay;
