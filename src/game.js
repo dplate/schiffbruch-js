@@ -1,12 +1,8 @@
-import audio from './sounds/audio.js';
-import grounds from './terrain/tiles/grounds.js';
-import tileEdges from './terrain/tiles/tileEdges.js';
 import loadImages from './images/loadImages.js';
 import animateTerrain from './terrain/animateTerrain.js';
 import loadSounds from './sounds/loadSounds.js';
 import playTerrainSounds from './terrain/playTerrainSounds.js';
 import spriteTypes from './images/spriteTypes.js';
-import addShipWreck from './terrain/addShipWreck.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import findRoute from './guy/routing/findRoute.js';
@@ -21,7 +17,6 @@ import sounds from './sounds/sounds.js';
 import textAreas from './interface/text/textAreas.js';
 import clearText from './interface/text/clearText.js';
 import closePaper from './interface/text/closePaper.js';
-import openPaper from './interface/text/openPaper.js';
 import canvases from './images/canvases.js';
 import getTileByPosition from './terrain/getTileByPosition.js';
 import texts from './interface/text/texts.js';
@@ -39,7 +34,6 @@ import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import processAction from './action/processAction.js';
 import drawCredits from './credits/drawCredits.js';
 import phases from './state/phases.js';
-import saveState from './state/saveState.js';
 import startNewGame from './state/startNewGame.js';
 import workbench from './guy/inventory/workbench.js';
 import cursor from './interface/cursor/cursor.js';
@@ -47,6 +41,7 @@ import drawLogo from './state/drawLogo.js';
 import drawPlay from './state/drawPlay.js';
 import loadState from './state/loadState.js';
 import actions from './action/actions.js';
+import handleItemTap from './guy/inventory/handleItemTap.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -404,11 +399,7 @@ const MouseInPanel = (Button, Push) => {
     if (item || workbench.selectedItem) {
       if (item) {
         if ((Button === 0) && (Push === 1)) {
-          if (!workbench.selectedItem) {
-            workbench.selectedItem = item;
-          } else {
-            CheckBenutze(item);
-          }
+          handleItemTap(item);
         }
         drawStatusText(texts[itemTextIds[item]]);
       }
@@ -454,52 +445,6 @@ const MouseInPanel = (Button, Push) => {
 const InRect = (x, y, rcRect) => {
   return (x <= rcRect.right) && (x >= rcRect.left) &&
     (y <= rcRect.bottom) && (y >= rcRect.top);
-}
-
-const CheckBenutze = (item) => {
-  if ((item === items.STONE && workbench.selectedItem === items.BRANCH) ||
-    (item === items.BRANCH && workbench.selectedItem === items.STONE)) {
-    if (!state.guy.inventory[items.AXE]) {
-      changeItem(items.STONE, -1);
-      changeItem(items.BRANCH, -1);
-      changeItem(items.AXE, 1);
-      openPaper(texts.BAUEAXT, false);
-      sounds.INVENTION.instance.play();
-    } else if (!state.guy.inventory[items.HARROW]) {
-      changeItem(items.STONE, -1);
-      changeItem(items.BRANCH, -1);
-      changeItem(items.HARROW, 1);
-      openPaper(texts.BAUEEGGE, false);
-      sounds.INVENTION.instance.play();
-    } else {
-      openPaper(texts.STEINPLUSASTNICHTS, false);
-    }
-  } else if ((item === items.LIANA && workbench.selectedItem === items.BRANCH) ||
-    (item === items.BRANCH && workbench.selectedItem === items.LIANA)) {
-    if (!state.guy.inventory[items.FISHING_ROD]) {
-      changeItem(items.LIANA, -1);
-      changeItem(items.BRANCH, -1);
-      changeItem(items.FISHING_ROD, 1);
-      openPaper(texts.BAUEANGEL, false);
-      sounds.INVENTION.instance.play();
-    } else {
-      openPaper(texts.ASTPLUSLIANENICHTS, false);
-    }
-  } else if (((item === items.LIANA) && (workbench.selectedItem === items.STONE)) ||
-    ((item === items.STONE) && (workbench.selectedItem === items.LIANA))) {
-    if (!state.guy.inventory[items.SLING]) {
-      changeItem(items.LIANA, -1);
-      changeItem(items.STONE, -1);
-      changeItem(items.SLING, 1);
-      openPaper(texts.BAUESCHLEUDER, false);
-      sounds.INVENTION.instance.play();
-    } else {
-      openPaper(texts.STEINPLUSLIANENICHTS, false);
-    }
-  } else {
-    openPaper(texts.NICHTBASTELN, false);
-  }
-  workbench.selectedItem = null;
 }
 
 const Animationen = () => {
