@@ -6,11 +6,8 @@ import spriteTypes from './images/spriteTypes.js';
 import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import findRoute from './guy/routing/findRoute.js';
-import items from './guy/inventory/items.js';
-import changeItem from './guy/inventory/changeItem.js';
 import findItemUnderCursor from './guy/inventory/findItemUnderCursor.js';
 import itemTextIds from './guy/inventory/itemTextIds.js';
-import updateMinimap from './interface/minimap/updateMinimap.js';
 import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
 import sounds from './sounds/sounds.js';
@@ -34,14 +31,14 @@ import getButtonAtPosition from './interface/menu/getButtonAtPosition.js';
 import processAction from './action/processAction.js';
 import drawCredits from './credits/drawCredits.js';
 import phases from './state/phases.js';
-import startNewGame from './state/startNewGame.js';
 import workbench from './guy/inventory/workbench.js';
 import cursor from './interface/cursor/cursor.js';
 import drawLogo from './state/drawLogo.js';
 import drawPlay from './state/drawPlay.js';
-import loadState from './state/loadState.js';
 import actions from './action/actions.js';
 import handleItemTap from './guy/inventory/handleItemTap.js';
+import initKeyboard from './interface/keyboard/initKeyboard.js';
+import handleKeyboard from './interface/keyboard/handleKeyboard.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
@@ -54,7 +51,6 @@ const mouseUpdates = {
   y: 0,
   rgbButtons: []
 };
-const pressedKeyCodes = {};
 let Button0down;    //linke Maustaste gedrückt gehalten
 let Button1down;    //rechte Maustaste gedrückt gehalten
 let timestampInSeconds;            //Start der Sekunde
@@ -111,13 +107,7 @@ const initInput = (window) => {
     mouseUpdates.rgbButtons[1] = event.buttons & 2;
   };
 
-  window.document.addEventListener("keydown", (event) => {
-    pressedKeyCodes[event.code] = true;
-  });
-
-  window.document.addEventListener("keyup", (event) => {
-    pressedKeyCodes[event.code] = false;
-  });
+  initKeyboard(window);
 }
 
 const InitStructs = () => {
@@ -250,108 +240,6 @@ const CheckMouse = () => {
     MouseInPanel(Button, Push);
 }
 
-const MarkKeysAsProcessed = () => {
-  Object.keys(pressedKeyCodes).forEach(code => pressedKeyCodes[code] = false);
-};
-
-const CheckKey = () => {
-  const DIK_ESCAPE = 'Escape';
-  const DIK_RETURN = 'Enter';
-  const DIK_SPACE = 'Space';
-  const DIK_UP = 'ArrowUp';
-  const DIK_RIGHT = 'ArrowRight';
-  const DIK_DOWN = 'ArrowDown';
-  const DIK_LEFT = 'ArrowLeft';
-  const DIK_F11 = 'F11';
-  const DIK_G = 'KeyG';
-  const DIK_C = 'KeyC';
-  const DIK_I = 'KeyI';
-  const DIK_W = 'KeyW';
-  const DIK_E = 'KeyE';
-  const pressedCancel = pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE];
-
-  if (state.phase === phases.LOGO) {
-    //Logo Abbrechen
-    if (pressedCancel) {
-      sounds.LOGO.instance.stop();
-      if (!loadState()) {
-        startNewGame();
-      }
-      MarkKeysAsProcessed();
-      return (2);
-    }
-  } else if (state.phase === phases.PLAY) {
-    const fastForward = actions[state.guy.action?.type]?.fastForward;
-    if (fastForward && pressedCancel) {
-      fastForward();
-      MarkKeysAsProcessed();
-      return (2);
-    }
-
-    if (pressedKeyCodes[DIK_RIGHT]) state.camera.x += 10;
-    if (pressedKeyCodes[DIK_LEFT]) state.camera.x -= 10;
-    if (pressedKeyCodes[DIK_DOWN]) state.camera.y += 10;
-    if (pressedKeyCodes[DIK_UP]) state.camera.y -= 10;
-    if (pressedKeyCodes[DIK_ESCAPE]) {
-      startAction(actionTypes.STOPPING_GAME);
-      MarkKeysAsProcessed();
-    }
-    if (pressedKeyCodes[DIK_F11]) {
-      startAction(actionTypes.RESTARTING_GAME);
-      MarkKeysAsProcessed();
-    }
-    if (pressedKeyCodes[DIK_G]) {
-      state.options.grid = !state.options.grid;
-      MarkKeysAsProcessed();
-    }
-
-    if (pressedKeyCodes[DIK_C])  //Zum testen
-    {
-      state.terrain.forEach((terrainColumn) => {
-        terrainColumn.forEach((tile) => {
-          tile.discovered = true;
-        });
-      });
-      updateMinimap();
-      MarkKeysAsProcessed();
-    }
-
-    if (pressedKeyCodes[DIK_I])  //Zum testen
-    {
-      changeItem(items.BRANCH, 10);
-      changeItem(items.STONE, 10);
-      changeItem(items.LEAF, 10);
-      changeItem(items.LIANA, 10);
-      changeItem(items.LOG, 10);
-      MarkKeysAsProcessed();
-    }
-    if (pressedKeyCodes[DIK_W])  //Zum testen
-    {
-      changeItem(items.AXE, 1);
-      changeItem(items.HARROW, 1);
-      changeItem(items.FISHING_ROD, 1);
-      changeItem(items.HAMMER, 1);
-      changeItem(items.SPYGLASS, 1);
-      changeItem(items.MATCHES, 1);
-      changeItem(items.SHOVEL, 1);
-      changeItem(items.MAP, 1);
-      changeItem(items.SLING, 1);
-      MarkKeysAsProcessed();
-    }
-    if (pressedKeyCodes[DIK_E])  //Zum testen
-    {
-      state.guy.cheatChance = (state.guy.cheatChance || 0) + 1;
-      MarkKeysAsProcessed();
-    }
-  } else if (state.phase === phases.CREDITS) {
-    if (pressedCancel) {
-      MarkKeysAsProcessed();
-      return (0);
-    }
-  }
-  return (1);
-}
-
 const MouseInSpielflaeche = (Button, Push, xDiff, yDiff) => {
   const tilePosition = getTileByPosition({ x: MousePosition.x + state.camera.x, y: MousePosition.y + state.camera.y });
   if (tilePosition && state.terrain[tilePosition.x][tilePosition.y].discovered) {
@@ -465,8 +353,9 @@ const refresh = (timestamp) => {
     if (framesPerSecond === 0) framesPerSecond = 50;
   }
 
+  handleKeyboard();
+
   if (state.phase === phases.LOGO) {
-    if (CheckKey() === 2) return true;    //Das Keyboard abfragen
     drawLogo()
   } else if (state.phase === phases.PLAY) {
     if (state.calendar.minutes > (12 * 60) && (state.guy.action?.type !== actionTypes.ENDING_DAY))  //Hier ist der Tag zuende
@@ -477,7 +366,6 @@ const refresh = (timestamp) => {
     if (!actions[state.guy.action?.type]?.movie || state.paper) {
       CheckMouse();    //Den MouseZustand abchecken
     }
-    CheckKey();
     restrictCamera();            //Das Scrollen an die Grenzen der Landschaft anpassen
     Animationen();            //Die Animationsphasen weiterschalten
     discoverTerrain();
@@ -494,7 +382,6 @@ const refresh = (timestamp) => {
     drawPlay();
 
   } else if (state.phase === phases.CREDITS) {
-    if (CheckKey() === 0) return false;
     drawCredits(frame, framesPerSecond);
   }
   return true;
@@ -511,10 +398,11 @@ const run = async (window) => {
 
   return new Promise((resolve) => {
     const loop = (timestamp) => {
-      if (refresh(timestamp)) {
-        window.requestAnimationFrame(loop);
-      } else {
+      refresh(timestamp);
+      if (state.phase === phases.EXIT) {
         resolve();
+      } else {
+        window.requestAnimationFrame(loop);        
       }
     }
     window.requestAnimationFrame(loop);
