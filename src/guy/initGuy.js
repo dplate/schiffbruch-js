@@ -15,7 +15,6 @@ const initGuy = () => {
   state.guy.health = 100;
   state.guy.inventory = createInventory();
 
-  state.guy.chance = 0;
   state.guy.sprite = spriteTypes.GUY_SAILING;
 };
 

@@ -12,13 +12,19 @@ import discoverTerrain from '../../guy/discoverTerrain.js';
 import updateCamera from '../../camera/updateCamera.js';
 import grounds from '../../terrain/tiles/grounds.js';
 import findRoute from '../../guy/routing/findRoute.js';
+import updateMinimap from '../../interface/minimap/updateMinimap.js';
+import tileEdges from '../../terrain/tiles/tileEdges.js';
+
+const findBeachPositionX = () => {
+  return state.terrain.findIndex(terrainColumn => {
+    return terrainColumn[state.guy.tile.y].ground !== grounds.SEA;
+  })
+};
 
 const sail = () => {
-  const targetX = state.terrain.findIndex(terrainColumn => {
-    return terrainColumn[state.guy.tile.y].ground !== grounds.SEA;
-  });
+  const beachPositionX = findBeachPositionX();
   state.guy.active = true;
-  state.guy.route = findRoute({ x: targetX - 2, y: state.guy.tile.y });
+  state.guy.route = findRoute({ x: beachPositionX - 2, y: state.guy.tile.y });
   sounds.STORM.instance.play(true);
 };
 
@@ -49,6 +55,28 @@ const arrive = () => {
   saveState();
 };
 
+const fastForward = () => {
+  sounds.STORM.instance.stop();
+  sounds.SWIMMING.instance.stop();
+  
+  const beachPositionX = findBeachPositionX();
+  for (let x = state.guy.tile.x; x <= beachPositionX; x++) {
+    state.guy.tile.x = x;
+    discoverTerrain();
+  }
+  addShipWreck(state.terrain[beachPositionX - 2][state.guy.tile.y]);
+
+  const tile = state.terrain[beachPositionX][state.guy.tile.y];
+  state.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
+  state.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
+  state.guy.route = [];
+  state.guy.active = false;
+  state.guy.sprite = spriteTypes.GUY_WAITING;
+  state.guy.action = null;
+
+  arrive();
+};
+
 const arriving = {
   steps: [
     sail,
@@ -58,7 +86,8 @@ const arriving = {
     arrive
   ],
   finish: () => openPaper(texts.ARRIVING, false),
-  movie: true
+  movie: true,
+  fastForward
 };
 
 export default arriving;

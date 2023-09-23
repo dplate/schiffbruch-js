@@ -1,6 +1,6 @@
+import calculateChance from '../guy/calculateChance.js';
 import canvases from '../images/canvases.js';
 import images from '../images/images.js';
-import state from '../state/state.js';
 import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
 import blitText from './text/blitText.js';
@@ -12,8 +12,11 @@ const height = 150;
 
 const drawChance = () => {
   const panelPosition = interfaces[interfaceTypes.PANEL].position;
+  const chance = calculateChance();
 
-  const positionY = panelPosition.y - 113 + Math.floor(100 * Math.sin(Math.PI / 200 * state.guy.chance));
+  const positionY = panelPosition.y - 113 + Math.floor(
+    113 * Math.sin(Math.min(Math.PI * chance / 200, Math.PI / 2))
+  );
 
   canvases.PRIMARY.drawImage(
     images.PANEL.instance,
@@ -28,7 +31,8 @@ const drawChance = () => {
   );
 
   textAreas.CHANCE.y = Math.floor(positionY + height - 25);
-  drawText(state.guy.chance.toFixed(0), textAreas.CHANCE);
+  const chanceString = chance.toFixed(0).toString();
+  drawText(chanceString.length < 2 ? `${chanceString}%` : chanceString, textAreas.CHANCE);
   blitText(textAreas.CHANCE);
 };
 

@@ -35,7 +35,6 @@ const state = {
     food: null,
     health: null,
     inventory: null,
-    chance: null
   },
   constructionHints: {},
   calendar: {

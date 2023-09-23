@@ -1,5 +1,4 @@
 import canvases from '../../images/canvases.js';
-import fade from '../../images/fade.js';
 import images from '../../images/images.js';
 import state from '../../state/state.js';
 import blitText from './blitText.js';

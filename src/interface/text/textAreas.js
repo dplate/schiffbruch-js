@@ -24,7 +24,7 @@ const textAreas = {
   },
   CHANCE: {
     font: fonts.DIGITAL,
-    x: 800 - 190,
+    x: 800 - 192,
     y: 370,
     width: 5 * fonts.DIGITAL.distance,
     height: fonts.DIGITAL.height

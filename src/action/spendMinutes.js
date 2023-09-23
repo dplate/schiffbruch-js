@@ -6,14 +6,12 @@ import state from '../state/state.js';
 import startAction from './startAction.js';
 import actionTypes from './actionTypes.js';
 import actions from './actions.js';
+import calculateChance from '../guy/calculateChance.js';
 
 const removeObjectsWithLifetime = (minutes, tile) => {
   if (tile.object?.lifetime) {
     tile.object.lifetime -= minutes;
     if (tile.object.lifetime <= 0) {
-      if (tile.object.chance) {
-        state.guy.chance -= tile.object.chance;
-      }
       tile.object = null;
     }
   }
@@ -30,7 +28,8 @@ const growFood = (minutes, tile) => {
 };
 
 const checkForRescue = (minutes) => {
-  const rescued = Math.random() < state.guy.chance / 100 * minutes / 720;
+  const chance = calculateChance();
+  const rescued = Math.random() < chance / 100 * minutes / 720;
   if (!isOnSea() && rescued) {
     startAction(actionTypes.LEAVING);
   }

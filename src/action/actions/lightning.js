@@ -14,9 +14,7 @@ const lightIt = () => {
 
 const watchFire = (tile) => {
   tile.object.sprite = spriteTypes.FIRE;
-  tile.object.chance = 2 + 2 * tile.height;
   tile.object.lifetime = 35 * 60;
-  state.guy.chance += tile.object.chance;
   startGuyAnimation(spriteTypes.GUY_WAITING);
   spendMinutes(2);
 };

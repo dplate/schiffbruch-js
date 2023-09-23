@@ -61,15 +61,6 @@ const constructingSos = {
     standUp,
     goToCenterOfTile
   ],
-  finish: (tile) => {
-    if ((tile.ground === grounds.GRASS) || (tile.ground === grounds.WETLAND)) {
-      tile.object.chance = 1;
-    }
-    else {
-      tile.object.chance = 2;
-    }
-    state.guy.chance += tile.object.chance;
-  }
 };
 
 export default constructingSos;

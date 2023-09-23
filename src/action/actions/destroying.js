@@ -30,13 +30,8 @@ const destroy = (tile) => {
   tile.originalObject = null
   if (tile.construction) {
     tile.construction = null;
-  } else {
-    if (object.chance) {
-      state.guy.chance -= object.chance;
-    }
-    if (object.sprite === spriteTypes.PIPE) {
-      updatePipes();
-    }
+  } else if (object.sprite === spriteTypes.PIPE) {
+    updatePipes();
   }
 };
 

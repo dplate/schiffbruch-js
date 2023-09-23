@@ -59,6 +59,11 @@ const switchToCredits = () => {
   state.phase = phases.CREDITS;
 };
 
+const fastForward = () => {
+  state.guy.action = null;
+  switchToCredits();
+};
+
 const leaving = {
   steps: [
     goToCenterOfTile,
@@ -70,7 +75,8 @@ const leaving = {
     sail
   ],
   finish: switchToCredits,
-  movie: true
+  movie: true,
+  fastForward
 };
 
 export default leaving;

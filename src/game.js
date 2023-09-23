@@ -255,6 +255,10 @@ const CheckMouse = () => {
     MouseInPanel(Button, Push);
 }
 
+const MarkKeysAsProcessed = () => {
+  Object.keys(pressedKeyCodes).forEach(code => pressedKeyCodes[code] = false);
+};
+
 const CheckKey = () => {
   const DIK_ESCAPE = 'Escape';
   const DIK_RETURN = 'Enter';
@@ -268,69 +272,53 @@ const CheckKey = () => {
   const DIK_C = 'KeyC';
   const DIK_I = 'KeyI';
   const DIK_W = 'KeyW';
+  const DIK_E = 'KeyE';
+  const pressedCancel = pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE];
 
   if (state.phase === phases.LOGO) {
     //Logo Abbrechen
-    if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
+    if (pressedCancel) {
       sounds.LOGO.instance.stop();
       if (!loadState()) {
         startNewGame();
       }
-      return (2);
-    }
-  } else if (state.guy.action?.type === actionTypes.ARRIVING) {
-    //Intro Abbrechen
-    if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
-      sounds.STORM.instance.stop();
-      sounds.SWIMMING.instance.stop();
-      state.guy.active = false;
-      for (let x = state.guy.tile.x; x < MAXXKACH; x++) {
-        state.guy.tile.x = x;
-        discoverTerrain();
-        if (state.terrain[state.guy.tile.x][state.guy.tile.y].ground !== grounds.SEA) break;
-      }
-      addShipWreck(state.terrain[state.guy.tile.x - 2][state.guy.tile.y]);
-
-      const tile = state.terrain[state.guy.tile.x][state.guy.tile.y];
-      state.guy.position.x = tile.position.x + tileEdges[tile.type].center.x;
-      state.guy.position.y = tile.position.y + tileEdges[tile.type].center.y;
-      state.guy.route = [];
-      updateCamera(state.guy.position, false);
-
-      state.guy.sprite = spriteTypes.GUY_WAITING;
-      state.guy.action = null;
-      state.phase = phases.PLAY;
-      saveState();
-      return (2);
-    }
-  } else if (state.guy.action?.type === actionTypes.LEAVING) {
-    if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
-      audio.stopAll();
-      state.phase = phases.CREDITS;
+      MarkKeysAsProcessed();
       return (2);
     }
   } else if (state.phase === phases.PLAY) {
+    const fastForward = actions[state.guy.action?.type]?.fastForward;
+    if (fastForward && pressedCancel) {
+      fastForward();
+      MarkKeysAsProcessed();
+      return (2);
+    }
+
     if (pressedKeyCodes[DIK_RIGHT]) state.camera.x += 10;
     if (pressedKeyCodes[DIK_LEFT]) state.camera.x -= 10;
     if (pressedKeyCodes[DIK_DOWN]) state.camera.y += 10;
     if (pressedKeyCodes[DIK_UP]) state.camera.y -= 10;
     if (pressedKeyCodes[DIK_ESCAPE]) {
       startAction(actionTypes.STOPPING_GAME);
+      MarkKeysAsProcessed();
     }
     if (pressedKeyCodes[DIK_F11]) {
       startAction(actionTypes.RESTARTING_GAME);
+      MarkKeysAsProcessed();
     }
     if (pressedKeyCodes[DIK_G]) {
       state.options.grid = !state.options.grid;
+      MarkKeysAsProcessed();
     }
 
     if (pressedKeyCodes[DIK_C])  //Zum testen
     {
-      let x, y;
-      for (y = 0; y < MAXYKACH; y++)
-        for (x = 0; x < MAXXKACH; x++)
-          state.terrain[x][y].discovered = true;
+      state.terrain.forEach((terrainColumn) => {
+        terrainColumn.forEach((tile) => {
+          tile.discovered = true;
+        });
+      });
       updateMinimap();
+      MarkKeysAsProcessed();
     }
 
     if (pressedKeyCodes[DIK_I])  //Zum testen
@@ -340,6 +328,7 @@ const CheckKey = () => {
       changeItem(items.LEAF, 10);
       changeItem(items.LIANA, 10);
       changeItem(items.LOG, 10);
+      MarkKeysAsProcessed();
     }
     if (pressedKeyCodes[DIK_W])  //Zum testen
     {
@@ -352,11 +341,16 @@ const CheckKey = () => {
       changeItem(items.SHOVEL, 1);
       changeItem(items.MAP, 1);
       changeItem(items.SLING, 1);
-
-      state.guy.chance += 10;
+      MarkKeysAsProcessed();
+    }
+    if (pressedKeyCodes[DIK_E])  //Zum testen
+    {
+      state.guy.cheatChance = (state.guy.cheatChance || 0) + 1;
+      MarkKeysAsProcessed();
     }
   } else if (state.phase === phases.CREDITS) {
-    if (pressedKeyCodes[DIK_ESCAPE] || pressedKeyCodes[DIK_RETURN] || pressedKeyCodes[DIK_SPACE]) {
+    if (pressedCancel) {
+      MarkKeysAsProcessed();
       return (0);
     }
   }
@@ -532,9 +526,6 @@ const refresh = (timestamp) => {
   } else if (state.phase === phases.PLAY) {
     if (state.calendar.minutes > (12 * 60) && (state.guy.action?.type !== actionTypes.ENDING_DAY))  //Hier ist der Tag zuende
     {
-      if (state.guy.action?.type === actionTypes.LOOKING) {
-        state.guy.chance -= 1 + state.terrain[state.guy.tile.x][state.guy.tile.y].height;
-      }
       startAction(actionTypes.ENDING_DAY);
     }
 
