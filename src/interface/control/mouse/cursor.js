@@ -1,4 +1,4 @@
-import spriteTypes from '../../images/spriteTypes.js';
+import spriteTypes from '../../../images/spriteTypes.js';
 
 const cursor = {
   x: 0,

@@ -1,9 +1,8 @@
-import drawStatusText from '../text/drawStatusText.js';
-import texts from '../text/texts.js';
+import cursor from '../control/mouse/cursor.js';
 import getButtonAtPosition from './getButtonAtPosition.js';
 
-const handleButtonHovers = (mousePosition) => {
-  const button = getButtonAtPosition(mousePosition);
+const handleButtonHovers = () => {
+  const button = getButtonAtPosition(cursor);
   if (!button) {
     return;
   }

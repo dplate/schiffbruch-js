@@ -6,11 +6,12 @@ import buttons from './buttons.js';
 const drawButtons = () => {
   buttons.forEach(button => {
     if (button.isVisible()) {
+      const panelArea = interfaces[interfaceTypes.PANEL]().area;
       drawSprite(
         button.sprite, 
         button.frame, 
-        interfaces[interfaceTypes.PANEL].position.x + button.position.x, 
-        interfaces[interfaceTypes.PANEL].position.y + button.position.y
+        panelArea.x + button.position.x, 
+        panelArea.y + button.position.y
       );
     }
   });

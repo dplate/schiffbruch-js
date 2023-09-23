@@ -3,7 +3,7 @@ import itemSprites from './itemSprites.js';
 import items from './items.js';
 import state from '../../state/state.js';
 
-const findItemUnderCursor = (position) => {
+const findItemAtPosition = (position) => {
   return items.list.find(item => {
     if (state.guy.inventory[item] > 0) {
       const sprite = itemSprites[item];
@@ -15,7 +15,7 @@ const findItemUnderCursor = (position) => {
         bottom: inventoryOffsets.items.y + inventoryPosition.y + sprite.height
       };
       if (position.x >= rectangle.left && position.y >= rectangle.top &&
-          position.x < rectangle.right && position.y < rectangle.bottom) {
+        position.x < rectangle.right && position.y < rectangle.bottom) {
         return true;
       }
     };
@@ -23,4 +23,4 @@ const findItemUnderCursor = (position) => {
   });
 };
 
-export default findItemUnderCursor;
+export default findItemAtPosition;

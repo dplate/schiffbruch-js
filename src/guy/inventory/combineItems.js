@@ -66,15 +66,6 @@ const combineItems = (items) => {
   openPaper(texts[newOutput.textId], false);
 };
 
-const handleItemTap = (tappedItem) => {
-  if (!workbench.selectedItem) {
-    workbench.selectedItem = tappedItem;
-  } else {
-    combineItems([tappedItem, workbench.selectedItem]);
-    workbench.selectedItem = null;
-  }
-};
-
-export default handleItemTap;
+export default combineItems;
 
 

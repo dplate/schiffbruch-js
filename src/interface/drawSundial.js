@@ -19,12 +19,12 @@ const center = {
 };
 
 const drawSun = () => {
-  const panelPosition = interfaces[interfaceTypes.PANEL].position;
+  const panelArea = interfaces[interfaceTypes.PANEL]().area;
   const angle = Math.PI - Math.PI * state.calendar.minutes / 720;
 
   const position = {
-    x: Math.floor(panelPosition.x + center.x + radius.x * Math.cos(angle) - width / 2),
-    y: Math.floor(panelPosition.y + center.y - radius.y * Math.sin(angle) - height / 2)
+    x: Math.floor(panelArea.x + center.x + radius.x * Math.cos(angle) - width / 2),
+    y: Math.floor(panelArea.y + center.y - radius.y * Math.sin(angle) - height / 2)
   };
   const limitedHeight = Math.min(center.y - position.y, height);
   

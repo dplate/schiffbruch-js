@@ -1,8 +1,8 @@
-import workbench from '../../guy/inventory/workbench.js';
-import drawSprite from '../../images/drawSprite.js';
+import drawItem from '../../../guy/inventory/drawItem.js';
+import itemSprites from '../../../guy/inventory/itemSprites.js';
+import workbench from '../../../guy/inventory/workbench.js';
+import drawSprite from '../../../images/drawSprite.js';
 import cursor from './cursor.js';
-import itemSprites from '../../guy/inventory/itemSprites.js';
-import drawItem from '../../guy/inventory/drawItem.js';
 
 const drawCursor = () => {
   if (workbench.selectedItem) {

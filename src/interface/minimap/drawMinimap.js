@@ -7,24 +7,17 @@ import interfaceTypes from '../interfaceTypes.js';
 import interfaces from '../interfaces.js';
 
 const drawMinimap = () => {
-  const panelPosition = interfaces[interfaceTypes.PANEL].position;
-  const position = {
-    x: panelPosition.x + 47,
-    y: panelPosition.y + 23
-  };
-
-  const minimapWidth = minimapScaling * state.terrain.length;
-  const minimapHeight = minimapScaling * state.terrain[0].length;
+  const area = interfaces[interfaceTypes.MINIMAP]().area;
   canvases.PRIMARY.drawImage(
     canvases.MINIMAP.canvas,
-    0, 0, minimapWidth, minimapHeight,
-    position.x, position.y, minimapWidth, minimapHeight
+    0, 0, area.width, area.height,
+    area.x, area.y, area.width, area.height
   );
 
   canvases.PRIMARY.fillStyle = `rgba(255, 0, 0, 1)`;
   canvases.PRIMARY.fillRect(
-    position.x + minimapScaling * state.guy.tile.x, 
-    position.y + minimapScaling * state.guy.tile.y, 
+    area.x + minimapScaling * state.guy.tile.x, 
+    area.y + minimapScaling * state.guy.tile.y, 
     minimapScaling, 
     minimapScaling
   );
@@ -38,8 +31,8 @@ const drawMinimap = () => {
     0, 
     viewRectangleWith, 
     viewRectangleHeight,
-    Math.floor(position.x + minimapScaling * tileIndex.x), 
-    Math.floor(position.y + minimapScaling * tileIndex.y - 21), 
+    Math.floor(area.x + minimapScaling * tileIndex.x), 
+    Math.floor(area.y + minimapScaling * tileIndex.y - 21), 
     viewRectangleWith, 
     viewRectangleHeight
   );

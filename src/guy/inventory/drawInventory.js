@@ -4,22 +4,19 @@ import interfaces from '../../interface/interfaces.js';
 import interfaceTypes from '../../interface/interfaceTypes.js';
 import drawItems from './drawItems.js';
 
-const width = 178;
-const height = 114;
-
 const drawInventory = () => {
-  const panelPosition = interfaces[interfaceTypes.PANEL].position;
+  const inventoryArea = interfaces[interfaceTypes.INVENTORY]().area;
 
   canvases.PRIMARY.drawImage(
     images.INVENTORY.instance,
     0, 
     15, 
-    width, 
-    height,
-    panelPosition.x + 15, 
-    panelPosition.y + 220, 
-    width, 
-    height
+    inventoryArea.width, 
+    inventoryArea.height,
+    inventoryArea.x, 
+    inventoryArea.y, 
+    inventoryArea.width, 
+    inventoryArea.height
   );
 
   drawItems();

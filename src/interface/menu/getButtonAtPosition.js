@@ -8,9 +8,10 @@ const getButtonAtPosition = (position) => {
     if (!button.isVisible()) {
       return false;
     }
+    const panelArea = interfaces[interfaceTypes.PANEL]().area;
     const absoluteButtonPosition = {
-      x: interfaces[interfaceTypes.PANEL].position.x + button.position.x,
-      y: interfaces[interfaceTypes.PANEL].position.y + button.position.y
+      x: panelArea.x + button.position.x,
+      y: panelArea.y + button.position.y
     };
     const buttonSprite = sprites[button.sprite];
 

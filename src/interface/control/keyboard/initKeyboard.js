@@ -1,12 +1,12 @@
-import pressedKeyCodes from './pressedKeyCodes.js';
+import control from '../control.js';
 
 const initKeyboard = (window) => {
   window.document.addEventListener("keydown", (event) => {
-    pressedKeyCodes[event.code] = true;
+    control.pressedKeyCodes[event.code] = true;
   });
 
   window.document.addEventListener("keyup", (event) => {
-    pressedKeyCodes[event.code] = false;
+    control.pressedKeyCodes[event.code] = false;
   });
 };
 

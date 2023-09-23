@@ -1,20 +1,20 @@
-import phases from '../../state/phases.js';
-import state from '../../state/state.js';
-import pressedKeyCodes from './pressedKeyCodes.js';
-import sounds from '../../sounds/sounds.js';
-import startNewGame from '../../state/startNewGame.js';
-import loadState from '../../state/loadState.js';
-import actions from '../../action/actions.js';
-import startAction from '../../action/startAction.js';
-import actionTypes from '../../action/actionTypes.js';
-import changeItem from '../../guy/inventory/changeItem.js';
-import updateMinimap from '../minimap/updateMinimap.js';
-import items from '../../guy/inventory/items.js';
+import phases from '../../../state/phases.js';
+import state from '../../../state/state.js';
+import sounds from '../../../sounds/sounds.js';
+import startNewGame from '../../../state/startNewGame.js';
+import loadState from '../../../state/loadState.js';
+import actions from '../../../action/actions.js';
+import startAction from '../../../action/startAction.js';
+import actionTypes from '../../../action/actionTypes.js';
+import changeItem from '../../../guy/inventory/changeItem.js';
+import updateMinimap from '../../minimap/updateMinimap.js';
+import items from '../../../guy/inventory/items.js';
+import control from '../control.js';
 
 const hasPressedCancel = () => 
-  pressedKeyCodes['Escape'] || 
-  pressedKeyCodes['Enter'] || 
-  pressedKeyCodes['Space'];
+  control.pressedKeyCodes['Escape'] || 
+  control.pressedKeyCodes['Enter'] || 
+  control.pressedKeyCodes['Space'];
 
 const handleKeysDuringLogo = () => {
   if (hasPressedCancel()) {
@@ -33,16 +33,16 @@ const handleCameraMovement = () => {
     y: 0
   };
 
-  if (pressedKeyCodes['ArrowRight']) {
+  if (control.pressedKeyCodes['ArrowRight']) {
     movement.x += 10;
   }
-  if (pressedKeyCodes['ArrowLeft']) {
+  if (control.pressedKeyCodes['ArrowLeft']) {
     movement.x -= 10;
   }
-  if (pressedKeyCodes['ArrowDown']) {
+  if (control.pressedKeyCodes['ArrowDown']) {
     movement.y += 10;
   }
-  if (pressedKeyCodes['ArrowUp']) {
+  if (control.pressedKeyCodes['ArrowUp']) {
     movement.y -= 10;
   }
   return movement;
@@ -59,21 +59,21 @@ const handleKeyDuringPlay = () => {
   state.camera.x += movement.x;
   state.camera.y += movement.y;
 
-  if (pressedKeyCodes['Escape']) {
+  if (control.pressedKeyCodes['Escape']) {
     startAction(actionTypes.STOPPING_GAME);
     return true;
   }
-  if (pressedKeyCodes['F11']) {
+  if (control.pressedKeyCodes['F11']) {
     startAction(actionTypes.RESTARTING_GAME);
     return true;
   }
-  if (pressedKeyCodes['KeyG']) {
+  if (control.pressedKeyCodes['KeyG']) {
     state.options.grid = !state.options.grid;
     return true;
   }
 
-  if (pressedKeyCodes['KeyD']) {
-    if (pressedKeyCodes['KeyC']) {
+  if (control.pressedKeyCodes['KeyD']) {
+    if (control.pressedKeyCodes['KeyC']) {
       state.terrain.forEach((terrainColumn) => {
         terrainColumn.forEach((tile) => {
           tile.discovered = true;
@@ -82,7 +82,7 @@ const handleKeyDuringPlay = () => {
       updateMinimap();
       return true;
     }
-    if (pressedKeyCodes['KeyI']) {
+    if (control.pressedKeyCodes['KeyI']) {
       changeItem(items.BRANCH, 10);
       changeItem(items.STONE, 10);
       changeItem(items.LEAF, 10);
@@ -90,7 +90,7 @@ const handleKeyDuringPlay = () => {
       changeItem(items.LOG, 10);
       return true;
     }
-    if (pressedKeyCodes['KeyW']) {
+    if (control.pressedKeyCodes['KeyW']) {
       changeItem(items.AXE, 1);
       changeItem(items.HARROW, 1);
       changeItem(items.FISHING_ROD, 1);
@@ -102,7 +102,7 @@ const handleKeyDuringPlay = () => {
       changeItem(items.SLING, 1);
       return true;
     }
-    if (pressedKeyCodes['KeyE']) {
+    if (control.pressedKeyCodes['KeyE']) {
       state.guy.cheatChance = (state.guy.cheatChance || 0) + 1;
       return false;
     }
@@ -133,8 +133,8 @@ const handleKeys = () => {
 const handleKeyboard = () => {
   const keysProcessed = handleKeys();
   if (keysProcessed) {
-    Object.keys(pressedKeyCodes).forEach(code => 
-      pressedKeyCodes[code] = false
+    Object.keys(control.pressedKeyCodes).forEach(code => 
+      control.pressedKeyCodes[code] = false
     );
   }
 };

@@ -6,17 +6,17 @@ import blitText from './text/blitText.js';
 import textAreas from './text/textAreas.js';
 
 const drawStatusBar = () => {
-  const statusBarPosition = interfaces[interfaceTypes.STATUS_BAR].position;
+  const statusBarArea = interfaces[interfaceTypes.STATUS_BAR]().area;
   canvases.PRIMARY.drawImage(
     images.STATUS_BAR.instance,
     0, 
     0, 
-    statusBarPosition.width, 
-    statusBarPosition.height,
-    statusBarPosition.x, 
-    statusBarPosition.y, 
-    statusBarPosition.width, 
-    statusBarPosition.height
+    statusBarArea.width, 
+    statusBarArea.height,
+    statusBarArea.x, 
+    statusBarArea.y, 
+    statusBarArea.width, 
+    statusBarArea.height
   );
 
   blitText(textAreas.STATUS);

@@ -5,7 +5,7 @@ import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
 
 const drawFluid = (percentage, sourceX, destinationX) => {
-  const panelPosition = interfaces[interfaceTypes.PANEL].position;
+  const panelArea = interfaces[interfaceTypes.PANEL]().area;
   const width = 11;
   const height = 95;
   const missingPixels = Math.round(height - percentage * height / 100)
@@ -16,8 +16,8 @@ const drawFluid = (percentage, sourceX, destinationX) => {
     115 + missingPixels, 
     width, 
     height - missingPixels,
-    panelPosition.x + destinationX, 
-    panelPosition.y + 393 + missingPixels, 
+    panelArea.x + destinationX, 
+    panelArea.y + 393 + missingPixels, 
     width, 
     height - missingPixels
   );
