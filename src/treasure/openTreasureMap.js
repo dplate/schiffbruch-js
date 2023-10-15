@@ -4,6 +4,7 @@ import state from '../state/state.js';
 
 const openTreasureMap = () => {
   const treasureMapCanvas = canvases.TREASURE_MAP.canvas;
+  const area = textAreas.PAPER.getArea();
 
   state.paper = {
     height: treasureMapCanvas.height
@@ -15,8 +16,8 @@ const openTreasureMap = () => {
     0, 
     treasureMapCanvas.width, 
     treasureMapCanvas.height,
-    textAreas.PAPER.x, 
-    textAreas.PAPER.y, 
+    area.x, 
+    area.y, 
     treasureMapCanvas.width, 
     treasureMapCanvas.height
   );

@@ -30,7 +30,7 @@ const drawChance = () => {
     height
   );
 
-  textAreas.CHANCE.y = Math.floor(positionY + height - 25);
+  textAreas.CHANCE.offsetY = Math.floor(positionY + height - 25);
   const chanceString = chance.toFixed(0).toString();
   drawText(chanceString.length < 2 ? `${chanceString}%` : chanceString, textAreas.CHANCE);
   blitText(textAreas.CHANCE);

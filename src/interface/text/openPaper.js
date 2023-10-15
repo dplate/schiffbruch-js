@@ -37,7 +37,8 @@ const drawNo = (no) => {
 };
 
 const openPaper = (text, question) => {
-  const textHeight = drawText(text, textAreas.PAPER)
+  const textHeight = drawText(text, textAreas.PAPER);
+  const area = textAreas.PAPER.getArea();
 
   state.paper = {
     height: textHeight
@@ -48,16 +49,16 @@ const openPaper = (text, question) => {
       answer: null
     };
     state.paper.question.yes = {
-      x: textAreas.PAPER.x + 50,
-      y: textAreas.PAPER.y + textHeight + 25,
+      x: area.x + 50,
+      y: area.y + textHeight + 25,
       width: 41,
       height: 42
     }
     drawYes(state.paper.question.yes);
 
     state.paper.question.no = {
-      x: textAreas.PAPER.x + 220,
-      y: textAreas.PAPER.y + textHeight + 25,
+      x: area.x + 220,
+      y: area.y + textHeight + 25,
       width: 100,
       height: 39
     }

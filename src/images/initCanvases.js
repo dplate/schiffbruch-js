@@ -3,8 +3,8 @@ import canvases from './canvases.js';
 const initCanvases = async (window) => {
   const primaryCanvas = window.document.createElement('canvas');
   primaryCanvas.id = 'primaryCanvas';
-  primaryCanvas.width = 800;
-  primaryCanvas.height = 600;
+  primaryCanvas.width = window.innerWidth;
+  primaryCanvas.height = window.innerHeight;
   window.document.body.appendChild(primaryCanvas);
   //window.document.body.requestFullscreen();
   canvases.PRIMARY = primaryCanvas.getContext('2d');

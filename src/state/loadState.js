@@ -2,6 +2,7 @@ import state from './state.js';
 import drawTreasureMap from '../treasure/drawTreasureMap.js';
 import updateMinimap from '../interface/minimap/updateMinimap.js';
 import closePaper from '../interface/text/closePaper.js';
+import updateCamera from '../camera/updateCamera.js';
 
 const loadState = () => {
   const rawState = window.localStorage.getItem('stateV11');
@@ -21,6 +22,7 @@ const loadState = () => {
   drawTreasureMap();
   updateMinimap();
   closePaper();
+  updateCamera(state.guy.position);
 
   return true;
 };

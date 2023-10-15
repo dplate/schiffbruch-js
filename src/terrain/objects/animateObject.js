@@ -9,7 +9,7 @@ const animateObject = (tile, elapsedTime) => {
     if (object.reverse) {
       object.frame -= frameChange;
       if (object.frame < 0) {
-        object.frame = sprite.frameCount - 1;
+        object.frame += sprite.frameCount;
       }
     } else {
       object.frame += frameChange;
@@ -17,7 +17,7 @@ const animateObject = (tile, elapsedTime) => {
         if (object.deleteAfterLastFrame) {
           tile.object = null;
         } else {
-          object.frame = 0;
+          object.frame -= sprite.frameCount;
         }
       }
     }

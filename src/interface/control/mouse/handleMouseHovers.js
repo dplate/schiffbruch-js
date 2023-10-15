@@ -49,12 +49,12 @@ const setStatusText = () => {
         return;
       }
     }
-    if (isCursorOverArea(textAreas.TIME)) {
+    if (isCursorOverArea(textAreas.TIME.getArea())) {
       drawStatusText(texts.STATUS_TIME);
       return;
     }
 
-    if (isCursorOverArea(textAreas.CHANCE)) {
+    if (isCursorOverArea(textAreas.CHANCE.getArea())) {
       drawStatusText(texts.STATUS_CHANCE);
       return;
     }

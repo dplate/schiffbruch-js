@@ -10,8 +10,8 @@ const drawTile = (area, x, y, forTreasureMap, canvasContext) => {
   
   const sprite = tileSprites[tile.type];
 
-  const destinationX = tile.position.x - area.x;
-  const destinationY = tile.position.y - area.y;
+  const destinationX = Math.round(tile.position.x - area.x);
+  const destinationY = Math.round(tile.position.y - area.y);
 
   if (
     destinationX + sprite.width < 0 || destinationY + sprite.height < 0 || 

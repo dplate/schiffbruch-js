@@ -23,8 +23,8 @@ const getColor = (tile) => {
 
 const updateMinimap = () => {
   const terrain = state.terrain;
-  canvases.MINIMAP.canvas.width = terrain.length * 2;
-  canvases.MINIMAP.canvas.height = terrain[0].length * 2;
+  canvases.MINIMAP.canvas.width = terrain.length * minimapScaling;
+  canvases.MINIMAP.canvas.height = terrain[0].length * minimapScaling;
   canvases.MINIMAP.fillStyle = undiscoveredColor
   canvases.MINIMAP.fillRect(0, 0, terrain.length * minimapScaling, terrain[0].length * minimapScaling);
 

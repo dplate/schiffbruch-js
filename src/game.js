@@ -6,6 +6,13 @@ import phases from './state/phases.js';
 import refresh from './refresh.js';
 import initControl from './interface/control/initControl.js';
 import initCanvases from './images/initCanvases.js';
+import resizeCanvases from './images/resizeCanvases.js';
+
+const resize = (screenWidth, screenHeight) => {
+  resizeCanvases(screenWidth, screenHeight);
+  state.camera.width = screenWidth;
+  state.camera.height = screenHeight;
+};
 
 const run = async (window) => {
   await loadImages();
@@ -13,6 +20,7 @@ const run = async (window) => {
   await loadSounds();
   initControl(window);
   texts.init('de');
+  resize(window.innerWidth, window.innerHeight)
 
   return new Promise((resolve) => {
     const loop = (timestamp) => {
@@ -32,3 +40,11 @@ window.document.getElementById('start').onclick = async (event) => {
   await run(window);
   window.location.reload();
 }
+
+window.addEventListener(
+  'resize', 
+  () => {
+    resize(window.innerWidth, window.innerHeight)
+  }, 
+  false
+);

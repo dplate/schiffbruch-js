@@ -1,7 +1,8 @@
 import canvases from '../../images/canvases.js';
 
 const clearText = (textArea) => {
-  canvases.TEXT.clearRect(textArea.x, textArea.y, textArea.width, textArea.height);
+  const area = textArea.getArea();
+  canvases.TEXT.clearRect(area.x, area.y, area.width, area.height);
 }
 
 export default clearText;

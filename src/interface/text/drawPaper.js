@@ -16,8 +16,9 @@ const drawPaper = () => {
 
   const paperHeight = Math.max(state.paper.height - 90, 0);
 
-  const x = textAreas.PAPER.x - 60;
-  const y = textAreas.PAPER.y - 30;
+  const area = textAreas.PAPER.getArea();
+  const x = area.x - 60;
+  const y = area.y - 30;
 
   canvases.PRIMARY.drawImage(
     images.PAPER.instance, 
@@ -51,7 +52,7 @@ const drawPaper = () => {
     rollHeight, 
   );
 
-  blitText(textAreas.PAPER, canvases.TEXT, canvases.PRIMARY);
+  blitText(textAreas.PAPER);
 };
 
 export default drawPaper;
