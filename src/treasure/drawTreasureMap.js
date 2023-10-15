@@ -7,6 +7,8 @@ import state from '../state/state.js';
 const drawTreasureMap = () => {
   const tile = state.terrain[state.treasure.x][state.treasure.y];
    const canvas = canvases.TREASURE_MAP.canvas;
+   canvas.width = 370;
+   canvas.height = 370;
 
   const tileCenter = tileEdges[tile.type].center;
   const area = {
