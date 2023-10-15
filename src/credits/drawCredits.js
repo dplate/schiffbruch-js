@@ -4,7 +4,7 @@ import sounds from '../sounds/sounds.js';
 import drawCreditTexts from './drawCreditTexts.js';
 import drawCreditGuy from './drawCreditGuy.js';
 
-const drawCredits = (frame, framesPerSecond) => {
+const drawCredits = (elapsedTime) => {
   sounds.OUTRO.instance.play(true);
 
   canvases.PRIMARY.fillStyle = 'rgba(0, 0, 0, 1)';
@@ -16,9 +16,9 @@ const drawCredits = (frame, framesPerSecond) => {
   );
 
   if (creditState.phase === 'TEXTS') {
-    drawCreditTexts(framesPerSecond);
+    drawCreditTexts(elapsedTime);
   } else {
-    drawCreditGuy(frame, framesPerSecond);
+    drawCreditGuy(elapsedTime);
   }
 };
 

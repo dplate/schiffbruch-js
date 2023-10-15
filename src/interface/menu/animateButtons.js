@@ -1,7 +1,7 @@
 import sprites from '../../images/sprites.js';
 import getButtonAtPosition from './getButtonAtPosition.js';
 
-const animateButtons = (frame, framesPerSecond, mousePosition) => {
+const animateButtons = (elapsedTime, mousePosition) => {
   const button = getButtonAtPosition(mousePosition);
   if (!button) {
     return;
@@ -11,12 +11,7 @@ const animateButtons = (frame, framesPerSecond, mousePosition) => {
     return;
   }
 
-  const animateEveryThisFrame = Math.round(framesPerSecond / sprite.speed) || 1;
-  if (frame % animateEveryThisFrame !== 0) {
-    return;
-  }
-
-  button.frame++;
+  button.frame += elapsedTime * sprite.speed / 1000;
   if (button.frame >= sprite.frameCount) {
     button.frame = 0;
   }

@@ -37,7 +37,7 @@ const getSpriteForDirection = (direction) => {
   }
 };
 
-const animateRoute = (frame) => {
+const animateRoute = (elapsedTime) => {
   const guy = state.guy;
   let routePoint = guy.route[0];
   let wayPoint = routePoint?.wayPoints[0];
@@ -59,33 +59,30 @@ const animateRoute = (frame) => {
     changeWaterAndFood(-1, -1);
   }
   
-  if (frame % tileCosts === 0) {
-    const distance = {
-      x: wayPoint.x - guy.position.x,
-      y: wayPoint.y - guy.position.y
-    };
-    const direction = getDirection(wayPoint, distance);
-    guy.sprite = getSpriteForDirection(direction);
-    const sprite = sprites[guy.sprite];
+  const distance = {
+    x: wayPoint.x - guy.position.x,
+    y: wayPoint.y - guy.position.y
+  };
+  const direction = getDirection(wayPoint, distance);
+  guy.sprite = getSpriteForDirection(direction);
+  const sprite = sprites[guy.sprite];
 
-    const speed = isOnSea() ? 2 : 1;
-    if ((frame / tileCosts) % (speed * 2) === 0) {
-      guy.frame++;
-      if (guy.frame >= sprite.frameCount) {
-        guy.frame = 0;
-      }
-    }
+  const animationSpeed = (isOnSea() ? 5 : 10) / tileCosts;
+  guy.frame += elapsedTime * animationSpeed / 1000;
+  if (guy.frame >= sprite.frameCount) {
+    guy.frame = 0;
+  }
 
-    const length = Math.sqrt(distance.x * distance.x + distance.y * distance.y);
-    if (length > 0) {
-      state.guy.position.x += distance.x * speed / length;
-      state.guy.position.y += distance.y * speed / length;
-    }
+  const movementSpeed = (isOnSea() ? 30 : 15) / tileCosts;
+  const length = Math.sqrt(distance.x * distance.x + distance.y * distance.y);
+  if (length > 0) {
+    state.guy.position.x += (distance.x / length) * elapsedTime * (movementSpeed / 1000);
+    state.guy.position.y += (distance.y / length) * elapsedTime * (movementSpeed / 1000);
+  }
 
-    if (speed > length) {
-      routePoint.wayPoints.shift();
-      return;
-    }
+  if (length < 1) {
+    routePoint.wayPoints.shift();
+    return;
   }
 };
 

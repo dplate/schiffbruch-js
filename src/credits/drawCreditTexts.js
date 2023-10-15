@@ -21,11 +21,11 @@ const drawCreditText = (creditText, positionY, alpha) => {
   canvases.PRIMARY.globalAlpha = 1;
 }
 
-const drawCreditTexts = (framesPerSecond) => {
+const drawCreditTexts = (elapsedTime) => {
   const canvasContext = canvases.PRIMARY;
   const canvasHeight = canvasContext.canvas.height;
 
-  creditState.offset += Math.floor(150 / framesPerSecond);
+  creditState.offset += Math.floor(elapsedTime / 5);
 
   creditTexts[creditState.itemId].forEach((creditText, index) => {
     if (index === 0) {

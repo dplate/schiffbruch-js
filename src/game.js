@@ -1,38 +1,17 @@
 import loadImages from './images/loadImages.js';
-import animateTerrain from './terrain/animateTerrain.js';
 import loadSounds from './sounds/loadSounds.js';
-import playTerrainSounds from './terrain/playTerrainSounds.js';
-import updateCamera from './camera/updateCamera.js';
-import restrictCamera from './camera/restrictCamera.js';
-import discoverTerrain from './guy/discoverTerrain.js';
-import animateGuy from './guy/animateGuy.js';
 import canvases from './images/canvases.js';
 import texts from './interface/text/texts.js';
 import state from './state/state.js';
-import animateButtons from './interface/menu/animateButtons.js';
-import startAction from './action/startAction.js';
-import actionTypes from './action/actionTypes.js';
-import processAction from './action/processAction.js';
-import drawCredits from './credits/drawCredits.js';
 import phases from './state/phases.js';
-import drawLogo from './state/drawLogo.js';
-import drawPlay from './state/drawPlay.js';
-import actions from './action/actions.js';
 import initKeyboard from './interface/control/keyboard/initKeyboard.js';
-import handleKeyboard from './interface/control/keyboard/handleKeyboard.js';
 import initMouse from './interface/control/mouse/initMouse.js';
-import handleMouseHovers from './interface/control/mouse/handleMouseHovers.js';
-import handleTap from './interface/control/handleTap.js';
-import handleTouch from './interface/control/handleTouch.js';
-import cursor from './interface/control/mouse/cursor.js';
+import refresh from './refresh.js';
 
 const MAXXKACH = 61    //Anzahl der Kacheln
 const MAXYKACH = 61;
 const MAXX = 800; //Bildschirmauflösung
 const MAXY = 600;
-
-let timestampInSeconds;            //Start der Sekunde
-let frame, framesPerSecond;    //Anzahl der Bilder in der Sekunde
 
 const initCanvases = async (window) => {
   const primaryCanvas = window.document.createElement('canvas');
@@ -67,74 +46,12 @@ const initInput = (window) => {
   initKeyboard(window);
 }
 
-const InitStructs = () => {
-  framesPerSecond = 100;
-  frame = 0;
-  timestampInSeconds = 0;
-}
-
-const Animationen = () => {
-  animateTerrain(frame, framesPerSecond);
-  animateButtons(frame, framesPerSecond, cursor);
-  if (!state.paper) {
-    animateGuy(frame, framesPerSecond);
-  }
-}
-
-const refresh = (timestamp) => {
-  frame++;
-  const newTimestampInSeconds = timestamp / 1000;
-  if (timestampInSeconds + 5 < newTimestampInSeconds) {
-    timestampInSeconds = newTimestampInSeconds;
-    framesPerSecond = (framesPerSecond + frame / 5) / 2;
-    frame = 0;
-    if (framesPerSecond === 0) framesPerSecond = 50;
-  }
-
-  handleKeyboard();
-  
-  if (state.phase === phases.LOGO) {
-    drawLogo()
-  } else if (state.phase === phases.PLAY) {
-    if (state.calendar.minutes > (12 * 60) && (state.guy.action?.type !== actionTypes.ENDING_DAY))  //Hier ist der Tag zuende
-    {
-      startAction(actionTypes.ENDING_DAY);
-    }
-
-    handleMouseHovers();
-    if (!actions[state.guy.action?.type]?.movie || state.paper) {
-      handleTap();
-      handleTouch();
-    }
-    restrictCamera();            //Das Scrollen an die Grenzen der Landschaft anpassen
-    Animationen();            //Die Animationsphasen weiterschalten
-    discoverTerrain();
-    playTerrainSounds();
-    processAction();
-
-    if (state.phase !== phases.PLAY) {
-      return true;
-    }
-
-    if (actions[state.guy.action?.type]?.movie) {
-      updateCamera(state.guy.position, true);
-    }
-    drawPlay();
-
-  } else if (state.phase === phases.CREDITS) {
-    drawCredits(frame, framesPerSecond);
-  }
-  return true;
-}
-
 const run = async (window) => {
   await loadImages();
   await initCanvases(window);
   await loadSounds();
   initInput(window);
   texts.init('de');
-
-  InitStructs();
 
   return new Promise((resolve) => {
     const loop = (timestamp) => {
