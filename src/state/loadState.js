@@ -4,7 +4,7 @@ import updateMinimap from '../interface/minimap/updateMinimap.js';
 import closePaper from '../interface/text/closePaper.js';
 
 const loadState = () => {
-  const rawState = window.localStorage.getItem('stateV10');
+  const rawState = window.localStorage.getItem('stateV11');
   if (!rawState) {
     return false;
   }

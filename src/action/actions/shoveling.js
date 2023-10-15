@@ -19,10 +19,9 @@ const shovel = () => {
 const findTreasure = () => {
   spendMinutes(20);
   changeWaterAndFood(-10, -10);
-  if (state.guy.tile.x === state.treasure.x && state.guy.tile.y === state.treasure.y && !state.treasure.found) {
+  if (state.guy.tile.x === state.treasure.x && state.guy.tile.y === state.treasure.y && !state.guy.inventory[items.MATCHES]) {
     openPaper(texts.SHOVELING_TREASURE, false);
     changeItem(items.MATCHES, 1);
-    state.treasure.found = true;
   } else {
     openPaper(texts.SHOVELING_NOTHING, false);
   }

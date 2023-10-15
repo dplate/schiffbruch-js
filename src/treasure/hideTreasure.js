@@ -12,8 +12,7 @@ const hideTreasure = () => {
     if (!tile.object && tile.type === tileTypes.FLAT && tile.ground !== grounds.QUICKSAND && tile.ground !== grounds.SEA) {
       return { 
         x, 
-        y, 
-        found: false
+        y
       };
     }
   }
