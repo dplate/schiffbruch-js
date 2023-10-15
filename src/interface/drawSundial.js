@@ -3,7 +3,6 @@ import images from '../images/images.js';
 import state from '../state/state.js';
 import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
-import blitText from './text/blitText.js';
 import drawText from './text/drawText.js';
 import textAreas from './text/textAreas.js';
 
@@ -44,8 +43,8 @@ const drawSun = () => {
 const drawTime = () => {
   const hour = String(6 + Math.floor(state.calendar.minutes / 60));
   const minute =  String(state.calendar.minutes % 60);
-  drawText(`${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`, textAreas.TIME);
-  blitText(textAreas.TIME);
+  textAreas.TIME.text = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+  drawText(textAreas.TIME);
 }
 
 const drawSundial = () => {

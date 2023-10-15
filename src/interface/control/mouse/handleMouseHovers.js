@@ -7,7 +7,7 @@ import getPaperAnswerAtPosition from '../../text/getPaperAnswerAtPosition.js';
 import findItemAtPosition from '../../../guy/inventory/findItemUnderCursor.js';
 import itemTextIds from '../../../guy/inventory/itemTextIds.js';
 import texts from '../../text/texts.js';
-import drawStatusText from '../../text/drawStatusText.js';
+import setStatusText from '../../text/setStatusText.js';
 import menuTypes from '../../menu/menuTypes.js';
 import textAreas from '../../text/textAreas.js';
 import handleButtonHovers from '../../menu/handleButtonHovers.js';
@@ -15,7 +15,6 @@ import getTileByPosition from '../../../terrain/getTileByPosition.js';
 import drawTileText from '../../../terrain/tiles/drawTileText.js';
 import interfaceTypes from '../../interfaceTypes.js';
 import isPositionInInterface from '../../isPositionInInterface.js';
-import clearText from '../../text/clearText.js';
 
 const setCurrentCursor = () => {
   if (!workbench.selectedItem) {
@@ -38,24 +37,22 @@ const isCursorOverArea = (area) => {
     cursor.y < area.y + area.height;
 };
 
-const setStatusText = () => {
-  clearText(textAreas.STATUS);
-
+const updateStatusText = () => {
   if (isPositionInInterface(cursor, interfaceTypes.PANEL)) {
     if (state.options.openedMenu === menuTypes.INVENTORY) {
       const item = findItemAtPosition(cursor);
       if (item) {
-        drawStatusText(texts[itemTextIds[item]]);
+        setStatusText(texts[itemTextIds[item]]);
         return;
       }
     }
     if (isCursorOverArea(textAreas.TIME.getArea())) {
-      drawStatusText(texts.STATUS_TIME);
+      setStatusText(texts.STATUS_TIME);
       return;
     }
 
     if (isCursorOverArea(textAreas.CHANCE.getArea())) {
-      drawStatusText(texts.STATUS_CHANCE);
+      setStatusText(texts.STATUS_CHANCE);
       return;
     }
     return;
@@ -68,7 +65,7 @@ const setStatusText = () => {
     });
     if (tilePosition) {
       const tile = state.terrain[tilePosition.x][tilePosition.y];
-      if (tile) {
+      if (tile?.discovered) {
         drawTileText(state.terrain[tilePosition.x][tilePosition.y]);
         return;
       }
@@ -78,8 +75,9 @@ const setStatusText = () => {
 }
 
 const handleMouseHovers = () => {
+  textAreas.STATUS.text = '';
   setCurrentCursor();
-  setStatusText();
+  updateStatusText();
   handleButtonHovers();
 };
 

@@ -1,16 +1,14 @@
-import clearText from './clearText.js';
 import drawString from './drawString.js';
 
-const drawText = (text, textArea) => {
+const drawText = (textArea, simulate = false) => {
   const area = textArea.getArea();
-  clearText(textArea); 
 
   const position = {
     x: area.x,
     y: area.y
   };
 
-  const words = text.split(' ');
+  const words = textArea.text.split(' ');
   words.forEach(word => {
     if (word === '/z') {
       position.x = area.x;
@@ -21,7 +19,12 @@ const drawText = (text, textArea) => {
         position.x = area.x;
         position.y += textArea.font.height + 3;
       }
-      position.x += drawString(word + ' ', position, textArea.font);
+      const string = word + ' ';
+      if (!simulate) {
+        drawString(string, position, textArea.font, simulate);
+      }
+  
+      position.x += string.length * textArea.font.distance;
     }
   });
 

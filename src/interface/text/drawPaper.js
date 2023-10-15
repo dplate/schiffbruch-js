@@ -1,13 +1,42 @@
 import canvases from '../../images/canvases.js';
 import images from '../../images/images.js';
 import state from '../../state/state.js';
-import blitText from './blitText.js';
+import answerArea from './answerArea.js';
+import drawText from './drawText.js';
 import textAreas from './textAreas.js';
 
 const rollHeight = 77;
 const width = 464;
 const paperColor = `rgba(236, 215, 179, 1)`
 const middleOffsetX = 34;
+
+const drawYes = (yes) => {
+  canvases.PRIMARY.drawImage(
+    images.PAPER.instance, 
+    0, 
+    154, 
+    yes.width, 
+    yes.height, 
+    yes.x, 
+    yes.y, 
+    yes.width, 
+    yes.height
+  );
+};
+
+const drawNo = (no) => {
+  canvases.PRIMARY.drawImage(
+    images.PAPER.instance, 
+    41, 
+    154, 
+    no.width, 
+    no.height, 
+    no.x, 
+    no.y, 
+    no.width, 
+    no.height
+  );
+};
 
 const drawPaper = () => {
   if (!state.paper) {
@@ -52,7 +81,27 @@ const drawPaper = () => {
     rollHeight, 
   );
 
-  blitText(textAreas.PAPER);
+  if (state.paper.treasureMap) {
+    const treasureMapCanvas = canvases.TREASURE_MAP.canvas;
+    canvases.PRIMARY.drawImage(
+      treasureMapCanvas,
+      0, 
+      0, 
+      treasureMapCanvas.width, 
+      treasureMapCanvas.height,
+      area.x, 
+      area.y, 
+      treasureMapCanvas.width, 
+      treasureMapCanvas.height
+    );
+  } else {
+    drawText(textAreas.PAPER);
+
+    if (state.paper.question) {
+      drawYes(answerArea.getYes());
+      drawNo(answerArea.getNo());
+    }
+  }
 };
 
 export default drawPaper;

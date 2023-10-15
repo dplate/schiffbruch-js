@@ -2,7 +2,7 @@ import canvases from '../images/canvases.js';
 import images from '../images/images.js';
 import interfaceTypes from './interfaceTypes.js';
 import interfaces from './interfaces.js';
-import blitText from './text/blitText.js';
+import drawText from './text/drawText.js';
 import textAreas from './text/textAreas.js';
 
 const drawStatusBar = () => {
@@ -19,7 +19,7 @@ const drawStatusBar = () => {
     statusBarArea.height
   );
 
-  blitText(textAreas.STATUS);
+  drawText(textAreas.STATUS);
 };
 
 export default drawStatusBar;

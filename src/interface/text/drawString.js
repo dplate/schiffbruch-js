@@ -9,7 +9,7 @@ const drawString = (string, position, font) => {
     const sourceRow = lastCharacters.findIndex(lastCharacter => character <= lastCharacter);
     const sourceColumn = string.charCodeAt(index) - charCodeOffset - 16 * sourceRow;
 
-    canvases.TEXT.drawImage(
+    canvases.PRIMARY.drawImage(
       font.image.instance, 
       sourceColumn * font.width, 
       sourceRow * font.height, 
@@ -21,7 +21,6 @@ const drawString = (string, position, font) => {
       font.height, 
     );
   }
-  return string.length * font.distance;
 };
 
 export default drawString;

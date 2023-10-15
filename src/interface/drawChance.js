@@ -3,7 +3,6 @@ import canvases from '../images/canvases.js';
 import images from '../images/images.js';
 import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
-import blitText from './text/blitText.js';
 import drawText from './text/drawText.js';
 import textAreas from './text/textAreas.js';
 
@@ -32,8 +31,8 @@ const drawChance = () => {
 
   textAreas.CHANCE.offsetY = Math.floor(positionY + height - 25);
   const chanceString = chance.toFixed(0).toString();
-  drawText(chanceString.length < 2 ? `${chanceString}%` : chanceString, textAreas.CHANCE);
-  blitText(textAreas.CHANCE);
+  textAreas.CHANCE.text = chanceString.length < 2 ? `${chanceString}%` : chanceString;
+  drawText(textAreas.CHANCE);
 };
 
 export default drawChance;

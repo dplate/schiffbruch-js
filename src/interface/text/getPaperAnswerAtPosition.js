@@ -1,4 +1,5 @@
 import state from '../../state/state.js';
+import answerArea from './answerArea.js';
 
 const isOverAnswer = (position, answer) => {
   return position.x >= answer.x && 
@@ -11,10 +12,10 @@ const getPaperAnswerAtPosition = (position) => {
   if (!state.paper?.question) {
     return null;
   }
-  if (isOverAnswer(position, state.paper.question.yes)) {
+  if (isOverAnswer(position, answerArea.getYes())) {
     return true;
   };
-  if (isOverAnswer(position, state.paper.question.no)) {
+  if (isOverAnswer(position, answerArea.getNo())) {
     return false;
   };
   return null;

@@ -5,6 +5,7 @@ import fonts from './fonts.js';
 const textAreas = {
   STATUS: {
     font: fonts.DIGITAL,
+    text: '',
     getArea: () => {
       const statusBarArea = interfaces[interfaceTypes.STATUS_BAR]().area;
       return {
@@ -17,6 +18,7 @@ const textAreas = {
   },
   TIME: {
     font: fonts.DIGITAL,
+    text: '',
     getArea: () => {
       const panelArea = interfaces[interfaceTypes.PANEL]().area;
       return {
@@ -29,6 +31,7 @@ const textAreas = {
   },
   PAPER: {
     font: fonts.HAND,
+    text: '',
     getArea: () => {
       const panelArea = interfaces[interfaceTypes.PANEL]().area;
       const statusBarArea = interfaces[interfaceTypes.STATUS_BAR]().area;
@@ -39,10 +42,10 @@ const textAreas = {
         height: 400
       };
     }
-    
   },
   CHANCE: {
     font: fonts.DIGITAL,
+    text: '',
     offsetY: 0,
     getArea: null
   }

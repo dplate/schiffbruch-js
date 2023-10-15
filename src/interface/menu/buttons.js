@@ -4,10 +4,10 @@ import state from '../../state/state.js';
 import menuTypes from './menuTypes.js';
 import startAction from '../../action/startAction.js';
 import actionTypes from '../../action/actionTypes.js';
-import drawStatusText from '../text/drawStatusText.js';
+import setStatusText from '../text/setStatusText.js';
 import texts from '../text/texts.js';
 import constructionTypes from '../../construction/constructionTypes.js';
-import drawStartConstructionText from '../../construction/drawStartConstructionText.js';
+import setStartConstructionText from '../../construction/setStartConstructionText.js';
 import grounds from '../../terrain/tiles/grounds.js';
 import isUsableBoat from '../../terrain/objects/isUsableBoat.js';
 import findNeighbor from '../../guy/findNeighbor.js';
@@ -31,7 +31,7 @@ const buttons = [
     },
     isVisible: () => true,
     onTap: () => startAction(actionTypes.STOPPING_GAME),
-    onHover: () => drawStatusText(texts.BUTTON_STOPPING_GAME)
+    onHover: () => setStatusText(texts.BUTTON_STOPPING_GAME)
   },
   {
     ...buttonDefault,
@@ -42,7 +42,7 @@ const buttons = [
     },
     isVisible: () => true,
     onTap: () => startAction(actionTypes.RESTARTING_GAME),
-    onHover: () => drawStatusText(texts.BUTTON_RESTARTING_GAME)
+    onHover: () => setStatusText(texts.BUTTON_RESTARTING_GAME)
   },
   {
     ...buttonDefault,
@@ -53,7 +53,7 @@ const buttons = [
     },
     isVisible: () => true,
     onTap: () => startAction(actionTypes.RESTARTING_DAY),
-    onHover: () => drawStatusText(texts.BUTTON_RESTARTING_DAY)
+    onHover: () => setStatusText(texts.BUTTON_RESTARTING_DAY)
   },
   {
     ...buttonDefault,
@@ -64,7 +64,7 @@ const buttons = [
     },
     isVisible: () => !state.options.grid,
     onTap: () => state.options.grid = true,
-    onHover: () => drawStatusText(texts.BUTTON_GRID)
+    onHover: () => setStatusText(texts.BUTTON_GRID)
   },
   {
     ...buttonDefault,
@@ -75,7 +75,7 @@ const buttons = [
     },
     isVisible: () => state.options.grid,
     onTap: () => state.options.grid = false,
-    onHover: () => drawStatusText(texts.BUTTON_GRID_CHECKED)
+    onHover: () => setStatusText(texts.BUTTON_GRID_CHECKED)
   },
   {
     ...buttonDefault,
@@ -86,7 +86,7 @@ const buttons = [
     },
     isVisible: () => audio.isRunning(),
     onTap: () => audio.suspend(),
-    onHover: () => drawStatusText(texts.BUTTON_MUTE)
+    onHover: () => setStatusText(texts.BUTTON_MUTE)
   },
   {
     ...buttonDefault,
@@ -97,7 +97,7 @@ const buttons = [
     },
     isVisible: () => !audio.isRunning(),
     onTap: () => audio.resume(),
-    onHover: () => drawStatusText(texts.BUTTON_MUTE_CHECKED)
+    onHover: () => setStatusText(texts.BUTTON_MUTE_CHECKED)
   },
   {
     ...buttonDefault,
@@ -108,7 +108,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu !== menuTypes.ACTIONS,
     onTap: () => state.options.openedMenu = menuTypes.ACTIONS,
-    onHover: () => drawStatusText(texts.BUTTON_ACTIONS)
+    onHover: () => setStatusText(texts.BUTTON_ACTIONS)
   },
   {
     ...buttonDefault,
@@ -119,7 +119,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS,
     onTap: () => state.options.openedMenu = null,
-    onHover: () => drawStatusText(texts.BUTTON_ACTIONS_CHECKED)
+    onHover: () => setStatusText(texts.BUTTON_ACTIONS_CHECKED)
   },
   {
     ...buttonDefault,
@@ -130,7 +130,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu !== menuTypes.CONSTRUCTIONS,
     onTap: () => state.options.openedMenu = menuTypes.CONSTRUCTIONS,
-    onHover: () => drawStatusText(texts.BUTTON_CONSTRUCTIONS)
+    onHover: () => setStatusText(texts.BUTTON_CONSTRUCTIONS)
   },
   {
     ...buttonDefault,
@@ -141,7 +141,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
     onTap: () => state.options.openedMenu = null,
-    onHover: () => drawStatusText(texts.BUTTON_CONSTRUCTIONS_CHECKED)
+    onHover: () => setStatusText(texts.BUTTON_CONSTRUCTIONS_CHECKED)
   },
   {
     ...buttonDefault,
@@ -152,7 +152,7 @@ const buttons = [
     },
     isVisible: () => !state.guy.active && isUsableBoat(state.terrain[state.guy.tile.x][state.guy.tile.y]),
     onTap: () => startAction(actionTypes.UNDOCKING),
-    onHover: () => drawStatusText(texts.BUTTON_UNDOCKING)
+    onHover: () => setStatusText(texts.BUTTON_UNDOCKING)
   },
   {
     ...buttonDefault,
@@ -163,7 +163,7 @@ const buttons = [
     },
     isVisible: () => !state.guy.active && isOnSea() && findNeighbor((tile) => tile.ground !== grounds.SEA),
     onTap: () => startAction(actionTypes.DOCKING),
-    onHover: () => drawStatusText(texts.BUTTON_DOCKING)
+    onHover: () => setStatusText(texts.BUTTON_DOCKING)
   },
   {
     ...buttonDefault,
@@ -174,7 +174,7 @@ const buttons = [
     },
     isVisible: () => state.guy.active,
     onTap: () => startAction(actionTypes.STOPPING),
-    onHover: () => drawStatusText(texts.BUTTON_STOPPING)
+    onHover: () => setStatusText(texts.BUTTON_STOPPING)
   },
   {
     ...buttonDefault,
@@ -193,7 +193,7 @@ const buttons = [
         }
       }
     },
-    onHover: () => drawStatusText(texts.BUTTON_RESTARTING_CONSTRUCTION)
+    onHover: () => setStatusText(texts.BUTTON_RESTARTING_CONSTRUCTION)
   },
   {
     ...buttonDefault,
@@ -204,7 +204,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu !== menuTypes.INVENTORY,
     onTap: () => state.options.openedMenu = menuTypes.INVENTORY,
-    onHover: () => drawStatusText(texts.BUTTON_INVENTORY)
+    onHover: () => setStatusText(texts.BUTTON_INVENTORY)
   },
   {
     ...buttonDefault,
@@ -215,7 +215,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.INVENTORY,
     onTap: () => state.options.openedMenu = null,
-    onHover: () => drawStatusText(texts.BUTTON_INVENTORY_CHECKED)
+    onHover: () => setStatusText(texts.BUTTON_INVENTORY_CHECKED)
   },
   {
     ...buttonDefault,
@@ -226,7 +226,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS,
     onTap: () => startAction(actionTypes.SEARCHING),
-    onHover: () => drawStatusText(texts.BUTTON_SEARCHING)
+    onHover: () => setStatusText(texts.BUTTON_SEARCHING)
   },
   {
     ...buttonDefault,
@@ -237,7 +237,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS,
     onTap: () => startAction(actionTypes.CONSUMING),
-    onHover: () => drawStatusText(texts.BUTTON_CONSUMING)
+    onHover: () => setStatusText(texts.BUTTON_CONSUMING)
   },
   {
     ...buttonDefault,
@@ -248,7 +248,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS,
     onTap: () => startAction(actionTypes.SLEEPING),
-    onHover: () => drawStatusText(texts.BUTTON_SLEEPING)
+    onHover: () => setStatusText(texts.BUTTON_SLEEPING)
   },
   {
     ...buttonDefault,
@@ -259,7 +259,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.AXE],
     onTap: () => startAction(actionTypes.CHOPPING),
-    onHover: () => drawStatusText(texts.BUTTON_CHOPPING)
+    onHover: () => setStatusText(texts.BUTTON_CHOPPING)
   },
   {
     ...buttonDefault,
@@ -279,7 +279,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.FISHING_ROD],
     onTap: () => startAction(actionTypes.FISHING),
-    onHover: () => drawStatusText(texts.BUTTON_FISHING)
+    onHover: () => setStatusText(texts.BUTTON_FISHING)
   },
   {
     ...buttonDefault,
@@ -299,7 +299,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.MATCHES],
     onTap: () => startAction(actionTypes.LIGHTNING),
-    onHover: () => drawStatusText(texts.BUTTON_LIGHTNING)
+    onHover: () => setStatusText(texts.BUTTON_LIGHTNING)
   },
   {
     ...buttonDefault,
@@ -319,7 +319,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.SPYGLASS],
     onTap: () => startAction(actionTypes.LOOKING),
-    onHover: () => drawStatusText(texts.BUTTON_LOOKING)
+    onHover: () => setStatusText(texts.BUTTON_LOOKING)
   },
   {
     ...buttonDefault,
@@ -339,7 +339,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.MAP],
     onTap: () => openTreasureMap(),
-    onHover: () => drawStatusText(texts.BUTTON_HUNTING_TREASURE)
+    onHover: () => setStatusText(texts.BUTTON_HUNTING_TREASURE)
   },
   {
     ...buttonDefault,
@@ -359,7 +359,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.SHOVEL],
     onTap: () => startAction(actionTypes.SHOVELING),
-    onHover: () => drawStatusText(texts.BUTTON_SHOVELING)
+    onHover: () => setStatusText(texts.BUTTON_SHOVELING)
   },
   {
     ...buttonDefault,
@@ -379,7 +379,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.ACTIONS && state.guy.inventory[items.SLING],
     onTap: () => startAction(actionTypes.SLINGING),
-    onHover: () => drawStatusText(texts.BUTTON_SLINGING)
+    onHover: () => setStatusText(texts.BUTTON_SLINGING)
   },
   {
     ...buttonDefault,
@@ -399,7 +399,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
     onTap: () => startAction(actionTypes.CONSTRUCTING_TENT),
-    onHover: () => drawStartConstructionText(constructionTypes.TENT)
+    onHover: () => setStartConstructionText(constructionTypes.TENT)
   },
   {
     ...buttonDefault,
@@ -410,7 +410,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HARROW],
     onTap: () => startAction(actionTypes.CONSTRUCTING_FIELD),
-    onHover: () => drawStartConstructionText(constructionTypes.FIELD)
+    onHover: () => setStartConstructionText(constructionTypes.FIELD)
   },
   {
     ...buttonDefault,
@@ -430,7 +430,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.AXE],
     onTap: () => startAction(actionTypes.CONSTRUCTING_BOAT),
-    onHover: () => drawStartConstructionText(constructionTypes.BOAT)
+    onHover: () => setStartConstructionText(constructionTypes.BOAT)
   },
   {
     ...buttonDefault,
@@ -450,7 +450,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.AXE],
     onTap: () => startAction(actionTypes.CONSTRUCTING_PIPE),
-    onHover: () => drawStartConstructionText(constructionTypes.PIPE)
+    onHover: () => setStartConstructionText(constructionTypes.PIPE)
   },
   {
     ...buttonDefault,
@@ -470,7 +470,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
     onTap: () => startAction(actionTypes.CONSTRUCTING_SOS),
-    onHover: () => drawStartConstructionText(constructionTypes.SOS)
+    onHover: () => setStartConstructionText(constructionTypes.SOS)
   },
   {
     ...buttonDefault,
@@ -481,7 +481,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HAMMER],
     onTap: () => startAction(actionTypes.CONSTRUCTING_LADDER),
-    onHover: () => drawStartConstructionText(constructionTypes.LADDER)
+    onHover: () => setStartConstructionText(constructionTypes.LADDER)
   },
   {
     ...buttonDefault,
@@ -501,7 +501,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HAMMER],
     onTap: () => startAction(actionTypes.CONSTRUCTING_PLATFORM),
-    onHover: () => drawStartConstructionText(constructionTypes.PLATFORM)
+    onHover: () => setStartConstructionText(constructionTypes.PLATFORM)
   },
   {
     ...buttonDefault,
@@ -521,7 +521,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS && state.guy.inventory[items.HAMMER],
     onTap: () => startAction(actionTypes.CONSTRUCTING_TREE_HOUSE),
-    onHover: () => drawStartConstructionText(constructionTypes.TREE_HOUSE)
+    onHover: () => setStartConstructionText(constructionTypes.TREE_HOUSE)
   },
   {
     ...buttonDefault,
@@ -541,7 +541,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
     onTap: () => startAction(actionTypes.CONSTRUCTING_FIREPLACE),
-    onHover: () => drawStartConstructionText(constructionTypes.FIREPLACE)
+    onHover: () => setStartConstructionText(constructionTypes.FIREPLACE)
   },
   {
     ...buttonDefault,
@@ -552,7 +552,7 @@ const buttons = [
     },
     isVisible: () => state.options.openedMenu === menuTypes.CONSTRUCTIONS,
     onTap: () => startAction(actionTypes.DESTROYING),
-    onHover: () => drawStatusText(texts.BUTTON_DESTROYING)
+    onHover: () => setStatusText(texts.BUTTON_DESTROYING)
   }
 ];
 

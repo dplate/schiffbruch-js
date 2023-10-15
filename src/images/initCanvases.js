@@ -12,11 +12,6 @@ const initCanvases = async (window) => {
 
   canvases.MINIMAP = window.document.createElement('canvas').getContext('2d');
 
-  const textCanvas = window.document.createElement('canvas');
-  textCanvas.width = canvases.PRIMARY.canvas.width;
-  textCanvas.height = canvases.PRIMARY.canvas.height;
-  canvases.TEXT = textCanvas.getContext('2d');
-
   canvases.TREASURE_MAP = window.document.createElement('canvas').getContext('2d');
 };
 
