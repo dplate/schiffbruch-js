@@ -4,6 +4,7 @@ import updateCamera from './camera/updateCamera.js';
 import restrictCamera from './camera/restrictCamera.js';
 import discoverTerrain from './guy/discoverTerrain.js';
 import animateGuy from './guy/animateGuy.js';
+import calculateChance from './guy/calculateChance.js';
 import state from './state/state.js';
 import animateButtons from './interface/menu/animateButtons.js';
 import startAction from './action/startAction.js';
@@ -23,6 +24,7 @@ import hasAnyInput from './interface/control/hasAnyInput.js';
 import sounds from './sounds/sounds.js';
 import startNewGame from './state/startNewGame.js';
 import loadState from './state/loadState.js';
+import updateStatusText from './interface/text/updateStatusText.js';
 
 let previousTimestamp = null;
 
@@ -53,6 +55,8 @@ const refresh = (timestamp) => {
       startAction(actionTypes.ENDING_DAY);
     }
 
+    calculateChance();
+    updateStatusText();
     handleKeyboard();
     handleMouseHovers();
     if (!actions[state.guy.action?.type]?.movie || state.paper) {

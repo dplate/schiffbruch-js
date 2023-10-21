@@ -1,6 +1,6 @@
-import calculateChance from '../guy/calculateChance.js';
 import canvases from '../images/canvases.js';
 import images from '../images/images.js';
+import state from '../state/state.js';
 import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
 import drawText from './text/drawText.js';
@@ -11,7 +11,7 @@ const height = 150;
 
 const drawChance = () => {
   const panelArea = interfaces[interfaceTypes.PANEL]().area;
-  const chance = calculateChance();
+  const chance = state.guy.chance;
 
   const positionY = panelArea.y - 113 + Math.floor(
     113 * Math.sin(Math.min(Math.PI * chance / 200, Math.PI / 2))

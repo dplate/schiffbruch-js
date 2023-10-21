@@ -36,7 +36,7 @@ const calculateChance = () => {
 
   const actionChance = getActionChance();
 
-  return terrainChance + actionChance + (state.guy.cheatChance || 0);
+  state.guy.chance = terrainChance + actionChance + (state.guy.cheatChance || 0);
 };
 
 export default calculateChance;

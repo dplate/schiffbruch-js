@@ -37,7 +37,7 @@ const isCursorOverArea = (area) => {
     cursor.y < area.y + area.height;
 };
 
-const updateStatusText = () => {
+const setHoverStatusText = () => {
   if (isPositionInInterface(cursor, interfaceTypes.PANEL)) {
     if (state.options.openedMenu === menuTypes.INVENTORY) {
       const item = findItemAtPosition(cursor);
@@ -75,9 +75,11 @@ const updateStatusText = () => {
 }
 
 const handleMouseHovers = () => {
-  textAreas.STATUS.text = '';
+  if (cursor.x === null || cursor.y === null) {
+    return;
+  }
   setCurrentCursor();
-  updateStatusText();
+  setHoverStatusText();
   handleButtonHovers();
 };
 

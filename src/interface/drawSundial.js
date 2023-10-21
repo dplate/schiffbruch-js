@@ -4,6 +4,7 @@ import state from '../state/state.js';
 import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
 import drawText from './text/drawText.js';
+import formatTime from './text/formatTime.js';
 import textAreas from './text/textAreas.js';
 
 const width = 51;
@@ -41,9 +42,7 @@ const drawSun = () => {
 };
 
 const drawTime = () => {
-  const hour = String(6 + Math.floor(state.calendar.minutes / 60));
-  const minute =  String(state.calendar.minutes % 60);
-  textAreas.TIME.text = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+  textAreas.TIME.text = formatTime();
   drawText(textAreas.TIME);
 }
 
