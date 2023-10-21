@@ -22,5 +22,5 @@ You can play the latest experimental version <a href="https://dplate.github.io/s
 - [X] Refactor code (split single-file code and translate to English)
 - [X] Support screens larger than 800x600, but keep pixel perfect images
 - [X] Make game touch device compatible
-- [ ] Support screens smaller than 800x600 (make menus responsive)
+- [X] Support screens smaller than 800x600 (make menus responsive)
 - [ ] Add English version
