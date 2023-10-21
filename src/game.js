@@ -7,6 +7,7 @@ import refresh from './refresh.js';
 import initControl from './interface/control/initControl.js';
 import initCanvases from './images/initCanvases.js';
 import resizeCanvases from './images/resizeCanvases.js';
+import audio from './sounds/audio.js';
 
 const run = async (window) => {
   await loadImages();
@@ -37,8 +38,18 @@ window.document.getElementById('start').onclick = async (event) => {
 
 window.addEventListener(
   'resize', 
-  () => {
-    resizeCanvases(window.innerWidth, window.innerHeight)
-  }, 
+  () => resizeCanvases(window.innerWidth, window.innerHeight), 
+  false
+);
+
+window.addEventListener(
+  'focus', 
+  () => audio?.resume(), 
+  false
+);
+
+window.addEventListener(
+  'blur', 
+  () => audio?.suspend(), 
   false
 );
