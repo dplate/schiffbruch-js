@@ -1,6 +1,4 @@
 import sprites from '../../images/sprites.js';
-import interfaceTypes from '../interfaceTypes.js';
-import interfaces from '../interfaces.js';
 import buttons from './buttons.js';
 
 const getButtonAtPosition = (position) => {
@@ -8,10 +6,10 @@ const getButtonAtPosition = (position) => {
     if (!button.isVisible()) {
       return false;
     }
-    const panelArea = interfaces[interfaceTypes.PANEL]().area;
+    const area = button.getInterface().area;
     const absoluteButtonPosition = {
-      x: panelArea.x + button.position.x,
-      y: panelArea.y + button.position.y
+      x: area.x + button.position.x,
+      y: area.y + button.position.y
     };
     const buttonSprite = sprites[button.sprite];
 

@@ -14,17 +14,17 @@ import menuTypes from './menu/menuTypes.js';
 const drawPanel = () => {
   drawMinimap();
 
-  const panelArea = interfaces[interfaceTypes.PANEL]().area;
+  const panel = interfaces[interfaceTypes.PANEL]();
   canvases.PRIMARY.drawImage(
     images.PANEL.instance,
     0, 
-    0, 
-    panelArea.width, 
-    panelArea.height,
-    panelArea.x, 
-    panelArea.y, 
-    panelArea.width, 
-    panelArea.height
+    panel.compact ? 150 : 0, 
+    panel.area.width, 
+    panel.area.height,
+    panel.area.x, 
+    panel.area.y, 
+    panel.area.width, 
+    panel.area.height
   );
 
   drawButtons();

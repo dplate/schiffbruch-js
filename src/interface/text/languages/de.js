@@ -135,7 +135,6 @@ export default {
   BUTTON_RESTARTING_DAY: 'Tag neu starten',
   BUTTON_MUTE_CHECKED: 'Sound anstellen',
   BUTTON_MUTE: 'Sound ausstellen',
-  LABEL_TIME: 'Zeit',
   LABEL_WATER: 'Wasser',
   LABEL_FOOD: 'Nahrung',
   LABEL_HEALTH: 'Gesundheit',

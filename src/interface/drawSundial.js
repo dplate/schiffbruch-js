@@ -47,6 +47,10 @@ const drawTime = () => {
 }
 
 const drawSundial = () => {
+  if (interfaces[interfaceTypes.PANEL]().compact) {
+    return;
+  }
+
   drawSun();
   drawTime();
 }

@@ -5,7 +5,11 @@ import interfaceTypes from '../interfaceTypes.js';
 import interfaces from '../interfaces.js';
 
 const drawMinimap = () => {
-  const area = interfaces[interfaceTypes.MINIMAP]().area;
+  const map = interfaces[interfaceTypes.MINIMAP]();
+  if (map.hidden) {
+    return;
+  }
+  const area = map.area;
   canvases.PRIMARY.drawImage(
     canvases.MINIMAP.canvas,
     0, 0, area.width, area.height,

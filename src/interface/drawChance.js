@@ -10,10 +10,13 @@ const width = 37;
 const height = 150;
 
 const drawChance = () => {
-  const panelArea = interfaces[interfaceTypes.PANEL]().area;
+  const panel = interfaces[interfaceTypes.PANEL]();
+  if (panel.compact) {
+    return;
+  }
   const chance = state.guy.chance;
 
-  const positionY = panelArea.y - 113 + Math.floor(
+  const positionY = panel.area.y - 113 + Math.floor(
     113 * Math.sin(Math.min(Math.PI * chance / 200, Math.PI / 2))
   );
 
@@ -23,7 +26,7 @@ const drawChance = () => {
     210, 
     width, 
     height,
-    panelArea.x + 5, 
+    panel.area.x + 5, 
     positionY, 
     width, 
     height

@@ -5,7 +5,12 @@ import interfaces from './interfaces.js';
 import interfaceTypes from './interfaceTypes.js';
 
 const drawFluid = (percentage, sourceX, destinationX) => {
-  const panelArea = interfaces[interfaceTypes.PANEL]().area;
+  const panel = interfaces[interfaceTypes.PANEL]();
+  if (panel.compact) {
+    return;
+  }
+
+  const panelArea = panel.area;
   const width = 11;
   const height = 95;
   const missingPixels = Math.round(height - percentage * height / 100)

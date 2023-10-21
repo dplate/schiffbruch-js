@@ -1,17 +1,15 @@
 import drawSprite from '../../images/drawSprite.js';
-import interfaceTypes from '../interfaceTypes.js';
-import interfaces from '../interfaces.js';
 import buttons from './buttons.js';
 
 const drawButtons = () => {
   buttons.forEach(button => {
     if (button.isVisible()) {
-      const panelArea = interfaces[interfaceTypes.PANEL]().area;
+      const area = button.getInterface().area;
       drawSprite(
         button.sprite, 
         button.frame, 
-        panelArea.x + button.position.x, 
-        panelArea.y + button.position.y
+        area.x + button.position.x, 
+        area.y + button.position.y
       );
     }
   });
