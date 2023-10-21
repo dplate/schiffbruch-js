@@ -1,9 +1,11 @@
 import canvases from '../../images/canvases.js';
 import images from '../../images/images.js';
 import drawItem from './drawItem.js';
-import inventoryOffsets from './inventoryOffsets.js';
+import itemsOffset from './itemsOffset.js';
 import itemSprites from './itemSprites.js';
 import state from '../../state/state.js';
+import interfaces from '../../interface/interfaces.js';
+import interfaceTypes from '../../interface/interfaceTypes.js';
 
 const romanOneWidth = 3;
 const romanOneHeight = 13;
@@ -54,12 +56,13 @@ const drawRomanNumber = (amountPosition, number) => {
 };
 
 const drawItems = () => {
+  const area = interfaces[interfaceTypes.INVENTORY]().area;
   Object.entries(state.guy.inventory).forEach(([item, amount]) => {
     if (amount > 0) {
       const sprite = itemSprites[item];
       const position = {
-        x: inventoryOffsets.items.x + sprite.inventoryPosition.x, 
-        y: inventoryOffsets.items.y + sprite.inventoryPosition.y
+        x: area.x + itemsOffset.x + sprite.inventoryPosition.x, 
+        y: area.y + itemsOffset.y + sprite.inventoryPosition.y
       };
       drawItem(item, position);
       

@@ -8,7 +8,7 @@ import cursor from './mouse/cursor.js';
 import isPositionInInterface from '../isPositionInInterface.js';
 import workbench from '../../guy/inventory/workbench.js';
 import combineItems from '../../guy/inventory/combineItems.js';
-import findItemAtPosition from '../../guy/inventory/findItemUnderCursor.js';
+import findItemAtPosition from '../../guy/inventory/findItemAtPosition.js';
 
 const handleMinimapTouch = () => {
   if (isPositionInInterface(control.touch.position, interfaceTypes.MINIMAP)) {
@@ -17,22 +17,6 @@ const handleMinimapTouch = () => {
       x: control.touch.position.x - area.x, 
       y: control.touch.position.y - area.y 
     });
-  }
-};
-
-const handleInventoryTouch = () => {
-  if (!isPositionInInterface(control.touch.position, interfaceTypes.INVENTORY)) {
-    workbench.selectedItem = null;
-  }
-
-  const item = findItemAtPosition(control.touch.position);
-  if (!workbench.selectedItem && item) {
-    workbench.selectedItem = item;
-  } else if (control.touch.released) {
-    if (item && item !== workbench.selectedItem) {
-      combineItems([item, workbench.selectedItem]);
-    }
-    workbench.selectedItem = null;
   }
 };
 
@@ -52,7 +36,6 @@ const handleTouch = () => {
   }
 
   handleMinimapTouch();
-  handleInventoryTouch();
   handleMapTouch();
 
   if (control.touch.released) {

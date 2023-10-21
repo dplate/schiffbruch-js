@@ -10,6 +10,9 @@ import handleButtonTaps from '../menu/handleButtonTaps.js';
 import getTileByPosition from '../../terrain/getTileByPosition.js';
 import findRoute from '../../guy/routing/findRoute.js';
 import isPositionInInterface from '../isPositionInInterface.js';
+import workbench from '../../guy/inventory/workbench.js';
+import combineItems from '../../guy/inventory/combineItems.js';
+import findItemAtPosition from '../../guy/inventory/findItemAtPosition.js';
 
 const handlePaperTap = () => {
   if (state.paper.question) {
@@ -60,6 +63,22 @@ const handleTapOnTerrain = () => {
   }
 };
 
+const handleInventoryTap = () => {
+  if (!isPositionInInterface(control.tap, interfaceTypes.INVENTORY)) {
+    workbench.selectedItem = null;
+  }
+
+  const item = findItemAtPosition(control.tap);
+  if (!workbench.selectedItem && item) {
+    workbench.selectedItem = item;
+  } else if (control.touch.released) {
+    if (item && item !== workbench.selectedItem) {
+      combineItems([item, workbench.selectedItem]);
+    }
+    workbench.selectedItem = null;
+  }
+};
+
 const executeTap = () => {
   if (state.paper) {
     handlePaperTap();
@@ -74,6 +93,8 @@ const executeTap = () => {
   }
 
   handleButtonTaps(control.tap);
+
+  handleInventoryTap(control.tap);
 
   if (!isPositionInInterface(control.tap, interfaceTypes.STATUS_BAR) && 
     !isPositionInInterface(control.tap, interfaceTypes.PANEL)) {

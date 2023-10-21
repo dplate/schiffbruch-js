@@ -5,6 +5,9 @@ import drawSprite from '../../../images/drawSprite.js';
 import cursor from './cursor.js';
 
 const drawCursor = () => {
+  if (cursor.x === null || cursor.y === null) {
+    return;
+  }
   if (workbench.selectedItem) {
     const position = {
       x: cursor.x - itemSprites[workbench.selectedItem].width / 2,

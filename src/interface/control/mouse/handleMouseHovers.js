@@ -4,7 +4,7 @@ import getButtonAtPosition from '../../menu/getButtonAtPosition.js';
 import workbench from '../../../guy/inventory/workbench.js';
 import cursor from './cursor.js';
 import getPaperAnswerAtPosition from '../../text/getPaperAnswerAtPosition.js';
-import findItemAtPosition from '../../../guy/inventory/findItemUnderCursor.js';
+import findItemAtPosition from '../../../guy/inventory/findItemAtPosition.js';
 import itemTextIds from '../../../guy/inventory/itemTextIds.js';
 import texts from '../../text/texts.js';
 import setStatusText from '../../text/setStatusText.js';

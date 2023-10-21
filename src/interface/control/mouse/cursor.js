@@ -1,8 +1,8 @@
 import spriteTypes from '../../../images/spriteTypes.js';
 
 const cursor = {
-  x: 0,
-  y: 0,
+  x: null,
+  y: null,
   sprite: spriteTypes.CURSOR_ARROW
 };
 

@@ -1,15 +1,6 @@
-import canvases from '../../../images/canvases.js';
 import control from '../control.js';
+import getPositionFromEvent from '../getPositionFromEvent.js';
 import cursor from './cursor.js';
-
-const getPositionFromEvent = (event) => {
-  const rect = canvases.PRIMARY.canvas.getBoundingClientRect();
-  const scaling = canvases.PRIMARY.canvas.dataset.scaling;
-  return {
-    x: Math.min(rect.width / scaling, Math.max(0, (event.clientX / scaling) - rect.left)),
-    y: Math.min(rect.height / scaling, Math.max(0, (event.clientY / scaling) - rect.top))
-  };
-};
 
 const hasRightMouseButtonPressed = (event) => event.buttons & 2;
 
@@ -31,6 +22,7 @@ const initMouse = (window) => {
       }
       control.touch.position = position;
     }
+    event.preventDefault();
   };
 
   window.document.onmousedown = (event) => {
@@ -39,10 +31,10 @@ const initMouse = (window) => {
       drag: null,
       released: false
     };
+    event.preventDefault();
   };
 
   window.document.onmouseup = (event) => {
-
     if (!control.touch?.drag) {
       control.tap = getPositionFromEvent(event);   
     }
@@ -50,6 +42,7 @@ const initMouse = (window) => {
       control.touch.drag = null
       control.touch.released = true;
     }
+    event.preventDefault();
   };
 };
 

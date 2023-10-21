@@ -19,6 +19,10 @@ import handleMouseHovers from './interface/control/mouse/handleMouseHovers.js';
 import handleTap from './interface/control/handleTap.js';
 import handleTouch from './interface/control/handleTouch.js';
 import cursor from './interface/control/mouse/cursor.js';
+import hasAnyInput from './interface/control/hasAnyInput.js';
+import sounds from './sounds/sounds.js';
+import startNewGame from './state/startNewGame.js';
+import loadState from './state/loadState.js';
 
 let previousTimestamp = null;
 
@@ -34,16 +38,22 @@ const refresh = (timestamp) => {
   if (elapsedTime > 500) {
     return true;
   }
-
-  handleKeyboard();
   
   if (state.phase === phases.LOGO) {
-    drawLogo()
+    if (hasAnyInput()) {
+      sounds.LOGO.instance.stop();
+      if (!loadState()) {
+        startNewGame();
+      }
+    } else {
+      drawLogo()
+    }
   } else if (state.phase === phases.PLAY) {
     if (state.calendar.minutes > (12 * 60) && (state.guy.action?.type !== actionTypes.ENDING_DAY)) {
       startAction(actionTypes.ENDING_DAY);
     }
 
+    handleKeyboard();
     handleMouseHovers();
     if (!actions[state.guy.action?.type]?.movie || state.paper) {
       handleTap();
@@ -69,6 +79,9 @@ const refresh = (timestamp) => {
     drawPlay();
 
   } else if (state.phase === phases.CREDITS) {
+    if (hasAnyInput()) {
+      state.phase = phases.EXIT;
+    }
     drawCredits(elapsedTime);
   }
   return true;

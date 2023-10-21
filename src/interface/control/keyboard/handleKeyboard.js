@@ -1,8 +1,4 @@
-import phases from '../../../state/phases.js';
 import state from '../../../state/state.js';
-import sounds from '../../../sounds/sounds.js';
-import startNewGame from '../../../state/startNewGame.js';
-import loadState from '../../../state/loadState.js';
 import actions from '../../../action/actions.js';
 import startAction from '../../../action/startAction.js';
 import actionTypes from '../../../action/actionTypes.js';
@@ -10,22 +6,7 @@ import changeItem from '../../../guy/inventory/changeItem.js';
 import updateMinimap from '../../minimap/updateMinimap.js';
 import items from '../../../guy/inventory/items.js';
 import control from '../control.js';
-
-const hasPressedCancel = () => 
-  control.pressedKeyCodes['Escape'] || 
-  control.pressedKeyCodes['Enter'] || 
-  control.pressedKeyCodes['Space'];
-
-const handleKeysDuringLogo = () => {
-  if (hasPressedCancel()) {
-    sounds.LOGO.instance.stop();
-    if (!loadState()) {
-      startNewGame();
-    }
-    return true;
-  }
-  return false;
-};
+import hasPressedCancel from './hasPressedCancel.js';
 
 const handleCameraMovement = () => {
   const movement = {
@@ -48,7 +29,7 @@ const handleCameraMovement = () => {
   return movement;
 }
 
-const handleKeyDuringPlay = () => {
+const handleKeys = () => {
   const fastForward = actions[state.guy.action?.type]?.fastForward;
   if (fastForward && hasPressedCancel()) {
     fastForward();
@@ -106,26 +87,6 @@ const handleKeyDuringPlay = () => {
       state.guy.cheatChance = (state.guy.cheatChance || 0) + 1;
       return false;
     }
-  }
-  return false;
-};
-
-const handleKeysDuringCredits = () => {
-  if (hasPressedCancel()) {
-    state.phase = phases.EXIT;
-    return true;
-  }
-  return false;
-};
-
-const handleKeys = () => {
-  switch(state.phase) {
-    case phases.LOGO:
-      return handleKeysDuringLogo();
-    case phases.PLAY:
-      return handleKeyDuringPlay();
-    case phases.CREDITS:
-      return handleKeysDuringCredits();  
   }
   return false;
 };
