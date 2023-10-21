@@ -1,3 +1,4 @@
+import canvases from '../../images/canvases.js';
 import interfaceTypes from '../interfaceTypes.js';
 import interfaces from '../interfaces.js';
 import fonts from './fonts.js';
@@ -33,11 +34,12 @@ const textAreas = {
     font: fonts.HAND,
     text: '',
     getArea: () => {
-      const panelArea = interfaces[interfaceTypes.PANEL]().area;
+      const panel = interfaces[interfaceTypes.PANEL]();
+      const panelArea = panel.area;
       const statusBarArea = interfaces[interfaceTypes.STATUS_BAR]().area;
       return {
-        x: Math.round((panelArea.x - 360) / 2),
-        y: Math.round((statusBarArea.y - 400) / 2),
+        x: canvases.PRIMARY.canvas.width < 800 ? 15 : Math.round((panelArea.x - 360) / 2),
+        y: canvases.PRIMARY.canvas.height < 600 ? 15 : Math.round((statusBarArea.y - 400) / 2),
         width: 380,
         height: 400
       };

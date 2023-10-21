@@ -6,7 +6,6 @@ const initCanvases = async (window) => {
   primaryCanvas.width = window.innerWidth;
   primaryCanvas.height = window.innerHeight;
   window.document.body.appendChild(primaryCanvas);
-  window.document.body.requestFullscreen();
   canvases.PRIMARY = primaryCanvas.getContext('2d');
   canvases.PRIMARY.imageSmoothingEnabled = false;
 

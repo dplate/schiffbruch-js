@@ -32,6 +32,7 @@ const run = async (window) => {
 
 window.document.getElementById('start').onclick = async (event) => {
   event.target.style.display = 'none';
+  window.document.body.requestFullscreen({ navigationUI: 'hide' });
   await run(window);
   window.location.reload();
 }
