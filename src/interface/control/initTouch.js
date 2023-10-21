@@ -5,15 +5,21 @@ const initTouch = (window) => {
   window.document.addEventListener('touchmove', (event) => {
     const position = getPositionFromEvent(event.changedTouches[0]);
     if (control.touch) {
-      if (!control.touch.drag) {
-        control.touch.drag = {
-          x: 0,
-          y: 0
-        };
+      const movement = {
+        x: position.x - control.touch.position.x,
+        y: position.y - control.touch.position.y
+      };
+      if (Math.abs(movement.x) > 10 || Math.abs(movement.y) > 10 || control.touch.drag) {
+        if (!control.touch.drag) {
+          control.touch.drag = {
+            x: 0,
+            y: 0
+          };
+        }
+        control.touch.drag.x += movement.x;
+        control.touch.drag.y += movement.y;
+        control.touch.position = position;
       }
-      control.touch.drag.x += position.x - control.touch.position.x;
-      control.touch.drag.y += position.y - control.touch.position.y;
-      control.touch.position = position;
     }
     event.preventDefault();
   }, { passive:false });

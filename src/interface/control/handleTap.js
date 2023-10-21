@@ -69,13 +69,15 @@ const handleInventoryTap = () => {
   }
 
   const item = findItemAtPosition(control.tap);
-  if (!workbench.selectedItem && item) {
-    workbench.selectedItem = item;
-  } else if (control.touch.released) {
-    if (item && item !== workbench.selectedItem) {
-      combineItems([item, workbench.selectedItem]);
+  if (item) {
+    if (!workbench.selectedItem) {
+      workbench.selectedItem = item;
+    } else {
+      if (item !== workbench.selectedItem) {
+        combineItems([item, workbench.selectedItem]);
+      }
+      workbench.selectedItem = null;
     }
-    workbench.selectedItem = null;
   }
 };
 
