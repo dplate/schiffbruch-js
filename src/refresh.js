@@ -31,6 +31,9 @@ const refresh = (timestamp) => {
     return true;
   }
   previousTimestamp = timestamp;
+  if (elapsedTime > 500) {
+    return true;
+  }
 
   handleKeyboard();
   
