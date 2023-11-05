@@ -7,8 +7,8 @@ const answerArea = {
     return {
       x: area.x + 50,
       y: area.y + state.paper.height - 90,
-      width: 41,
-      height: 42
+      width: 68,
+      height: 41
     };
   },
   getNo: () => {
@@ -16,7 +16,7 @@ const answerArea = {
     return {
       x: area.x + 220,
       y: area.y + state.paper.height - 90,
-      width: 100,
+      width: 97,
       height: 39
     };
   }

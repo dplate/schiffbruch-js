@@ -8,17 +8,18 @@ import initControl from './interface/control/initControl.js';
 import initCanvases from './images/initCanvases.js';
 import resizeCanvases from './images/resizeCanvases.js';
 import audio from './sounds/audio.js';
-import canvases from './images/canvases.js';
 
-const run = async (window) => {
-  await loadImages();
+const run = async (window, language) => {
+  window.document.getElementById('start').style.display = 'none';
+  
+  await loadImages(language);
   await initCanvases(window);
   await loadSounds();
   initControl(window);
-  texts.init('de');
+  texts.init(language);
   resizeCanvases(window.innerWidth, window.innerHeight)
 
-  return new Promise((resolve) => {
+  await new Promise((resolve) => {
     const loop = (timestamp) => {
       refresh(timestamp);
       if (state.phase === phases.EXIT) {
@@ -28,15 +29,26 @@ const run = async (window) => {
       }
     }
     window.requestAnimationFrame(loop);
-  })
-}
+  });
 
-window.document.getElementById('start').onclick = async (event) => {
-  event.target.style.display = 'none';
-  //window.document.body.requestFullscreen({ navigationUI: 'hide' });
-  await run(window);
   window.location.reload();
-}
+};
+
+const setFullScreenAndRun = (event, window, language) => {
+  window.document.body.requestFullscreen({ navigationUI: 'hide' });
+  run(window, language);
+  event.stopPropagation();
+};
+
+const userLanguage = navigator.language.split('-')[0];
+const language = userLanguage === 'de' ? 'de' : 'en';
+const primaryStart = window.document.getElementById(`start-${language}`);
+primaryStart.style.top = '190px';
+primaryStart.style.fontSize = '4em';
+
+window.document.getElementById('start').onclick = (event) => setFullScreenAndRun(event, window, language);
+window.document.getElementById('start-de').onclick = (event) => setFullScreenAndRun(event, window, 'de');
+window.document.getElementById('start-en').onclick = (event) => setFullScreenAndRun(event, window, 'en');
 
 window.addEventListener(
   'resize', 

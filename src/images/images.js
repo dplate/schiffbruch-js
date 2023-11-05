@@ -12,7 +12,7 @@ const images = {
     instance: null
   },
   PANEL: {
-    file: 'panel.png',
+    file: 'panel-{language}.png',
     instance: null
   },
   BUILDINGS: {
@@ -36,7 +36,7 @@ const images = {
     instance: null
   },
   PAPER: {
-    file: 'paper.png',
+    file: 'paper-{language}.png',
     instance: null
   },
   BUTTONS: {

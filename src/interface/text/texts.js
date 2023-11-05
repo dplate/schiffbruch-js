@@ -1,10 +1,15 @@
 import de from './languages/de.js';
+import en from './languages/en.js';
 
 const texts = {};
 
 texts.init = (language) => {
   switch(language) {
-    default: Object.assign(texts, de);
+    case 'de': 
+      Object.assign(texts, de);
+      break;
+    default: 
+      Object.assign(texts, en);
   };
 };
 

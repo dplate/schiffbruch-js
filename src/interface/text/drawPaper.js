@@ -27,7 +27,7 @@ const drawYes = (yes) => {
 const drawNo = (no) => {
   canvases.PRIMARY.drawImage(
     images.PAPER.instance, 
-    41, 
+    73, 
     154, 
     no.width, 
     no.height, 
