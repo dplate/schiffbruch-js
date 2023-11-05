@@ -10,8 +10,8 @@ const drawCursor = () => {
   }
   if (workbench.selectedItem) {
     const position = {
-      x: cursor.x - itemSprites[workbench.selectedItem].width / 2,
-      y: cursor.y - itemSprites[workbench.selectedItem].height / 2
+      x: Math.round(cursor.x - itemSprites[workbench.selectedItem].width / 2),
+      y: Math.round(cursor.y - itemSprites[workbench.selectedItem].height / 2)
     };
     drawItem(workbench.selectedItem, position);
   } else {

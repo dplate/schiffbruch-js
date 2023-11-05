@@ -13,6 +13,7 @@ const resizeCanvases = async (screenWidth, screenHeight) => {
     primaryCanvas.dataset.scaling = scaleFactor;
     state.camera.width = primaryCanvas.width;
     state.camera.height = primaryCanvas.height;
+    canvases.PRIMARY.imageSmoothingEnabled = false;
   }
 };
 

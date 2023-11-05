@@ -8,6 +8,7 @@ import initControl from './interface/control/initControl.js';
 import initCanvases from './images/initCanvases.js';
 import resizeCanvases from './images/resizeCanvases.js';
 import audio from './sounds/audio.js';
+import canvases from './images/canvases.js';
 
 const run = async (window) => {
   await loadImages();
@@ -32,7 +33,7 @@ const run = async (window) => {
 
 window.document.getElementById('start').onclick = async (event) => {
   event.target.style.display = 'none';
-  window.document.body.requestFullscreen({ navigationUI: 'hide' });
+  //window.document.body.requestFullscreen({ navigationUI: 'hide' });
   await run(window);
   window.location.reload();
 }

@@ -42,6 +42,7 @@ const handleTapOnTerrain = () => {
     return;
   }
   if (tilePosition.x === state.guy.tile.x && tilePosition.y === state.guy.tile.y) {
+    state.guy.route = [];
     return;
   }
   if (

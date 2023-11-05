@@ -15,6 +15,7 @@ import getTileByPosition from '../../../terrain/getTileByPosition.js';
 import drawTileText from '../../../terrain/tiles/drawTileText.js';
 import interfaceTypes from '../../interfaceTypes.js';
 import isPositionInInterface from '../../isPositionInInterface.js';
+import setInventoryStatusText from '../../../guy/inventory/setInventoryStatusText.js';
 
 const setCurrentCursor = () => {
   if (!workbench.selectedItem) {
@@ -42,7 +43,7 @@ const setHoverStatusText = () => {
     if (state.options.openedMenu === menuTypes.INVENTORY) {
       const item = findItemAtPosition(cursor);
       if (item) {
-        setStatusText(texts[itemTextIds[item]]);
+        setInventoryStatusText(item);
         return;
       }
     }
