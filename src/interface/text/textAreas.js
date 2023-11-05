@@ -1,4 +1,4 @@
-import canvases from '../../images/canvases.js';
+import state from '../../state/state.js';
 import interfaceTypes from '../interfaceTypes.js';
 import interfaces from '../interfaces.js';
 import fonts from './fonts.js';
@@ -37,11 +37,13 @@ const textAreas = {
       const panel = interfaces[interfaceTypes.PANEL]();
       const panelArea = panel.area;
       const statusBarArea = interfaces[interfaceTypes.STATUS_BAR]().area;
+      const width = 380;
+      const height = state.paper?.height || 400;
       return {
-        x: canvases.PRIMARY.canvas.width < 800 ? 15 : Math.round((panelArea.x - 360) / 2),
-        y: canvases.PRIMARY.canvas.height < 600 ? 15 : Math.round((statusBarArea.y - 400) / 2),
+        x: Math.max(15, Math.round((panelArea.x - width) / 2) + 20),
+        y: Math.max(15, Math.round((statusBarArea.y - height) / 2)),
         width: 380,
-        height: 400
+        height
       };
     }
   },
