@@ -40,13 +40,8 @@ const setFullScreenAndRun = (event, window, language) => {
   event.stopPropagation();
 };
 
-const userLanguage = navigator.language.split('-')[0];
-const language = userLanguage === 'de' ? 'de' : 'en';
-const primaryStart = window.document.getElementById(`start-${language}`);
-primaryStart.style.top = '190px';
-primaryStart.style.fontSize = '4em';
-
-window.document.getElementById('start').onclick = (event) => setFullScreenAndRun(event, window, language);
+const language = navigator.language.split('-')[0] === 'de' ? 'de' : 'en';
+window.document.getElementById('ship').onclick = (event) => setFullScreenAndRun(event, window, language);
 window.document.getElementById('start-de').onclick = (event) => setFullScreenAndRun(event, window, 'de');
 window.document.getElementById('start-en').onclick = (event) => setFullScreenAndRun(event, window, 'en');
 

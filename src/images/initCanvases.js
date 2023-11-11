@@ -3,6 +3,7 @@ import canvases from './canvases.js';
 const initCanvases = async (window) => {
   const primaryCanvas = window.document.createElement('canvas');
   primaryCanvas.id = 'primaryCanvas';
+  primaryCanvas.className = 'noInterpolation';
   primaryCanvas.width = window.innerWidth;
   primaryCanvas.height = window.innerHeight;
   window.document.body.appendChild(primaryCanvas);

@@ -18,7 +18,16 @@
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
-        background: radial-gradient(circle, rgba(0,0,50,1) 0%, rgba(0,0,10,1) 100%);
+        background: linear-gradient(0deg, #063759, #7DC4F4 50%, #C1E3FB 51%, #008AEA);
+      }
+
+      .noInterpolation {
+        image-rendering: optimizeSpeed;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: optimize-contrast;
+        image-rendering: pixelated;
+        -ms-interpolation-mode: nearest-neighbor;
       }
 
       #primaryCanvas {
@@ -27,57 +36,62 @@
         top: 0;
         left: 0;
         cursor: none;
-        image-rendering: optimizeSpeed;
-        image-rendering: -moz-crisp-edges;
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: optimize-contrast;
-        image-rendering: pixelated;
-        -ms-interpolation-mode: nearest-neighbor;
       }
 
-      #start {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        cursor: pointer;
+      #ship {
+        width: 48px;
+        height: 38px;
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, calc(-50% - 50px));
-        width: 500px;
+        transform-origin: top;
+        transform: translate(53vw, 45vh) scale(3);
       }
 
-      #startImage {
-        width: 240px;
-        height: 190px;
-        image-rendering: optimizeSpeed;
-        image-rendering: -moz-crisp-edges;
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: optimize-contrast;
-        image-rendering: pixelated;
-        -ms-interpolation-mode: nearest-neighbor;
+      @media screen and (min-width: 600px) {
+        #ship {
+          transform: translate(53vw, 45vh) scale(5);
+        }
       }
 
-      #start-de, #start-en {
+      @media screen and (min-width: 900px) {
+        #ship {
+          transform: translate(53vw, 45vh) scale(7);
+        }
+      }
+
+      @media screen and (min-width: 1200px) {
+        #ship {
+          transform: translate(53vw, 45vh) scale(10);
+        }
+      }
+
+      .waves {
+        position: fixed;
+        white-space: nowrap;
+        font-size: 7vw;
+        height: 9vw;
+      }
+
+      #start-de {
+        transform: translate(5vw, calc(50vh - 50%));
+      }
+
+      #start-en {
+        transform: translate(72vw, calc(50vh - 50%));
+      }
+
+      .waves span {
         position: absolute;
-        top: 260px;
-        font-size: 2em;
-        width: 100%;
       }
 
-      #start-de span, #start-en span {
-        position: absolute;
-        width: 100%;
-        text-align: center;
-      }
-
-      #start-de span:nth-child(1), #start-en span:nth-child(1) {
+      .waves span:nth-child(1) {
         color: transparent;
-        -webkit-text-stroke: 2px rgba(25, 25, 150, 1);
+        -webkit-text-stroke: 0.2vw rgba(25, 25, 150, 1);
+        -webkit-box-reflect: below -2vw linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
+        z-index: 1;
       }
 
-      #start-de span:nth-child(2), #start-en span:nth-child(2) {
-        color: #41A9F1;
+      .waves span:nth-child(2) {
+        color: #7DC4F4;
         animation: animate 4s ease-in-out infinite;
       }
 
@@ -116,15 +130,15 @@
   <body oncontextmenu="return false;">
     <script type="module" src="./src/game.js"></script>
     <div id="start">
-      <img id="startImage" src="./images/start.png" />
-      <div id="start-de">
+      <div id="start-de" class="waves">
         <span>In See stechen</span>
         <span>In See stechen</span>
       </div>
-      <div id="start-en">
+      <div id="start-en" class="waves">
         <span>Set sail</span>
         <span>Set sail</span>
       </div>
+      <img id="ship" class="noInterpolation" src="./images/ship.png" />
     </div>
   </body>
 </html>
