@@ -6,10 +6,10 @@
     <title>Schiffbruch</title>
     <link rel="icon" type="image/png" sizes="48x48" href="./favicon.png">
     <style>
-      html, body {
+      html {
         font-family: Georgia, serif;
-        margin: 0;
-        height: 100%;
+        height: 100vh;
+        height: 100dvh;
         overflow: hidden;
         -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
@@ -18,6 +18,10 @@
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
+      }
+
+      body {
+        margin: 0;
         background: linear-gradient(0deg, #063759, #7DC4F4 50%, #C1E3FB 51%, #008AEA);
       }
 
@@ -43,24 +47,28 @@
         height: 38px;
         position: fixed;
         transform-origin: top;
-        transform: translate(53vw, 45vh) scale(3);
+        transform: translate(55vw, 45vh) scale(3);
+        transform: translate(55vw, 45dvh) scale(3);
       }
 
-      @media screen and (min-width: 600px) {
+      @media screen and (min-height: 400px) {
         #ship {
-          transform: translate(53vw, 45vh) scale(5);
+          transform: translate(55vw, 45vh) scale(5);
+          transform: translate(55vw, 45dvh) scale(5);
         }
       }
 
-      @media screen and (min-width: 900px) {
+      @media screen and (min-height: 600px) {
         #ship {
-          transform: translate(53vw, 45vh) scale(6);
+          transform: translate(55vw, 45vh) scale(6);
+          transform: translate(55vw, 45dvh) scale(6);
         }
       }
 
-      @media screen and (min-width: 1200px) {
+      @media screen and (min-height: 800px) {
         #ship {
-          transform: translate(53vw, 45vh) scale(8);
+          transform: translate(55vw, 45vh) scale(8);
+          transform: translate(55vw, 45dvh) scale(8);
         }
       }
 
@@ -72,11 +80,13 @@
       }
 
       #start-de {
-        transform: translate(5vw, calc(50vh - 50%));
+        transform: translate(5vw, calc(50vh - 55%));
+        transform: translate(5vw, calc(50dvh - 55%));
       }
 
       #start-en {
-        transform: translate(72vw, calc(50vh - 50%));
+        transform: translate(72vw, calc(50vh - 55%));
+        transform: translate(72vw, calc(50dvh - 55%));
       }
 
       .waves span {
