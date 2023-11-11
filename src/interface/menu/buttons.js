@@ -17,9 +17,10 @@ import actions from '../../action/actions.js';
 import audio from '../../sounds/audio.js';
 import interfaces from '../interfaces.js';
 import interfaceTypes from '../interfaceTypes.js';
+import sprites from '../../images/sprites.js';
 
 const buttonDefault = {
-  frame: 0,
+  frame: null,
   isVisible: () => true
 };
 
@@ -250,6 +251,7 @@ const buttons = [
   },
   {
     ...buttonDefault,
+    frame: 0,
     sprite: spriteTypes.BUTTON_CONSUMING,
     position: {
       x: 41,
@@ -274,6 +276,7 @@ const buttons = [
   },
   {
     ...buttonDefault,
+    frame: 1,
     sprite: spriteTypes.BUTTON_CHOPPING,
     position: {
       x: 123,
@@ -340,6 +343,7 @@ const buttons = [
   },
   {
     ...buttonDefault,
+    frame: 0,
     sprite: spriteTypes.BUTTON_LOOKING,
     position: {
       x: 82,
@@ -362,6 +366,7 @@ const buttons = [
   },
   {
     ...buttonDefault,
+    frame: 0,
     sprite: spriteTypes.BUTTON_HUNTING_TREASURE,
     position: {
       x: 123,
@@ -607,5 +612,7 @@ const buttons = [
     getInterface: interfaces[interfaceTypes.CONTROL_BUTTONS]
   }
 ];
+
+buttons.forEach(button => button.frame = button.frame === null ? sprites[button.sprite].frameCount - 1 : button.frame);
 
 export default buttons;
