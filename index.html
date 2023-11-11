@@ -54,13 +54,13 @@
 
       @media screen and (min-width: 900px) {
         #ship {
-          transform: translate(53vw, 45vh) scale(7);
+          transform: translate(53vw, 45vh) scale(6);
         }
       }
 
       @media screen and (min-width: 1200px) {
         #ship {
-          transform: translate(53vw, 45vh) scale(10);
+          transform: translate(53vw, 45vh) scale(8);
         }
       }
 
@@ -93,6 +93,24 @@
       .waves span:nth-child(2) {
         color: #7DC4F4;
         animation: animate 4s ease-in-out infinite;
+      }
+
+      #turn {
+        display: none;
+        position: absolute;
+        background-color: black;
+        width: 100vw;
+        height: 100vh;
+      }
+      #turn img {
+        position: fixed;
+        width: 50vw;
+        transform: translate(calc(50vw - 50%), calc(50vh - 50%));
+      }
+      @media (orientation: portrait) {
+        #turn {
+          display: block;
+        }
       }
 
       @keyframes animate {
@@ -139,6 +157,9 @@
         <span>Set sail</span>
       </div>
       <img id="ship" class="noInterpolation" src="./images/ship.png" />
+      <div id="turn">
+        <img src="./images/turn.svg" />
+      </div>
     </div>
   </body>
 </html>
