@@ -13,6 +13,7 @@ import isPositionInInterface from '../isPositionInInterface.js';
 import workbench from '../../guy/inventory/workbench.js';
 import combineItems from '../../guy/inventory/combineItems.js';
 import findItemAtPosition from '../../guy/inventory/findItemAtPosition.js';
+import menuTypes from '../menu/menuTypes.js';
 
 const handlePaperTap = () => {
   if (state.paper.question) {
@@ -65,8 +66,10 @@ const handleTapOnTerrain = () => {
 };
 
 const handleInventoryTap = () => {
-  if (!isPositionInInterface(control.tap, interfaceTypes.INVENTORY)) {
+  if (state.options.openedMenu !== menuTypes.INVENTORY || 
+    !isPositionInInterface(control.tap, interfaceTypes.INVENTORY)) {
     workbench.selectedItem = null;
+    return;
   }
 
   const item = findItemAtPosition(control.tap);
