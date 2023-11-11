@@ -14,6 +14,7 @@ import grounds from '../../terrain/tiles/grounds.js';
 import findRoute from '../../guy/routing/findRoute.js';
 import updateMinimap from '../../interface/minimap/updateMinimap.js';
 import tileEdges from '../../terrain/tiles/tileEdges.js';
+import control from '../../interface/control/control.js';
 
 const findBeachPositionX = () => {
   return state.terrain.findIndex(terrainColumn => {
@@ -85,7 +86,10 @@ const arriving = {
     walk,
     arrive
   ],
-  finish: () => openPaper(texts.ARRIVING, false),
+  finish: () => {
+    control.tap = null;
+    openPaper(texts.ARRIVING, false)
+  },
   movie: true,
   fastForward
 };

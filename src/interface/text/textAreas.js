@@ -37,12 +37,12 @@ const textAreas = {
       const panel = interfaces[interfaceTypes.PANEL]();
       const panelArea = panel.area;
       const statusBarArea = interfaces[interfaceTypes.STATUS_BAR]().area;
-      const width = 380;
+      const width = 415;
       const height = state.paper?.height || 400;
       return {
-        x: Math.max(15, Math.round((panelArea.x - width) / 2) + 20),
+        x: Math.max(15, Math.round((panelArea.x - width) / 2)),
         y: Math.max(15, Math.round((statusBarArea.y - height) / 2)),
-        width: 380,
+        width,
         height
       };
     }

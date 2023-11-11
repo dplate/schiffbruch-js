@@ -46,7 +46,7 @@ const drawPaper = () => {
   const paperHeight = Math.max(state.paper.height - 90, 0);
 
   const area = textAreas.PAPER.getArea();
-  const x = area.x - 60;
+  const x = area.x - 45;
   const y = area.y - 30;
 
   canvases.PRIMARY.drawImage(

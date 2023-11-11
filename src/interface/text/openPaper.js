@@ -6,6 +6,7 @@ import drawText from './drawText.js';
 import textAreas from './textAreas.js';
 import state from '../../state/state.js';
 import fade from '../../images/fade.js';
+import control from '../control/control.js';
 
 const openPaper = (text, question) => {
   textAreas.PAPER.text = text;
