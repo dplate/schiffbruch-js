@@ -6,9 +6,6 @@ import interfaceTypes from '../interfaceTypes.js';
 import moveCameraFromMinimap from '../minimap/moveCameraFromMinimap.js';
 import cursor from './mouse/cursor.js';
 import isPositionInInterface from '../isPositionInInterface.js';
-import workbench from '../../guy/inventory/workbench.js';
-import combineItems from '../../guy/inventory/combineItems.js';
-import findItemAtPosition from '../../guy/inventory/findItemAtPosition.js';
 
 const handleMinimapTouch = () => {
   if (isPositionInInterface(control.touch.position, interfaceTypes.MINIMAP)) {

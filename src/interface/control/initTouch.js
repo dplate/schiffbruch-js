@@ -9,7 +9,7 @@ const initTouch = (window) => {
         x: position.x - control.touch.position.x,
         y: position.y - control.touch.position.y
       };
-      if (Math.abs(movement.x) > 10 || Math.abs(movement.y) > 10 || control.touch.drag) {
+      if (Math.abs(movement.x) > 20 || Math.abs(movement.y) > 20 || control.touch.drag) {
         if (!control.touch.drag) {
           control.touch.drag = {
             x: 0,
