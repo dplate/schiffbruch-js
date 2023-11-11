@@ -5,14 +5,13 @@ import workbench from '../../../guy/inventory/workbench.js';
 import cursor from './cursor.js';
 import getPaperAnswerAtPosition from '../../text/getPaperAnswerAtPosition.js';
 import findItemAtPosition from '../../../guy/inventory/findItemAtPosition.js';
-import itemTextIds from '../../../guy/inventory/itemTextIds.js';
 import texts from '../../text/texts.js';
 import setStatusText from '../../text/setStatusText.js';
 import menuTypes from '../../menu/menuTypes.js';
 import textAreas from '../../text/textAreas.js';
 import handleButtonHovers from '../../menu/handleButtonHovers.js';
 import getTileByPosition from '../../../terrain/getTileByPosition.js';
-import drawTileText from '../../../terrain/tiles/drawTileText.js';
+import createTileText from '../../../terrain/tiles/createTileText.js';
 import interfaceTypes from '../../interfaceTypes.js';
 import isPositionInInterface from '../../isPositionInInterface.js';
 import setInventoryStatusText from '../../../guy/inventory/setInventoryStatusText.js';
@@ -67,7 +66,7 @@ const setHoverStatusText = () => {
     if (tilePosition) {
       const tile = state.terrain[tilePosition.x][tilePosition.y];
       if (tile?.discovered) {
-        drawTileText(state.terrain[tilePosition.x][tilePosition.y]);
+        setStatusText(createTileText(state.terrain[tilePosition.x][tilePosition.y]));
         return;
       }
     }

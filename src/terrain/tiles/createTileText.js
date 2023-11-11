@@ -1,6 +1,5 @@
 import constructions from '../../construction/constructions.js';
 import createNeededItemsText from '../../construction/createNeededItemsText.js';
-import setStatusText from '../../interface/text/setStatusText.js';
 import texts from '../../interface/text/texts.js';
 import getTextIdForObject from '../objects/getTextIdForObject.js';
 import groundTextIds from './groundTextIds.js';
@@ -23,6 +22,4 @@ const createTileText = (tile) => {
   return `${groundText} ${texts.WITH} ${objectText} (${progress}%)${needItemsText}`;
 };
 
-const drawTileText = (tile) => setStatusText(createTileText(tile));
-
-export default drawTileText;
+export default createTileText;
