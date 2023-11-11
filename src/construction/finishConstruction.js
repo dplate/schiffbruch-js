@@ -7,7 +7,7 @@ const finishConstruction = (tile) => {
   const construction = constructions[tile.construction.type];
   if (construction.hintTextId && !state.constructionHints[tile.construction.type]) {
     openPaper(texts[construction.hintTextId], false);
-    state.constructionHints[tile.construction.typeT] = true;
+    state.constructionHints[tile.construction.type] = true;
   }
   tile.object.frame = 0;
   tile.construction = null;
