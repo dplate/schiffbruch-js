@@ -11,7 +11,7 @@ const sounds = {
   },
   FOREST: {
     file: 'forest',
-    baseGain: 0.8,
+    baseGain: 0.5,
     instance: null
   },
   FIRE: {
