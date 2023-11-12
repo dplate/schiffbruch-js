@@ -16,7 +16,7 @@ const createTileText = (tile) => {
     return `${groundText} ${texts.WITH} ${objectText}`;
   }
 
-  const actionSteps = Object.values(actions).find(action => action.construction === tile.construction.type).steps?.length || constructions[tile.construction.type].actionSteps;
+  const actionSteps = Object.values(actions).find(action => action.construction === tile.construction.type).steps.length;
   const progress = Math.floor(tile.construction.actionStep * 100 / actionSteps);
   const needItemsText = createNeededItemsText(tile.construction.neededItems);
   return `${groundText} ${texts.WITH} ${objectText} (${progress}%)${needItemsText}`;

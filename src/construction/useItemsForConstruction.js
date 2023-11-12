@@ -8,17 +8,23 @@ import changeItem from '../guy/inventory/changeItem.js';
 import actions from '../action/actions.js';
 
 const useItemsForConstruction = (tile) => {
-  const construction = constructions[tile.construction.type];
-
+  const actionSteps = Object.values(actions).find(action => action.construction === tile.construction.type).steps.length;
   const amountLeft = Object.values(tile.construction.neededItems)
     .reduce((sum, amount) => sum + amount, 0);
-  const actionSteps = Object.values(actions).find(action => action.construction === tile.construction.type).steps?.length || construction.actionSteps;
+  
   const stepsLeft = actionSteps - tile.construction.actionStep + 1;
-
   const amountLeftPerStep = amountLeft / stepsLeft;
-
-  let amountLeftForThisStep = tile.construction.actionStep === 0 ? 
-    Math.ceil(amountLeftPerStep) : Math.round(amountLeftPerStep);
+  let amountLeftForThisStep = Math.floor(amountLeftPerStep);
+  
+  if (amountLeft > 0) {
+    const totalAmountNeeded = Object.values(constructions[tile.construction.type].items)
+      .reduce((sum, amount) => sum + amount, 0);
+    const atLeastOneEveryThisStep = Math.round(actionSteps / totalAmountNeeded);
+    if ((atLeastOneEveryThisStep >= 1 && tile.construction.actionStep % atLeastOneEveryThisStep === 0) ||
+       (tile.construction.actionStep === 0 && amountLeftForThisStep === 0)) {
+      amountLeftForThisStep = 1;
+    }
+  }
 
   if (amountLeftForThisStep <= 0) {
     return true;

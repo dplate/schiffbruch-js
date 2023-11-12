@@ -7,7 +7,6 @@ const constructions = {
     sprite: spriteTypes.FIELD,
     frames: [3, 4, 5, 6, 7, 8, 0],
     items: {},
-    actionSteps: 20,
     hintTextId: 'HINT_FIELD'
   },
   [constructionTypes.TENT]: {
@@ -17,7 +16,6 @@ const constructions = {
       [items.BRANCH]: 5,
       [items.LEAF]: 5
     },
-    actionSteps: 16,
     hintTextId: 'HINT_TENT'
   },
   [constructionTypes.BOAT]: {
@@ -35,7 +33,6 @@ const constructions = {
     items: {
       [items.LOG]: 1
     },
-    actionSteps: 16,
     hintTextId: 'HINT_PIPE'
   },
   [constructionTypes.SOS]: {
@@ -44,7 +41,6 @@ const constructions = {
     items: {
       [items.STONE]: 10
     },
-    actionSteps: 20,
     hintTextId: 'HINT_SOS',
   },
   [constructionTypes.FIREPLACE]: {
@@ -54,7 +50,6 @@ const constructions = {
       [items.BRANCH]: 5,
       [items.LOG]: 4
     },
-    actionSteps: 9,
     hintTextId: 'HINT_FIREPLACE',
   },
   [constructionTypes.LADDER]: {
@@ -63,7 +58,6 @@ const constructions = {
     items: {
       [items.BRANCH]: 4
     },
-    actionSteps: 19,
   },
   [constructionTypes.PLATFORM]: {
     sprite: spriteTypes.BIG_TREE_WITH_PLATFORM,
@@ -72,7 +66,6 @@ const constructions = {
       [items.BRANCH]: 3,
       [items.LOG]: 3
     },
-    actionSteps: 21,
   },
   [constructionTypes.TREE_HOUSE]: {
     sprite: spriteTypes.BIG_TREE_WITH_TREE_HOUSE,
@@ -82,7 +75,6 @@ const constructions = {
       [items.LOG]: 4,
       [items.LEAF]: 5
     },
-    actionSteps: 21,
     hintTextId: 'HINT_TREE_HOUSE',
   }
 };
