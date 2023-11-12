@@ -14,6 +14,7 @@ const initGuy = () => {
   state.guy.food = 100;
   state.guy.health = 100;
   state.guy.chance = 0;
+  state.guy.cheatChance = 0;
   state.guy.inventory = createInventory();
 
   state.guy.sprite = spriteTypes.GUY_SAILING;

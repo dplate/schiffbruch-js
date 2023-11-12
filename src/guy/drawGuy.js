@@ -10,6 +10,7 @@ const drawGuy = (canvasContext) => {
     Math.round(guy.position.x - state.camera.x), 
     Math.round(guy.position.y - state.camera.y),
     1,
+    false,
     canvasContext
   );
 };
