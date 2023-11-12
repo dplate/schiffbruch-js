@@ -1,4 +1,3 @@
-import goToObject from '../../guy/routing/goToObject.js';
 import state from '../../state/state.js';
 import directions from '../../terrain/directions.js';
 import grounds from '../../terrain/tiles/grounds.js';
@@ -8,8 +7,9 @@ import goToNorthOfTile from '../../guy/routing/goToNorthOfTile.js';
 import goToEastOfTile from '../../guy/routing/goToEastOfTile.js';
 import spriteTypes from '../../images/spriteTypes.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
+import goToSouthOfTile from '../../guy/routing/goToSouthOfTile.js';
 
-const isCoast = (tile) => tile.ground !== grounds.SEA;
+const isCoast = (tile) => tile.ground !== grounds.SEA && !tile.object;
 
 const paddleToCoast = () => {
   const neighbor = findNeighbor(isCoast);
