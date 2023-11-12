@@ -25,7 +25,7 @@ const drawCreditTexts = (elapsedTime) => {
   const canvasContext = canvases.PRIMARY;
   const canvasHeight = canvasContext.canvas.height;
 
-  creditState.offset += Math.floor(elapsedTime / 5);
+  creditState.offset += Math.max(1, Math.floor(elapsedTime * canvasHeight / 5000));
 
   creditTexts[creditState.itemId].forEach((creditText, index) => {
     if (index === 0) {
