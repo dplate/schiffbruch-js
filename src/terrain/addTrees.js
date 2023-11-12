@@ -42,7 +42,7 @@ const addTrees = () => {
 
   state.terrain.forEach((terrainColumn) => {
     terrainColumn.forEach((tile) => {
-      if (tile.object || tile.ground === grounds.QUICKSAND || Math.random() > 0.3) {
+      if (tile.object || tile.ground === grounds.QUICKSAND || tile.ground === grounds.SEA || Math.random() > 0.3) {
         return;
       }
 

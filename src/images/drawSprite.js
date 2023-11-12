@@ -3,7 +3,6 @@ import sprites from './sprites.js'
 
 const drawSprite = (type, frame, x, y, scaling = 1, mirror = false, canvasContext = canvases.PRIMARY) => {
   if (mirror) {
-    canvasContext.save();
     canvasContext.scale(-1, 1);
   }
   const sprite = sprites[type];
@@ -20,7 +19,7 @@ const drawSprite = (type, frame, x, y, scaling = 1, mirror = false, canvasContex
     sprite.height * scaling
   );
   if (mirror) {
-    canvasContext.restore();
+    canvasContext.scale(-1, 1);
   }
 };
 

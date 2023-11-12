@@ -2,6 +2,9 @@ import spriteTypes from '../../images/spriteTypes.js';
 import sprites from '../../images/sprites.js';
 
 const createWaves = () => {
+  if (Math.random() < 0.5) {
+    return null;
+  }
   const mirror = Math.random() < 0.5;
   return {
     sprite: spriteTypes.WAVES,

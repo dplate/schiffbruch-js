@@ -10,8 +10,8 @@ const drawTile = (area, x, y, forTreasureMap, canvasContext) => {
   
   const sprite = tileSprites[tile.type];
 
-  const destinationX = Math.round(tile.position.x - area.x);
-  const destinationY = Math.round(tile.position.y - area.y);
+  const destinationX = tile.position.x - area.x;
+  const destinationY = tile.position.y - area.y;
 
   if (
     destinationX + sprite.width < 0 || destinationY + sprite.height < 0 || 
@@ -27,8 +27,8 @@ const drawTile = (area, x, y, forTreasureMap, canvasContext) => {
       variant.y, 
       sprite.width, 
       sprite.height, 
-      destinationX, 
-      destinationY, 
+      Math.round(destinationX), 
+      Math.round(destinationY), 
       sprite.width, 
       sprite.height
     );
@@ -45,8 +45,6 @@ const drawTile = (area, x, y, forTreasureMap, canvasContext) => {
       drawTileSprite(sprite.variants.route);
     }
   }
-
-  drawObject(area, tile, forTreasureMap, true, false, canvasContext);
 };
 
 export default drawTile;
