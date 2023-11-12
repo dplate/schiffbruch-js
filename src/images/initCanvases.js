@@ -9,7 +9,6 @@ const initCanvases = async (window) => {
   window.document.body.appendChild(primaryCanvas);
   canvases.PRIMARY = primaryCanvas.getContext('2d', { 
     alpha: false, 
-    desynchronized: true,
     willReadFrequently: false 
   });
   canvases.PRIMARY.imageSmoothingEnabled = false;
