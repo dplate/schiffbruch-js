@@ -17,7 +17,11 @@ const drawTerrain = (area, forTreasureMap, canvasContext = canvases.PRIMARY) => 
       if ((tile.discovered && tile.object) || forTreasureMap) {
         drawObject(area, tile, forTreasureMap, true, false, canvasContext);
       }
-
+    }
+  }
+  for (let x = 0; x < terrainWidth; x++) {
+    for (let y = 0; y < terrainHeight; y++) {
+      const tile = state.terrain[x][y];
       if (tile.discovered && !forTreasureMap) {
         const mustDrawGuy = state.guy.tile.x === x && state.guy.tile.y === y;
         drawObject(area, tile, forTreasureMap, false, mustDrawGuy, canvasContext);
