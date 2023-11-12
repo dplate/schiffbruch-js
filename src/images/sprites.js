@@ -13,7 +13,7 @@ const treeDefault = {
   image: images.TREES,
   sound: sounds.FOREST,
   frameCount: 4,
-  speed: 4
+  speed: 3
 };
 
 const bigTreeDefault = {
