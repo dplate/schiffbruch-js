@@ -54,8 +54,7 @@ const addTrees = () => {
         x: Math.round(position.x),
         y: Math.round(position.y),
         reverse: Math.random() < 0.5,
-        frame: getStartFrame(spriteType),
-        mirror: (spriteType === spriteTypes.BUSH) ? Math.random() < 0.5 : false
+        frame: getStartFrame(spriteType)
       };
       bigTreePlanted = bigTreePlanted || (spriteType === spriteTypes.BIG_TREE);
     });

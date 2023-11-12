@@ -24,7 +24,6 @@ const drawObject = (area, tile, forTreasureMap, groundObjects, mustDrawGuy, canv
     tile.position.x + object.x - area.x, 
     tile.position.y + object.y - area.y,
     1,
-    object.mirror,
     canvasContext
   );
 
