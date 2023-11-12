@@ -89,7 +89,7 @@ const drawPaper = () => {
       0, 
       treasureMapCanvas.width, 
       treasureMapCanvas.height,
-      area.x, 
+      area.x + 30, 
       area.y, 
       treasureMapCanvas.width, 
       treasureMapCanvas.height
