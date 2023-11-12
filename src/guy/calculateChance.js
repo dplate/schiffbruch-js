@@ -28,11 +28,14 @@ const getActionChance = () => {
 };
 
 const calculateChance = () => {
-  const terrainChance = state.terrain.reduce((chance, terrainColumn) => {
-    return chance + terrainColumn.reduce((chance, tile) => {
-        return chance + getChanceOnTile(tile);
-    }, 0)
-  }, 0);
+  let terrainChance = 0;
+  const terrainWidth = state.terrain.length;
+  const terrainHeight = state.terrain[0].length;
+  for (let x = 0; x < terrainWidth; x++) {
+    for (let y = 0; y < terrainHeight; y++) {
+      terrainChance += getChanceOnTile(state.terrain[x][y])
+    }
+  }
 
   const actionChance = getActionChance();
 

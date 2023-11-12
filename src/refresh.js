@@ -40,7 +40,7 @@ const refresh = (timestamp) => {
   if (elapsedTime > 500) {
     return true;
   }
-  
+
   if (state.phase === phases.LOGO) {
     if (hasAnyInput()) {
       sounds.LOGO.instance.stop();

@@ -7,9 +7,13 @@ const initCanvases = async (window) => {
   primaryCanvas.width = window.innerWidth;
   primaryCanvas.height = window.innerHeight;
   window.document.body.appendChild(primaryCanvas);
-  canvases.PRIMARY = primaryCanvas.getContext('2d');
+  canvases.PRIMARY = primaryCanvas.getContext('2d', { 
+    alpha: false, 
+    desynchronized: true,
+    willReadFrequently: false 
+  });
   canvases.PRIMARY.imageSmoothingEnabled = false;
-  
+
   canvases.MINIMAP = window.document.createElement('canvas').getContext('2d');
 
   canvases.TREASURE_MAP = window.document.createElement('canvas').getContext('2d');

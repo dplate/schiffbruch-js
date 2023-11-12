@@ -1,11 +1,16 @@
 import sprites from '../images/sprites.js';
 import state from '../state/state.js';
 
+const maxTileDistance = 3;
+
 const playTerrainSounds = () => {
   const terrain = state.terrain;
   const terrainSounds = [];
-  for (let x in terrain) {
-    for (let y in terrain[x]) {
+
+  const terrainWidth = state.terrain.length;
+  const terrainHeight = state.terrain[0].length;
+  for (let x = Math.max(0, state.guy.tile.x - maxTileDistance); x < Math.min(terrainWidth, state.guy.tile.x + maxTileDistance + 1); x++) {
+    for (let y = Math.max(0, state.guy.tile.y - maxTileDistance); y < Math.min(terrainHeight, state.guy.tile.y + maxTileDistance + 1); y++) {
       const object = terrain[x][y].object;
       if (object) {
         const sound = sprites[object.sprite].sound;
@@ -25,7 +30,7 @@ const playTerrainSounds = () => {
     }
   }
   terrainSounds.forEach((terrainSound) => {
-    terrainSound.sound.instance.play(true);
+    terrainSound.sound.instance.play(false);
     terrainSound.sound.instance.setGain(terrainSound.gain);
   });
 };

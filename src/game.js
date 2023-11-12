@@ -11,6 +11,7 @@ import audio from './sounds/audio.js';
 
 const run = async (window, language) => {
   window.document.getElementById('start').style.display = 'none';
+  window.document.body.style.background = 'none';
   
   await loadImages(language);
   await initCanvases(window);
