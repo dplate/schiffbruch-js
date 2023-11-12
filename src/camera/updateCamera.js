@@ -9,8 +9,8 @@ const updateCamera = (newCenter, movie) => {
   const camera = state.camera;
   camera.width = canvases.PRIMARY.canvas.width;
   camera.height = canvases.PRIMARY.canvas.height;
-  camera.x = newCenter.x - (movie ? camera.width : panelArea.x) / 2;
-  camera.y = newCenter.y - (movie ? camera.height : statusBarArea.y) / 2;
+  camera.x = Math.round(newCenter.x - (movie ? camera.width : panelArea.x) / 2);
+  camera.y = Math.round(newCenter.y - (movie ? camera.height : statusBarArea.y) / 2);
 };
 
 export default updateCamera;
