@@ -5,7 +5,7 @@ const answerArea = {
   getYes: () => {
     const area = textAreas.PAPER.getArea();
     return {
-      x: area.x + 50,
+      x: area.x + 80,
       y: area.y + state.paper.height - 90,
       width: 68,
       height: 41
@@ -14,7 +14,7 @@ const answerArea = {
   getNo: () => {
     const area = textAreas.PAPER.getArea();
     return {
-      x: area.x + 220,
+      x: area.x + 250,
       y: area.y + state.paper.height - 90,
       width: 97,
       height: 39
