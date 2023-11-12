@@ -8,6 +8,7 @@ import initControl from './interface/control/initControl.js';
 import initCanvases from './images/initCanvases.js';
 import resizeCanvases from './images/resizeCanvases.js';
 import audio from './sounds/audio.js';
+import saveState from './state/saveState.js';
 
 const run = async (window, language) => {
   window.document.getElementById('start').style.display = 'none';
@@ -60,6 +61,11 @@ window.addEventListener(
 
 window.addEventListener(
   'blur', 
-  () => audio?.suspend(), 
+  () => {
+    audio?.suspend();
+    if (state.phase === phases.PLAY) {
+      saveState();
+    } 
+  },
   false
 );
