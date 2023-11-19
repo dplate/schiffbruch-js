@@ -8,8 +8,6 @@ import changeWaterAndFood from '../../guy/changeWaterAndFood.js';
 import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import spendMinutes from '../spendMinutes.js';
 import construct from '../../construction/construct.js';
-import grounds from '../../terrain/tiles/grounds.js';
-import state from '../../state/state.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 
 const sitDown = () => {
