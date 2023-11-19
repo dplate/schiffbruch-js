@@ -14,7 +14,7 @@ const lightIt = () => {
 const watchFire = (tile) => {
   if (tile.object.sprite === spriteTypes.BUSH) {
     tile.object.sprite = spriteTypes.BUSH_FIRE;
-    tile.object.lifetime = 2 * 60;
+    tile.object.lifetime = 30;
   } else {
     tile.object.sprite = spriteTypes.FIRE;
     tile.object.lifetime = 35 * 60;
