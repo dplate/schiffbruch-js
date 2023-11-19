@@ -6,7 +6,7 @@ const sounds = {
   },
   RIVER: {
     file: 'river',
-    baseGain: 0.5,
+    baseGain: 0.3,
     instance: null
   },
   FOREST: {
@@ -56,12 +56,12 @@ const sounds = {
   },
   STORM: {
     file: 'storm',
-    baseGain: 0.85,
+    baseGain: 0.3,
     instance: null
   },
   SPLASH: {
     file: 'splash',
-    baseGain: 0.95,
+    baseGain: 0.85,
     instance: null
   },
   SWIMMING: {
@@ -86,7 +86,7 @@ const sounds = {
   },
   FISHING: {
     file: 'fishing',
-    baseGain: 1,
+    baseGain: 0.8,
     instance: null
   },
   WOLF: {

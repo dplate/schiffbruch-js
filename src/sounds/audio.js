@@ -3,6 +3,7 @@ const createSound = (audioContext, audioBuffer, baseGain) => {
 
   const gainNode = audioContext.createGain();
   gainNode.connect(audioContext.destination);
+  gainNode.gain.value = baseGain;
 
   return {
     stop: () => {
