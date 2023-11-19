@@ -23,7 +23,7 @@ const processAnswer = () => {
 
 const walkToBeach = () => {
   const targetX = state.terrain.findLastIndex(terrainColumn => {
-    return terrainColumn[state.guy.tile.y].ground !== grounds.SEA;
+    return terrainColumn[state.guy.tile.y].ground === grounds.BEACH;
   });
 
   const shipTile = state.terrain[targetX + 2][state.guy.tile.y];

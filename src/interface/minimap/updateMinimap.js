@@ -1,6 +1,7 @@
 import canvases from '../../images/canvases.js';
 import state from '../../state/state.js';
 import grounds from '../../terrain/tiles/grounds.js';
+import isSea from '../../terrain/tiles/isSea.js';
 import minimapScaling from './minimapScaling.js';
 
 const undiscoveredColor = 'rgba(247, 222, 191, 1)';
@@ -9,7 +10,7 @@ const sandColor = 'rgba(112, 103, 93, 1)';
 
 const getColor = (tile) => {
   if (tile.discovered) {
-    if (tile.ground === grounds.SEA) {
+    if (isSea(tile)) {
       return waterColor;
     }
     if (tile.ground === grounds.BEACH || tile.ground === grounds.QUICKSAND) {

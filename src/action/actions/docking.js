@@ -9,7 +9,7 @@ import spriteTypes from '../../images/spriteTypes.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 import goToSouthOfTile from '../../guy/routing/goToSouthOfTile.js';
 
-const isCoast = (tile) => tile.ground !== grounds.SEA && !tile.object;
+const isCoast = (tile) => tile.ground === grounds.BEACH && !tile.object;
 
 const paddleToCoast = () => {
   const neighbor = findNeighbor(isCoast);

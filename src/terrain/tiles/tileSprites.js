@@ -36,6 +36,10 @@ const tileSprites = {
           x: 2 * width,
           y: 3 * height
         },
+        [grounds.SHORE]: {
+          x: 3 * width,
+          y: 3 * height
+        },
       },
       grid: {
         x: 0,

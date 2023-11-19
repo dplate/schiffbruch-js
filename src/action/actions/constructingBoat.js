@@ -12,6 +12,7 @@ import spendMinutes from '../spendMinutes.js';
 import tileEdges from '../../terrain/tiles/tileEdges.js';
 import directions from '../../terrain/directions.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
+import isSea from '../../terrain/tiles/isSea.js';
 
 const hit = () => {
   startGuyAnimation(spriteTypes.GUY_HITTING);
@@ -21,7 +22,7 @@ const hit = () => {
 };
 
 const moveBoatToCoast = (tile) => {
-  const neighbor = findNeighbor(tile => tile.ground === grounds.SEA);
+  const neighbor = findNeighbor(isSea);
   const edgePosition = tileEdges[tile.type][neighbor.direction];
   tile.object.x = edgePosition.x;
   tile.object.y = edgePosition.y;
@@ -34,8 +35,8 @@ const constructingBoat = {
   construction: constructionTypes.BOAT,
 
   getImpossibleText: (tile) => {
-    const nextToSea = findNeighbor(tile => tile.ground === grounds.SEA);
-    if (!tile.object && nextToSea) {
+    const nextToSea = findNeighbor(isSea);
+    if (!tile.object && tile.ground === grounds.BEACH && nextToSea) {
       return null;
     }
     return texts.IMPOSSIBLE_CONSTRUCTING_BOAT;

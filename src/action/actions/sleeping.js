@@ -1,6 +1,5 @@
 import goToOnTile from '../../guy/routing/goToOnTile.js';
 import texts from '../../interface/text/texts.js';
-import grounds from '../../terrain/tiles/grounds.js';
 import isUsableTent from '../../terrain/objects/isUsableTent.js';
 import isUsableTreeHouse from '../../terrain/objects/isUsableTreeHouse.js';
 import startGuyAnimation from '../../guy/startGuyAnimation.js';
@@ -10,6 +9,7 @@ import sounds from '../../sounds/sounds.js';
 import changeHealth from '../../guy/changeHealth.js';
 import spendMinutes from '../spendMinutes.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
+import isSea from '../../terrain/tiles/isSea.js';
 
 const goToSleepingPlace = (tile) => {
   if (isUsableTent(tile))
@@ -72,7 +72,7 @@ const standUp = (tile) => {
 
 const sleeping = {
   getImpossibleText: (tile) => {
-    if (tile.ground !== grounds.SEA) {
+    if (!isSea(tile)) {
       return null;
     }
     return texts.IMPOSSIBLE_NO_SLEEPING_ON_BOAT;

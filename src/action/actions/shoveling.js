@@ -7,9 +7,9 @@ import openPaper from '../../interface/text/openPaper.js';
 import texts from '../../interface/text/texts.js';
 import sounds from '../../sounds/sounds.js';
 import state from '../../state/state.js';
-import grounds from '../../terrain/tiles/grounds.js';
 import tileTypes from '../../terrain/tiles/tileTypes.js';
 import spendMinutes from '../spendMinutes.js';
+import isSea from '../../terrain/tiles/isSea.js';
 
 const shovel = () => {
   startGuyAnimation(spriteTypes.GUY_SHOVELING);
@@ -29,7 +29,7 @@ const findTreasure = () => {
 
 const shoveling = {
   getImpossibleText: (tile) => {
-    if (tile.ground !== grounds.SEA &&
+    if (!isSea(tile) &&
       tile.type === tileTypes.FLAT &&
       !tile.object) {
       return null;

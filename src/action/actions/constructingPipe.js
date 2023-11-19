@@ -11,6 +11,7 @@ import updatePipes from '../../terrain/updatePipes.js';
 import spendMinutes from '../spendMinutes.js';
 import tileEdges from '../../terrain/tiles/tileEdges.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
+import isSea from '../../terrain/tiles/isSea.js';
 
 const hit = () => {
   startGuyAnimation(spriteTypes.GUY_HITTING);
@@ -30,7 +31,7 @@ const constructingPipe = {
   construction: constructionTypes.PIPE,
 
   getImpossibleText: (tile) => {
-    if (!tile.object && tile.type === tileTypes.FLAT) {
+    if (!tile.object && tile.type === tileTypes.FLAT && !isSea(tile)) {
       return null;
     } 
     return texts.IMPOSSIBLE_CONSTRUCTING_PIPE;

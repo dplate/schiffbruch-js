@@ -14,6 +14,18 @@ const initGrounds = () => {
 };
 
 const isOpenSea = (x, y) => {
+  for (let xOffset = -2; xOffset <= 2; xOffset++) {
+    for (let yOffset = -2; yOffset <= 2; yOffset++) {
+      const neighborTile = state.terrain[x + xOffset]?.[y + yOffset];
+      if (neighborTile && neighborTile.type !== tileTypes.FLAT) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
+const isShore = (x, y) => {
   for (let xOffset = -1; xOffset <= 1; xOffset++) {
     for (let yOffset = -1; yOffset <= 1; yOffset++) {
       const neighborTile = state.terrain[x + xOffset]?.[y + yOffset];
@@ -30,6 +42,10 @@ const setSea = (x, y) => {
   if (tile && !tile.ground && tile.type === tileTypes.FLAT && tile.height === 0) {
     if (isOpenSea(x, y)) {
       tile.ground = grounds.SEA;
+    } else if (isShore(x, y)) {
+      tile.ground = grounds.SHORE;
+    }
+    if (tile.ground) {
       tile.object = createWaves();
       setSea(x, y - 1);
       setSea(x + 1, y);

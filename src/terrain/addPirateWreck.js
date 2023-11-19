@@ -1,12 +1,13 @@
 import spriteTypes from '../images/spriteTypes.js';
 import state from '../state/state.js';
 import grounds from './tiles/grounds.js';
+import isSea from './tiles/isSea.js';
 import tileEdges from './tiles/tileEdges.js';
 
 const isGoodPosition = (x, y) => {
   const terrain = state.terrain;
 
-  if (terrain[x][y].ground !== grounds.SEA) {
+  if (!isSea(terrain[x][y])) {
     return false;
   }
 
@@ -19,7 +20,7 @@ const isGoodPosition = (x, y) => {
   for (let neighborX = Math.max(0, x - 1); neighborX <= Math.min(x, terrain.length - 1); neighborX++) {
     for (let neighborY = Math.max(0, y - 1); neighborY <= Math.min(y + 1, terrain[0].length - 1); neighborY++) {
       if (neighborX !== x && neighborY !== y) {
-        if (terrain[neighborX][neighborY].ground !== grounds.SEA) {
+        if (terrain[neighborX][neighborY].ground === grounds.BEACH) {
           return true;
         }
       }    

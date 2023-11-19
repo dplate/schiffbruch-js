@@ -176,7 +176,7 @@ const buttons = [
       x: 82,
       y: 0
     },
-    isVisible: () => !state.guy.active && isOnSea() && findNeighbor((tile) => tile.ground !== grounds.SEA && !tile.object),
+    isVisible: () => !state.guy.active && isOnSea() && findNeighbor((tile) => tile.ground === grounds.BEACH && !tile.object),
     onTap: () => startAction(actionTypes.DOCKING),
     onHover: () => setStatusText(texts.BUTTON_DOCKING),
     getInterface: interfaces[interfaceTypes.CONTROL_BUTTONS]

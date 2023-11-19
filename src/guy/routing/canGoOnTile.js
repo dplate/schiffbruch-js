@@ -1,9 +1,10 @@
 import grounds from '../../terrain/tiles/grounds.js';
+import isSea from '../../terrain/tiles/isSea.js';
 import isOnSea from '../isOnSea.js';
 
 const canGoOnTile = (tile) => {
   if (isOnSea()) {
-    if (tile.ground === grounds.SEA) {
+    if (isSea(tile)) {
       return true;
     }
   } else {

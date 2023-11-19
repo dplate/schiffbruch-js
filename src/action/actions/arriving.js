@@ -12,13 +12,12 @@ import discoverTerrain from '../../guy/discoverTerrain.js';
 import updateCamera from '../../camera/updateCamera.js';
 import grounds from '../../terrain/tiles/grounds.js';
 import findRoute from '../../guy/routing/findRoute.js';
-import updateMinimap from '../../interface/minimap/updateMinimap.js';
 import tileEdges from '../../terrain/tiles/tileEdges.js';
 import control from '../../interface/control/control.js';
 
 const findBeachPositionX = () => {
   return state.terrain.findIndex(terrainColumn => {
-    return terrainColumn[state.guy.tile.y].ground !== grounds.SEA;
+    return terrainColumn[state.guy.tile.y].ground === grounds.BEACH;
   })
 };
 

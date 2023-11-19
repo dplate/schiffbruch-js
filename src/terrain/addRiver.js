@@ -2,6 +2,7 @@ import state from '../state/state.js';
 import directions from './directions.js';
 import createRiverObject from './objects/createRiverObject.js';
 import grounds from './tiles/grounds.js';
+import isSea from './tiles/isSea.js';
 import tileTypes from './tiles/tileTypes.js';
 import updateWetlands from './updateWetlands.js';
 
@@ -40,7 +41,7 @@ const hasEndReached = (tile, position, fromDirection) => {
     x: position.x + xDiff[toDirection],
     y: position.y + yDiff[toDirection],
   };
-  return state.terrain[nextPosition.x]?.[nextPosition.y].ground === grounds.SEA;
+  return isSea(state.terrain[nextPosition.x]?.[nextPosition.y]);
 };
 
 const isAlreadyRiver = (river, position) => river.some((step) => step.position.x === position.x && step.position.y === position.y);

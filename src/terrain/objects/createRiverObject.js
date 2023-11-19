@@ -2,6 +2,7 @@ import spriteTypes from '../../images/spriteTypes.js';
 import directions from '../directions.js';
 import tileTypes from '../tiles/tileTypes.js';
 import grounds from '../tiles/grounds.js';
+import isSea from '../tiles/isSea.js';
 
 const getSpringSprite = (toDirection) => {
   switch (toDirection) {
@@ -175,7 +176,7 @@ const getRiverSprite = (tile, fromDirection, toDirection) => {
 
 const createRiverObject = (tile, fromDirection, toDirection) => {
   if (!tile || 
-    tile.ground === grounds.SEA || 
+    isSea(tile) || 
     tile.ground === grounds.QUICKSAND ||
     (tile.ground === grounds.BEACH && toDirection)) {
     return null;

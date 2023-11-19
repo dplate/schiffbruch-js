@@ -1,11 +1,11 @@
 import texts from '../../interface/text/texts.js';
-import grounds from '../../terrain/tiles/grounds.js';
 import spriteTypes from '../../images/spriteTypes.js';
 import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import spendMinutes from '../spendMinutes.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
 import discoverTerrain from '../../guy/discoverTerrain.js';
 import changeWaterAndFood from '../../guy/changeWaterAndFood.js';
+import isSea from '../../terrain/tiles/isSea.js';
 
 const look = (distance) => {
   startGuyAnimation(spriteTypes.GUY_LOOKING);
@@ -16,7 +16,7 @@ const look = (distance) => {
 
 const looking = {
   getImpossibleText: (tile) => {
-    if (tile.ground !== grounds.SEA) {
+    if (!isSea(tile)) {
       return null;
     }
     return texts.IMPOSSIBLE_NO_LOOKING_ON_BOAT;

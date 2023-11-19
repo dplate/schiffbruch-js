@@ -9,6 +9,7 @@ import startGuyAnimation from '../../guy/startGuyAnimation.js';
 import spendMinutes from '../spendMinutes.js';
 import construct from '../../construction/construct.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
+import isSea from '../../terrain/tiles/isSea.js';
 
 const sitDown = () => {
   startGuyAnimation(spriteTypes.GUY_LAYING_DOWN);
@@ -26,7 +27,7 @@ const constructingSos = {
   construction: constructionTypes.SOS,
 
   getImpossibleText: (tile) => {
-    if (!tile.object && tile.type === tileTypes.FLAT) {
+    if (!tile.object && tile.type === tileTypes.FLAT && !isSea(tile)) {
       return null;
     }
     return texts.IMPOSSIBLE_CONSTRUCTING_SOS;

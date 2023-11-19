@@ -8,6 +8,7 @@ import tileTypes from '../../terrain/tiles/tileTypes.js';
 import spendMinutes from '../spendMinutes.js';
 import construct from '../../construction/construct.js';
 import goToCenterOfTile from '../../guy/routing/goToCenterOfTile.js';
+import isSea from '../../terrain/tiles/isSea.js';
 
 const knotSouth = () => {
   startGuyAnimation(spriteTypes.GUY_KNOTTING_SOUTH);
@@ -37,7 +38,7 @@ const constructingTent = {
   construction: constructionTypes.TENT,
 
   getImpossibleText: (tile) => {
-    if (!tile.object && tile.type === tileTypes.FLAT) {
+    if (!tile.object && tile.type === tileTypes.FLAT && !isSea(tile)) {
       return null;
     }
     return texts.IMPOSSIBLE_CONSTRUCTING_TENT;
