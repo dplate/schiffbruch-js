@@ -55,7 +55,7 @@ export default {
   IMPOSSIBLE_DESTROYING: 'Hier ist leider kein Bauwerk, das ich abreissen kann.',
   IMPOSSIBLE_GENERAL: 'Diese Gegend ist leider nicht geeignet.',
   IMPOSSIBLE_NO_BIRDS: 'Hier sind keine Voegel.',
-  IMPOSSIBLE_NO_FIREPLACE: 'Ich kann nur Feuerstellen anzuenden',
+  IMPOSSIBLE_NO_FIREPLACE_OR_BUSH: 'Ich kann nur Feuerstellen oder Buesche anzuenden',
   IMPOSSIBLE_NO_FOOD_OR_WATER: 'Hier gibt es weder etwas zu essen noch zu trinken.',
   IMPOSSIBLE_NO_LADDER: 'Ohne Leiter kann ich keine Plattform bauen.',
   IMPOSSIBLE_NO_LOOKING_ON_BOAT: 'Die Wellen sind zu hoch, um etwas zu sehen.',

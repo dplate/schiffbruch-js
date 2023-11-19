@@ -6,14 +6,14 @@ import grounds from '../terrain/tiles/grounds.js';
 const getChanceOnTile = (tile) => {
   if (!tile.construction && tile.object) {
     if (tile.object.sprite === spriteTypes.SOS) {
-      if ((tile.ground === grounds.GRASS) || (tile.ground === grounds.WETLAND)) {
+      if (tile.ground === grounds.GRASS || tile.ground === grounds.WETLAND) {
         return 1;
       }
       else {
         return 2;
       }
     }
-    if (tile.object.sprite === spriteTypes.FIRE) {
+    if (tile.object.sprite === spriteTypes.FIRE || tile.object.sprite === spriteTypes.BUSH_FIRE) {
       return 2 + 2 * tile.height;
     }
   }

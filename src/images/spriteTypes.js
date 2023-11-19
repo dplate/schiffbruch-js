@@ -33,6 +33,7 @@ const spriteTypes = {
   TREE_FALL_EVERGREEN: 'treeFallEvergreen',
   TREE_FALL_SMALL: 'treeFallSmall',
   BUSH: 'bush',
+  BUSH_FIRE: 'bushFire',
   BIG_TREE: 'bigTree',
   BIG_TREE_WITH_LADDER: 'bigTreeWithLadder',
   BIG_TREE_WITH_PLATFORM: 'bigTreeWithPlatform',

@@ -359,6 +359,17 @@ const sprites = {
     offsetX: -10,
     offsetY: -13,
   },
+  [spriteTypes.BUSH_FIRE]: {
+    ...treeDefault,
+    frameCount: 3,
+    speed: 4,
+    x: 264,
+    y: 0,
+    width: 20,
+    height: 20,
+    offsetX: -10,
+    offsetY: -20,
+  },
   [spriteTypes.BIG_TREE]: {
     ...bigTreeDefault,
     frameCount: 1,

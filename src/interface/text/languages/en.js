@@ -55,7 +55,7 @@ export default {
   IMPOSSIBLE_DESTROYING: 'Unfortunately, there is no construction here that I can demolish',
   IMPOSSIBLE_GENERAL: 'Unfortunately, this area is not suitable.',
   IMPOSSIBLE_NO_BIRDS: 'There are no birds here.',
-  IMPOSSIBLE_NO_FIREPLACE: 'I can only light fireplaces.',
+  IMPOSSIBLE_NO_FIREPLACE_OR_BUSH: 'I can only light fireplaces or bushes.',
   IMPOSSIBLE_NO_FOOD_OR_WATER: 'There is nothing to eat or drink here.',
   IMPOSSIBLE_NO_LADDER: 'I can\'t build a platform without a ladder.',
   IMPOSSIBLE_NO_LOOKING_ON_BOAT: 'The waves are too high to see anything.',
