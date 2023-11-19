@@ -14,7 +14,7 @@ export default {
   BUTTON_HUNTING_TREASURE: 'View treasure map',
   BUTTON_INVENTORY_CHECKED: 'Close the inventory',
   BUTTON_INVENTORY: 'Open the inventory',
-  BUTTON_LIGHTNING: 'Light the fireplace',
+  BUTTON_LIGHTNING: 'Light the signal fire',
   BUTTON_LOOKING: 'Look for rescue',
   BUTTON_MUTE_CHECKED: 'Turn on sound',
   BUTTON_MUTE: 'Turn off sound',

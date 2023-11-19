@@ -30,6 +30,7 @@ const getTextIdForObject = (object) => {
     case spriteTypes.FIREPLACE:
       return 'OBJECT_FIREPLACE';
     case spriteTypes.FIRE:
+    case spriteTypes.BUSH_FIRE:
       return 'OBJECT_FIRE';
     case spriteTypes.SHIP_WRECK:
     case spriteTypes.PIRATE_WRECK:  

@@ -361,6 +361,7 @@ const sprites = {
   },
   [spriteTypes.BUSH_FIRE]: {
     ...treeDefault,
+    sound: sounds.FIRE,
     frameCount: 3,
     speed: 4,
     x: 264,

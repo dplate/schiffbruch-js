@@ -14,7 +14,7 @@ export default {
   BUTTON_HUNTING_TREASURE: 'Schatzkarte anschauen',
   BUTTON_INVENTORY_CHECKED: 'Schliesst das Inventar',
   BUTTON_INVENTORY: 'Oeffnet das Inventar',
-  BUTTON_LIGHTNING: 'Feuerstelle anzuenden',
+  BUTTON_LIGHTNING: 'Signalfeuer anzuenden',
   BUTTON_LOOKING: 'Nach Rettung Ausschau halten',
   BUTTON_MUTE_CHECKED: 'Sound anstellen',
   BUTTON_MUTE: 'Sound ausstellen',
