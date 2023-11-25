@@ -1,2 +1,14 @@
 .idea
 .vscode
+/android/.gradle
+/android/local.properties
+/android/build
+/android/app/build
+/android/app/src/main/assets/www/src
+/android/app/src/main/assets/www/images
+/android/app/src/main/assets/www/sounds
+/android/app/src/main/assets/www/index.html
+/android/app/src/main/assets/www/favicon.png
+/android/app/src/main/assets/www/shortcut-icon.png
+/android/app/release
+/marketing/video.mp4

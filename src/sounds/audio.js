@@ -40,6 +40,20 @@ const createSound = (audioContext, audioBuffer, baseGain) => {
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const sounds = [];
 
+const loadFile = (path) => {
+  return new Promise((resolve, reject) => {
+      try {
+        const req = new XMLHttpRequest();
+        req.open("GET", path, true);
+        req.responseType = "arraybuffer";
+        req.onload = () => resolve(req.response);
+        req.send();
+      } catch (e) {
+          reject(e);
+      }
+  });
+}
+
 const audio = {
   suspend: () => {
     audioContext.suspend();
@@ -49,8 +63,7 @@ const audio = {
   },
   isRunning: () => audioContext.state === 'running',
   load: async (name, baseGain = 1) => {
-    const response = await fetch('./sounds/' + name + '.mp3');
-    const buffer = await response.arrayBuffer();
+    const buffer = await loadFile('./sounds/' + name + '.mp3');
     const audioBuffer = await audioContext.decodeAudioData(buffer);
     const sound = createSound(audioContext, audioBuffer, baseGain);
     sounds.push(sound);

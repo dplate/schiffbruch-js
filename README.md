@@ -24,4 +24,20 @@ You can play the latest experimental version <a href="https://dplate.github.io/s
 - [X] Make game touch device compatible
 - [X] Support screens smaller than 800x600 (make menus responsive)
 - [X] Add English version
-- [ ] Create Android app
+- [X] Create Android app
+
+## Create Android app
+
+Copy the following files/folders into the folder 
+
+/android/app/src/main/assets/www
+
+- images
+- sounds
+- src
+- favicon.png
+- shortcut-icon.png
+- index.html
+
+and build the project in folder android with Android Studio.
+

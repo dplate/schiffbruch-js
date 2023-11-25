@@ -53,19 +53,13 @@ window.addEventListener(
   false
 );
 
-window.addEventListener(
-  'focus', 
-  () => audio?.resume(), 
-  false
-);
-
-window.addEventListener(
-  'blur', 
-  () => {
+window.document.addEventListener("visibilitychange", () => {
+  if (window.document.visibilityState === "visible") {
+    audio?.resume()
+  } else {
     audio?.suspend();
     if (state.phase === phases.PLAY) {
       saveState();
     } 
-  },
-  false
-);
+  }
+});
