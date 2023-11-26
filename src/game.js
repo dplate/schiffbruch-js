@@ -9,6 +9,7 @@ import initCanvases from './images/initCanvases.js';
 import resizeCanvases from './images/resizeCanvases.js';
 import audio from './sounds/audio.js';
 import saveState from './state/saveState.js';
+import actions from './action/actions.js';
 
 const run = async (window, language) => {
   window.document.getElementById('start').style.display = 'none';
@@ -58,7 +59,7 @@ window.document.addEventListener("visibilitychange", () => {
     audio?.resume()
   } else {
     audio?.suspend();
-    if (state.phase === phases.PLAY) {
+    if (state.phase === phases.PLAY && !actions[state.guy.action?.type]?.movie) {
       saveState();
     } 
   }
