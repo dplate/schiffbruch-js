@@ -2,31 +2,13 @@
 
 Javascript port of my C++ game "Schiffbruch" from 1999. 
 
-Main goal is to make it runnable in web browsers without affecting the original old-school style and game-play. This will not be a "Schiffbruch 2"!
+Main goal is to make it runnable in web browsers without affecting the original old-school style and game-play. This is not be a "Schiffbruch 2"!
 
-You can play the latest experimental version <a href="https://dplate.github.io/schiffbruch-js/">here</a> (please note that a saved game will probably not work with future versions of the game).
+You can play the game in your browser <a href="https://schiffbruch.dplate.de">here</a> or download the Android app <a href="https://play.google.com/store/apps/details?id=de.dplate.schiffbruch">here</a>. The latest experimental version can be tested <a href="https://dplate.github.io/schiffbruch-js/">here</a>.
 
-## Tasks
+## Development
 
-- [X] Migrate C++ code to syntax-correct JS code
-- [X] Convert BMP files to PNG
-- [X] Convert WAV files to MP3
-- [X] Convert image handling from DirectDraw surfaces to JS canvases
-- [X] Basic integration of async input events instead of DirectInput
-- [X] Make game playable
-- [X] Use CSS for special effects (fade-in/out)
-- [X] Migrate DirectSound to JS AudioContext
-- [X] Save game into LocalStorage instead of file system
-- [X] Add start screen
-- [X] Publish first version to Github
-- [X] Refactor code (split single-file code and translate to English)
-- [X] Support screens larger than 800x600, but keep pixel perfect images
-- [X] Make game touch device compatible
-- [X] Support screens smaller than 800x600 (make menus responsive)
-- [X] Add English version
-- [X] Create Android app
-
-## Create Android app
+### Create Android app
 
 Copy the following files/folders into the folder 
 

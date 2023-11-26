@@ -1,0 +1,8 @@
+RewriteEngine On
+
+DirectoryIndex index.html
+DirectorySlash Off
+
+<FilesMatch "\.(jpg|png|svg|ico|js|mp3)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
