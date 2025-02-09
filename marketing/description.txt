@@ -20,12 +20,13 @@ Short English:
 Experience an adventure on a deserted Caribbean island
 
 ===
-Long German:
+Long English:
 ===
-Beim Spiel Schiffbruch strandest du auf einer einsamen Insel in der Südkaribik. Zuerst musst du es schaffen zu überleben: Dass heißt Trinkwasser und etwas zu Essen finden. Später erkundest du dann die Insel, erlebst Abenteuer und versuchst, von der Insel gerettet zu werden.
+In the game Schiffbruch you are stranded on a desert island in the southern Caribbean. First you have to manage to survive: That means finding drinking water and something to eat. Later you explore the island, experience adventures and try to be rescued from the island.
 
-Dies ist eine Neuauflage zum 25. Jubiläum des Originals von 1999 und bietet dieselbe Pixelgrafik und Sounds. Die Benutzeroberfläche wurde leicht angepasst, damit sie auch auf Handys und Tablets funktioniert. Außerdem skaliert das Spiel nun auf beliebige Bildschirmgrößen. Weiter wurden kleine Verbesserungen am Spiel und Bugfixes vorgenommen.
+This is a 25th anniversary remake of the 1999 original and features the same pixel graphics and sounds. The user interface has been slightly adapted to work on cell phones and tablets. In addition, the game now scales to any screen size. Small improvements to the game and bug fixes have also been made.
 
-Wie das ursprüngliche Spiel hat auch die Neuauflage eine kleine Downloadgröße, kostet nichts, hat keine Werbung oder In-App-Käufe, und sammelt keine Benutzerdaten.
+Like the original game, the new edition has a small download size, costs nothing, has no ads or in-app purchases, and collects no user data.
 
-Ich danke allen treuen Fans von Schiffbruch für die tollen Rückmeldungen in den letzten 25 Jahren mit dieser Neuauflage - auch wenn sie sich eher ein Schiffbruch 2 erhofft hatten.
+I would like to thank all the loyal fans of Schiffbruch for the great feedback over the last 25 years with this new edition - even if they were hoping for a Schiffbruch 2.
+
