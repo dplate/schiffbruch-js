@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace = "de.dplate.schiffbruch"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "de.dplate.schiffbruch"
-        minSdk = 19
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        minSdk = 21
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.1"
     }
 
     buildTypes {
@@ -30,5 +30,10 @@ android {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.2.0"))
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-Xlint:deprecation")
 }
