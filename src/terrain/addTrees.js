@@ -20,7 +20,7 @@ const getStartFrame = (spriteType) => {
   const sprite = sprites[spriteType];
   switch (spriteType) {
     case spriteTypes.BUSH:
-      return sprite.frameCount - 1;
+      return 2;
     default:
       return Math.floor(Math.random() * sprite.frameCount);
   }
