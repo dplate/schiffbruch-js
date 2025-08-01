@@ -19,23 +19,28 @@ const goToPlace = (tile) => {
   }
 };
 
+const removeFoodFromObject = (object) => {
+  if (object.sprite === spriteTypes.BUSH && object.frame === 2) {
+    object.frame++;
+  } else if (object.sprite === spriteTypes.FIELD && object.frame === 2) {
+    object.frame++;
+  } else {
+    object.frame = 0;
+  }
+};
+
 const consume = (tile) => {
   if (isEatable(tile.object)) {
     startGuyAnimation(spriteTypes.GUY_EATING);
     sounds.CRACKLING.instance.play();
+    removeFoodFromObject(tile.object);
     changeWaterAndFood(0, 15);
     spendMinutes(2);
-  } else {
+  } else if (isDrinkable(tile.object)) {
     startGuyAnimation(spriteTypes.GUY_DRINKING);
     sounds.DRINKING.instance.play();
     changeWaterAndFood(30, 0);
     spendMinutes(3);
-  }
-};
-
-const resetEatableObject = (tile) => {
-  if (isEatable(tile.object)) {
-    tile.object.frame = 0;
   }
 };
 
@@ -50,7 +55,6 @@ const consuming = {
     goToPlace,
     consume,
     consume,
-    resetEatableObject,
     goToCenterOfTile
   ]
 };

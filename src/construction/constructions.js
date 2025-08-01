@@ -5,7 +5,7 @@ import constructionTypes from './constructionTypes.js';
 const constructions = {
   [constructionTypes.FIELD]: {
     sprite: spriteTypes.FIELD,
-    frames: [3, 4, 5, 6, 7, 8, 0],
+    frames: [4, 5, 6, 7, 8, 9, 0],
     items: {},
     hintTextId: 'HINT_FIELD'
   },

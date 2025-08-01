@@ -1,5 +1,4 @@
 import spriteTypes from '../images/spriteTypes.js';
-import sprites from '../images/sprites.js';
 import isOnSea from '../guy/isOnSea.js';
 import changeHealth from '../guy/changeHealth.js';
 import state from '../state/state.js';
@@ -19,10 +18,14 @@ const removeObjectsWithLifetime = (minutes, tile) => {
 const growFood = (minutes, tile) => {
   if (tile.object?.sprite === spriteTypes.FIELD && !tile.construction) {
     tile.object.frame += minutes * 0.005;
-    tile.object.frame = Math.min(tile.object.frame, 2);
+    if (tile.object.frame > 2) {
+      tile.object.frame = Math.floor(tile.object.frame);
+    }
   } else if (tile.object?.sprite === spriteTypes.BUSH) {
     tile.object.frame += minutes * 0.0005;
-    tile.object.frame = Math.min(tile.object.frame, sprites[tile.object.sprite].frameCount - 1);
+    if (tile.object.frame > 2) {
+      tile.object.frame = Math.floor(tile.object.frame);
+    }
   }
 };
 

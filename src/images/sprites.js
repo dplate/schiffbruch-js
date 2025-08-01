@@ -350,7 +350,7 @@ const sprites = {
   },
   [spriteTypes.BUSH]: {
     ...treeDefault,
-    frameCount: 3,
+    frameCount: 4,
     speed: 0,
     x: 81,
     y: 0,
@@ -433,7 +433,7 @@ const sprites = {
     height: 27,
     offsetX: -21,
     offsetY: -16,
-    frameCount: 9,
+    frameCount: 10,
     speed: 0
   },
   [spriteTypes.TENT]: {
