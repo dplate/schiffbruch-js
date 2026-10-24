@@ -1,5 +1,8 @@
 import control from './control.js';
 import getPositionFromEvent from './getPositionFromEvent.js';
+import getButtonAtPosition from '../menu/getButtonAtPosition.js';
+
+const TOUCH_BUTTON_CANCEL_DELAY = 3000;
 
 const initTouch = (window) => {
   window.document.addEventListener('touchmove', (event) => {
@@ -28,17 +31,34 @@ const initTouch = (window) => {
     control.touch = {
       position: getPositionFromEvent(event.changedTouches[0]),
       drag: null,
-      released: false
+      released: false,
+      startedAt: Date.now()
     };
     event.preventDefault();
   }, { passive:false });
 
   window.document.addEventListener('touchend', (event) => {
-    if (!control.touch?.drag) {
-      control.tap = getPositionFromEvent(event.changedTouches[0]);   
+    const isLongPressOnButton =
+      control.touch &&
+      !control.touch.drag &&
+      Date.now() - control.touch.startedAt >= TOUCH_BUTTON_CANCEL_DELAY &&
+      getButtonAtPosition(control.touch.position);
+
+    if (isLongPressOnButton) {
+      control.tap = null;
+    } else if (!control.touch?.drag) {
+      control.tap = getPositionFromEvent(event.changedTouches[0]);
     }
     if (control.touch) {
       control.touch.drag = null
+      control.touch.released = true;
+    }
+    event.preventDefault();
+  }, { passive:false });
+
+  window.document.addEventListener('touchcancel', (event) => {
+    if (control.touch) {
+      control.touch.drag = null;
       control.touch.released = true;
     }
     event.preventDefault();

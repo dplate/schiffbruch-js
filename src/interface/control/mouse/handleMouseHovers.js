@@ -15,6 +15,9 @@ import createTileText from '../../../terrain/tiles/createTileText.js';
 import interfaceTypes from '../../interfaceTypes.js';
 import isPositionInInterface from '../../isPositionInInterface.js';
 import setInventoryStatusText from '../../../guy/inventory/setInventoryStatusText.js';
+import control from '../control.js';
+
+const TOUCH_HOVER_DELAY = 500;
 
 const setCurrentCursor = () => {
   if (!workbench.selectedItem) {
@@ -75,12 +78,27 @@ const setHoverStatusText = () => {
 }
 
 const handleMouseHovers = () => {
-  if (cursor.x === null || cursor.y === null) {
+  const isLongTouch =
+    control.touch?.startedAt &&
+    !control.touch.released &&
+    !control.touch.drag &&
+    Date.now() - control.touch.startedAt >= TOUCH_HOVER_DELAY;
+
+  if ((cursor.x === null || cursor.y === null) && !isLongTouch) {
     return;
   }
-  setCurrentCursor();
-  setHoverStatusText();
-  handleButtonHovers();
+
+  if (cursor.x !== null && cursor.y !== null) {
+    setCurrentCursor();
+    setHoverStatusText();
+    if (!control.touch?.startedAt) {
+      handleButtonHovers();
+    }
+  }
+
+  if (isLongTouch) {
+    handleButtonHovers(control.touch.position);
+  }
 };
 
 export default handleMouseHovers;
