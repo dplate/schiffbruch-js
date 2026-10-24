@@ -16,7 +16,7 @@ import drawLogo from './state/drawLogo.js';
 import drawPlay from './state/drawPlay.js';
 import actions from './action/actions.js';
 import handleKeyboard from './interface/control/keyboard/handleKeyboard.js';
-import handleMouseHovers from './interface/control/mouse/handleMouseHovers.js';
+import handleHovers from './interface/control/handleHovers.js';
 import handleTap from './interface/control/handleTap.js';
 import handleTouch from './interface/control/handleTouch.js';
 import cursor from './interface/control/mouse/cursor.js';
@@ -58,7 +58,7 @@ const refresh = (timestamp) => {
     calculateChance();
     updateStatusText();
     handleKeyboard();
-    handleMouseHovers();
+    handleHovers();
     if (!actions[state.guy.action?.type]?.movie || state.paper) {
       handleTap();
       handleTouch();
